@@ -31,6 +31,29 @@ def _contains(haystack: list[str], needle: list[str]) -> bool:
                for i in range(len(haystack) - size + 1))
 
 
+def is_checkable(value: str) -> bool:
+    """Values the leak rule looks for: several words, or one identifier."""
+    keys = _keys(value)
+    if len(keys) > 1:
+        return True
+    return bool(keys) and any(c.isdigit() or c == "@" for c in keys[0])
+
+
+def find_values(values: list[str], lines: list[str]) -> list[str]:
+    """Return the values still readable in ``lines``, whatever the layout.
+
+    Same rule as ``check_leaks``, for text read back from a redacted file:
+    the words of every line are joined, so a value split across lines by
+    OCR or by the PDF layout is still found.
+    """
+    keys = [k for line in lines for k in _keys(line)]
+    found = []
+    for value in dict.fromkeys(values):
+        if is_checkable(value) and _contains(keys, _keys(value)):
+            found.append(value)
+    return found
+
+
 def check_leaks(original_lines: list[str], output_lines: list[str],
                 masked: list[MaskedWord]) -> dict:
     """Return how many masked values were checked and which ones leaked."""

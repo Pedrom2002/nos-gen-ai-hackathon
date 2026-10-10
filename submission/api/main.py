@@ -38,8 +38,8 @@ SUBMISSION_DIR = Path(__file__).resolve().parents[1]
 OFFICIAL_PDF = SUBMISSION_DIR.parent / "raw_data" / "document_to_anonymize.pdf"
 # Phone photos at full resolution often pass 10 MB.
 MAX_BYTES = 25 * 1024 * 1024
-UNSUPPORTED = ("Formato não suportado: use PDF, DOCX, imagem (PNG, JPG), "
-               "TXT ou CSV.")
+UNSUPPORTED = ("Formato não suportado: use PDF, DOCX, imagem (PNG, JPG, "
+               "WebP), TXT ou CSV.")
 MODEL_DOWN = "O modelo não respondeu. Tente de novo dentro de um minuto."
 
 # Request logs would contain document names; keep them off.

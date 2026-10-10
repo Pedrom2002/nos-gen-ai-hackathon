@@ -89,6 +89,23 @@ def test_codes_that_look_like_ibans_are_kept():
         assert masked(line) == line
 
 
+def test_landlines_with_label_or_prefix_are_fully_masked():
+    assert masked("Tel: 213456789") == "Tel: *"
+    assert masked("Fixo +351 213 456 789") == "Fixo * * * *"
+
+
+def test_numbers_that_only_look_like_phones_or_ips_are_kept():
+    for line in ["Fatura 925035027", "Total 1.250.000.000 euros",
+                 "Versão 2.10.3.1", "Contrato 213456789"]:
+        assert masked(line) == line
+
+
+def test_ip_after_label_is_masked_but_label_is_kept():
+    assert masked("Endereço IP no registo: 85.240.117.36") == (
+        "Endereço IP no registo: *"
+    )
+
+
 def test_keeps_dates_amounts_and_references():
     for line in ["Data: 15 de abril de 2025", "Referência: ADM-2025-04-15-089",
                  "Fatura 225035027", "Renda 950,00 € em 2026"]:

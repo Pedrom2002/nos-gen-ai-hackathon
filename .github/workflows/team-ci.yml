@@ -42,10 +42,35 @@ jobs:
         working-directory: submission
         run: python -m anonimizador.metric submission.txt data/gold/gold.txt
 
+  frontend:
+    if: github.repository == 'Pedrom2002/nos-gen-ai-hackathon'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: submission/frontend
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Tests (masking logic, review history, API mapping)
+        run: npm test
+
+      - name: Type check
+        run: npx tsc --noEmit
+
+      - name: Build
+        run: npm run build
+
   package:
     # CD: every green push to the team branch publishes the candidate
     # deliverables, so the final submission is always one download away.
-    needs: test
+    needs: [test, frontend]
     if: >
       github.repository == 'Pedrom2002/nos-gen-ai-hackathon'
       && github.event_name == 'push'

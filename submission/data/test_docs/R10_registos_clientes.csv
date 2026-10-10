@@ -1,0 +1,6 @@
+id_cliente,nome,nif,data_nasc,sexo,cod_postal,localidade,telemovel,email,iban,plano,mensalidade,ultima_fatura
+936494403,Teresa Gonçalves Simões,322018056,1979-04-12,F,3810-193,Aveiro,915 220 874,teresa.simoes@gmail.com,PT50 0018 3215 7116 4941 5772 4,Fibra 500,39.99,FT2026/88120
+545922943,Pedro Henrique Lacerda,215438299,1966-12-01,M,4710-228,Braga,+351 932 006 115,phlacerda@hotmail.com,PT50 0007 7784 8648 8766 3442 5,Fibra 1G + TV,54.99,FT2026/88121
+689264693,Alice Monteiro,264529120,2001-08-19,F,1700-097,Lisboa,964118302,alice.monteiro01@gmail.com,PT50 0036 0107 9819 3319 0845 5,Móvel 20GB,12.99,FT2026/88122
+776261406,José Carlos Brito,217075363,1972-02-28,M,8500-510,Portimão,925 443 190,jcbrito@sapo.pt,PT50 0035 8754 7517 7992 2982 8,Fibra 500 + TV,47.99,FT2026/88123
+607862197,Leonor Sá Pereira,296727318,1990-10-05,F,2710-089,Sintra,912 770 553,leonor.sp@outlook.pt,PT50 0010 5568 1518 8447 2944 5,Fibra 1G,44.99,FT2026/88124

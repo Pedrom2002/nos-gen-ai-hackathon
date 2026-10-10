@@ -1,0 +1,30 @@
+RELATÓRIO DE INTERVENÇÃO TÉCNICA
+Ordem de trabalho: OT-718991814
+Técnico: Bruno Carvalho (equipa SETÚBAL-02)
+Data da visita: 02/10/2026, 09h15 às 11h40
+
+Cliente: Inês Cardoso Vieira
+NIF cliente: 349482144
+Morada: Praceta Manuel da Fonseca, lote 12, 2.º B, 2900-520 Setúbal
+Contacto no local: a própria, tel. 265 538 117 / 925 801 336
+
+Descrição da avaria reportada:
+Perda de sinal intermitente na fibra, sobretudo ao fim da tarde. Cliente refere que trabalha em casa (teletrabalho) e que perdeu duas reuniões importantes.
+
+Diagnóstico:
+Conector SC/APC da roseta danificado. Atenuação medida na ONT: -27,8 dBm (fora do limite). Cabo de drop com dobra acentuada junto à caixa do prédio.
+
+Trabalho realizado:
+1. Substituição do conector e da roseta ótica.
+2. Reposicionamento do cabo de drop na caixa de entrada do prédio (CEMU, piso 0).
+3. Nova medição na ONT: -19,4 dBm (dentro do limite).
+4. Teste de velocidade: 912 Mbps download / 488 Mbps upload.
+
+Material aplicado: 1 roseta ótica, 2 conectores SC/APC, 3 m de cabo de drop.
+Equipamento do cliente: ONT n.º série ZTEG-0C88-41A9 (mantida).
+
+Observações:
+O marido da cliente, Sr. Vieira, pediu que futuras visitas sejam marcadas para depois das 14h00. A viatura de serviço 45-TR-81 ficou estacionada em frente ao lote 12.
+
+Assinatura do cliente: Inês C. Vieira
+Assinatura do técnico: B. Carvalho

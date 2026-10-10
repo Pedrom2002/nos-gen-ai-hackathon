@@ -1,0 +1,15 @@
+[Transcrição do chat de apoio, sessão #CH-5592013]
+[03/10/2026 19:02] Assistente Lusofibra: Olá! Sou a Marta, em que posso ajudar?
+[03/10/2026 19:02] Cliente: boa noite, queria mudar o meu tarifário para o de 500 megas
+[03/10/2026 19:03] Assistente Lusofibra: Claro. Para validar a sua identidade, pode indicar o NIF do titular e a data de nascimento?
+[03/10/2026 19:03] Cliente: 223004871, 07-08-1990
+[03/10/2026 19:04] Assistente Lusofibra: Obrigada. Confirmo que fala com o titular Diogo Fernandes Esteves?
+[03/10/2026 19:04] Cliente: sim sou eu, o diogo
+[03/10/2026 19:05] Cliente: aproveito para atualizar o email, agora é diogo.esteves@empresa-xyz.pt e o tlm passou a ser o 926 117 834
+[03/10/2026 19:06] Assistente Lusofibra: Atualizado. A morada de instalação mantém-se na Rua Gonçalo Velho Cabral, 9, 9500-063 Ponta Delgada?
+[03/10/2026 19:06] Cliente: sim
+[03/10/2026 19:07] Cliente: ah e o pagamento agora é pela conta da minha namorada, a Beatriz Lemos, o iban é PT50 0018 0845 8500 3703 8265 7. ela autoriza
+[03/10/2026 19:08] Assistente Lusofibra: Para alterar o débito para uma conta de outra pessoa preciso da autorização da titular. Vou enviar o formulário para o seu novo email.
+[03/10/2026 19:08] Cliente: ok obrigado marta
+[03/10/2026 19:09] Assistente Lusofibra: A alteração de tarifário fica ativa amanhã. Obrigada e boa noite!
+[Fim da sessão]

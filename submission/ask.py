@@ -12,7 +12,7 @@ import argparse
 from pathlib import Path
 
 from anonimizador.extract import read_document
-from anonimizador.llm import DEFAULT_MODEL
+from anonimizador.llm import DEFAULT_MODEL, generate
 from anonimizador.pipeline import anonymize
 from anonimizador.pseudonymize import ask
 
@@ -28,8 +28,9 @@ def main(argv: list[str] | None = None) -> None:
     args = parser.parse_args(argv)
 
     lines = read_document(args.pdf)
-    result = anonymize(lines, model=args.model)
-    answer = ask(lines, result, args.question, model=args.model)
+    result = anonymize(lines, model=args.model, generate_fn=generate)
+    answer = ask(lines, result, args.question, model=args.model,
+                 generate_fn=generate)
     print("=== What the model saw ===")
     print(answer["model_saw"])
     print("=== Model answer (placeholders) ===")

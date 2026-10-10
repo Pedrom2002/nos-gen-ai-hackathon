@@ -4,11 +4,12 @@ import type { SourceKind } from "@/lib/document";
 // the badges on the dropzone and the drop validation all read from here.
 const IMAGE_TYPES: Record<string, string[]> = { "image/png": [".png"], "image/jpeg": [".jpg", ".jpeg"], "image/webp": [".webp"] };
 const IMAGE_EXTENSIONS = Object.values(IMAGE_TYPES).flat();
+const DOCX_TYPE = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
 
-export const ACCEPT = [".pdf", ".txt", ...IMAGE_EXTENSIONS, "application/pdf", "text/plain", ...Object.keys(IMAGE_TYPES)].join(",");
-export const BADGES = ["pdf", "txt", "png", "jpg", "webp"] as const;
-/** The backend refuses bigger uploads; above this the text goes instead of the file. */
-export const MAX_UPLOAD_BYTES = 5 * 1024 * 1024;
+export const ACCEPT = [".pdf", ".docx", ".txt", ".csv", ...IMAGE_EXTENSIONS, "application/pdf", DOCX_TYPE, "text/plain", "text/csv", ...Object.keys(IMAGE_TYPES)].join(",");
+export const BADGES = ["pdf", "docx", "txt", "csv", "png", "jpg", "webp"] as const;
+/** The backend refuses bigger uploads (api/main.py); above this the text goes instead of the file. */
+export const MAX_UPLOAD_BYTES = 25 * 1024 * 1024;
 /** Hard stop for what the browser will try to open. */
 export const MAX_LOCAL_BYTES = 25 * 1024 * 1024;
 
@@ -18,10 +19,12 @@ const extensionOf = (name: string) => { const m = /\.[^.]+$/.exec(name); return 
 export function kindOf(file: Pick<File, "name" | "type">): SourceKind | null {
   const type = file.type.toLowerCase();
   if (type === "application/pdf") return "pdf";
+  if (type === DOCX_TYPE) return "docx";
   if (type in IMAGE_TYPES) return "image";
   if (type === "text/plain" || type === "text/csv") return "text";
   const ext = extensionOf(file.name);
   if (ext === ".pdf") return "pdf";
+  if (ext === ".docx") return "docx";
   if (IMAGE_EXTENSIONS.includes(ext)) return "image";
   if (ext === ".txt" || ext === ".csv") return "text";
   return null;

@@ -4,7 +4,7 @@ import { useEffect, useMemo, useReducer, useRef, useState } from "react";
 import { toast } from "sonner";
 import {
   ArrowLeft, ArrowLeftRight, ArrowRight, Columns2, Copy, Download,
-  FileDown, Check, AlertTriangle, RotateCw, SearchX,
+  FileDown, Check, AlertTriangle, RotateCw, SearchX, ShieldCheck,
 } from "lucide-react";
 import { DocumentInput } from "@/components/DocumentInput";
 import { ReviewSkeleton } from "@/components/ReviewSkeleton";
@@ -16,7 +16,7 @@ import { disposeSource, readSource, type ReadProgress } from "@/lib/source";
 import { terminateOcr } from "@/lib/ocr";
 import { UI } from "@/lib/i18n-ui";
 import { emptyHistory, reviewHistory } from "@/lib/review-history";
-import { analyzeDocument, deleteDocument, isMockMode, syncDecisions } from "@/services/anonymizer";
+import { analyzeDocument, deleteDocument, downloadRedacted, isMockMode, syncDecisions } from "@/services/anonymizer";
 import {
   CATEGORIES, anonymize, catOf, normalizeCategory, partialMask, stats,
   type CategoryId, type Entity,
@@ -56,16 +56,22 @@ function Index() {
   const [history, dispatch] = useReducer(reviewHistory, emptyHistory);
   const entities = history.present;
   const [fileName, setFileName] = useState("");
-  // The last file loaded, with its text. A text-layer PDF goes to the backend
-  // itself when the text was not edited, so it is read as run.py reads it;
-  // images and scans always go as text, because the API has no OCR. Their
-  // page geometry is kept for the day the backend can redact images too.
+  // The last file loaded, with its text. While its text was not edited, the
+  // file itself goes to the backend: it reads PDFs as run.py does, reads
+  // photos and scans with its own OCR (straightened, misreads fixed), reads
+  // DOCX, and can give the file back with the masked words removed.
   const [source, setSource] = useState<SourceDoc | null>(null);
   // The drop handler may hold an older render's handleFile, so it releases
   // the previous document through a ref rather than the captured state.
   const sourceRef = useRef<SourceDoc | null>(null);
   const replaceSource = (next: SourceDoc | null) => { disposeSource(sourceRef.current); sourceRef.current = next; setSource(next); };
   const [docId, setDocId] = useState("");
+  // What the backend said about the file it read: whether it can return the
+  // file redacted, and how many text lines its OCR could not read.
+  const [redactable, setRedactable] = useState(false);
+  const [unread, setUnread] = useState(0);
+  const [redactedUrl, setRedactedUrl] = useState<string | null>(null);
+  const showRedacted = (url: string | null) => setRedactedUrl((old) => { if (old) URL.revokeObjectURL(old); return url; });
   const [dragging, setDragging] = useState(false);
   const [busy, setBusy] = useState<ReadProgress | null>(null);
   const reading = busy !== null;
@@ -104,7 +110,7 @@ function Index() {
       setFileName(f.name);
       setStep(0);
       setError("");
-      if (!doc.text.trim()) toast.info(doc.ocr ? u.ocrEmpty : x.emptyDoc); else toast.success(u.fileLoaded.replace("{name}", f.name));
+      if (!doc.text.trim() && doc.kind !== "docx") toast.info(doc.ocr ? u.ocrEmpty : x.emptyDoc); else toast.success(u.fileLoaded.replace("{name}", f.name));
     } catch (e) {
       console.error(e);
       toast.error(x.readFail);
@@ -112,16 +118,28 @@ function Index() {
   };
 
   const run = async () => {
-    if (!text.trim()) { toast.error(x.emptyDoc); return; }
+    if (!text.trim() && source?.kind !== "docx") { toast.error(x.emptyDoc); return; }
     setLoading(true);
     setError("");
     setStep(1);
     try {
-      // Only a text-layer PDF or a plain text file the backend can open goes up as is.
-      const raw = source && source.text === text && !source.ocr && source.kind !== "image" && source.file.size <= MAX_UPLOAD_BYTES;
-      const r = await analyzeDocument(text, raw ? source.file : null);
+      // The file itself goes up while its text is untouched; edited text goes as text.
+      const raw = !!source && source.text === text && source.file.size <= MAX_UPLOAD_BYTES;
+      let r;
+      try {
+        r = await analyzeDocument(text, raw ? source.file : null);
+      } catch (e) {
+        // A server without OCR refuses photos and scans: send what this browser read.
+        const noOcr = e instanceof Error && e.message.includes("OCR");
+        if (!(raw && source.ocr && text.trim() && noOcr)) throw e;
+        toast.info(u.ocrFallback);
+        r = await analyzeDocument(text, null);
+      }
       if (docId) void deleteDocument(docId).catch(() => {});
       setDocId(r.docId ?? "");
+      setRedactable(!!r.redactable);
+      setUnread(r.unread ?? 0);
+      showRedacted(null);
       // Show the document as the backend read it, so the highlights match its lines.
       setText(r.text);
       const seen = new Set<string>();
@@ -164,10 +182,27 @@ function Index() {
     if (docId) {
       const keep = entities.filter((e) => !e.enabled).flatMap((e) => e.refs ?? []);
       try { setSummary(await syncDecisions(docId, keep)); } catch (e) { console.error(e); }
+      // A photo is shown back redacted, as the backend built and checked it.
+      if (redactable && source?.kind === "image") {
+        try { showRedacted(URL.createObjectURL((await downloadRedacted(docId)).blob)); } catch (e) { console.error(e); showRedacted(null); }
+      }
     }
     setStep(2);
   };
+  const saveRedacted = async () => {
+    try {
+      const { blob, filename } = await downloadRedacted(docId);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url; a.download = filename; a.click();
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      // The backend explains why (a check failed, a line was not read...).
+      toast.error(e instanceof Error ? e.message : x.unknownErr);
+    }
+  };
   const clear = () => {
+    setRedactable(false); setUnread(0); showRedacted(null);
     setText(""); setFileName(""); replaceSource(null); setError(""); dispatch({ type: "reset", entities: [] }); setSummary(""); setStep(0);
     // The OCR worker and its models are only worth keeping while a document is open.
     void terminateOcr();
@@ -307,7 +342,10 @@ function Index() {
                 <Button variant="ghost" onClick={async () => { try { await navigator.clipboard.writeText(output); toast.success(t.copied); } catch { toast.error(u.copyFailed); } }} className="inline-flex items-center gap-2 rounded-xl border px-4 py-2 hover:bg-muted"><Copy className="h-4 w-4" /> {t.copy}</Button>
                 <Button variant="ghost" onClick={() => download("submission.txt", output)} className="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2 font-medium text-primary-foreground hover:opacity-90"><Download className="h-4 w-4" /> {t.downloadTxt}</Button>
                 <Button variant="ghost" onClick={() => download("lethe-relatorio.md", report(), "text/markdown")} className="inline-flex items-center gap-2 rounded-xl border px-4 py-2 hover:bg-muted"><FileDown className="h-4 w-4" /> {t.downloadReport}</Button>
+                {docId && redactable && <Button variant="ghost" onClick={() => void saveRedacted()} className="inline-flex items-center gap-2 rounded-xl border px-4 py-2 hover:bg-muted"><ShieldCheck className="h-4 w-4" /> {u.downloadRedacted}</Button>}
               </div>
+              {docId && unread > 0 && <p role="status" className="rounded-lg border border-warning/40 bg-warning/10 px-4 py-3 text-sm">{u.unreadLines.replace("{n}", String(unread))}</p>}
+              {redactedUrl && <figure className="min-w-0 rounded-lg border bg-card p-3"><img src={redactedUrl} alt={u.redactedPreview} className="mx-auto max-h-[70dvh] w-auto rounded" /><figcaption className="mt-2 text-center text-sm text-muted-foreground">{u.redactedPreview}</figcaption></figure>}
 
               <div className="border-t pt-8">
                 <h2 className="text-base font-semibold tracking-tight">{t.reportTitle}</h2>

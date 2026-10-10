@@ -1,0 +1,55 @@
+CONTRATO DE ADESÃO A SERVIÇOS DE TELECOMUNICAÇÕES
+N.º de contrato: LF-2026-0048831
+
+ENTRE
+
+LUSOFIBRA TELECOMUNICAÇÕES, S.A., sociedade anónima com sede na Avenida da Liberdade, 210, 1250-147 Lisboa, matriculada na Conservatória do Registo Comercial de Lisboa sob o número único de matrícula e de pessoa coletiva 509 999 990, neste ato representada por Henrique Valadares Couto, na qualidade de procurador, adiante designada por PRIMEIRA OUTORGANTE ou "Lusofibra";
+
+E
+
+MARIA DO CÉU FERREIRA ANTUNES, solteira, maior, natural da freguesia de Arroios, concelho de Lisboa, nascida a 14 de fevereiro de 1987, titular do Cartão de Cidadão n.º 15881399 8 P86, válido até 03/07/2030, contribuinte fiscal n.º 373 091 141, beneficiária da Segurança Social n.º 15576169877, residente na Rua Morais Soares, n.º 112, 3.º Esq., 1900-345 Lisboa, adiante designada por SEGUNDA OUTORGANTE ou "Cliente";
+
+é celebrado o presente contrato, que se rege pelas cláusulas seguintes:
+
+CLÁUSULA PRIMEIRA (Objeto)
+1. Pelo presente contrato, a Lusofibra obriga-se a prestar à Cliente os serviços de acesso à Internet em fibra ótica (1 Gbps), televisão por subscrição (pacote "Total 200 canais") e serviço telefónico fixo, adiante designados conjuntamente por "Serviços".
+2. Os Serviços são prestados na morada de instalação indicada no Anexo I, que coincide com a residência da Cliente.
+
+CLÁUSULA SEGUNDA (Contactos)
+1. Para efeitos de comunicações relativas ao presente contrato, a Cliente indica o telemóvel +351 912 384 551, o telefone fixo 218 145 902 e o endereço de correio eletrónico mceu.antunes87@gmail.com.
+2. Como contacto alternativo, em caso de impossibilidade, a Cliente indica a sua irmã, Ana Rita Ferreira Antunes, telemóvel 963 220 418.
+
+CLÁUSULA TERCEIRA (Preço)
+1. Como contrapartida dos Serviços, a Cliente pagará à Lusofibra o valor mensal de 54,99 EUR (cinquenta e quatro euros e noventa e nove cêntimos), IVA incluído à taxa legal em vigor.
+2. Durante os primeiros seis meses, é aplicado um desconto promocional de 10,00 EUR por mês.
+3. A instalação é gratuita. A ativação tem o custo único de 30,00 EUR, cobrado na primeira fatura, com o n.º 225035027.
+
+CLÁUSULA QUARTA (Pagamento)
+1. A Cliente autoriza a Lusofibra a cobrar os montantes devidos por débito direto SEPA na conta bancária com o IBAN PT50 0010 5568 1518 8447 2944 5, de que é a única titular, junto do Banco BPI, S.A.
+2. A Autorização de Débito Direto tem a referência ADD-0048831 e pode ser revogada pela Cliente a todo o tempo.
+
+CLÁUSULA QUINTA (Período de fidelização)
+1. O presente contrato tem um período de fidelização de 24 (vinte e quatro) meses, contado a partir da data de ativação dos Serviços.
+2. Em contrapartida da fidelização, a Lusofibra concede à Cliente as vantagens descritas no Anexo II, no valor total de 360,00 EUR.
+3. A cessação antecipada do contrato por iniciativa da Cliente, durante o período de fidelização, confere à Lusofibra o direito a receber uma compensação proporcional às vantagens concedidas, nos termos da lei aplicável.
+
+CLÁUSULA SEXTA (Equipamentos)
+1. A Lusofibra entrega à Cliente, em regime de comodato, um router Wi-Fi 6 (n.º de série RW6-2291-AXB-0418) e uma box de televisão (n.º de série BX4K-77120-PT).
+2. A Cliente obriga-se a devolver os equipamentos no prazo de 30 dias após a cessação do contrato, sob pena de lhe serem cobrados 120,00 EUR por equipamento.
+
+CLÁUSULA SÉTIMA (Proteção de dados pessoais)
+1. A Lusofibra é a entidade responsável pelo tratamento dos dados pessoais da Cliente, que serão tratados para efeitos de execução do presente contrato, faturação e cumprimento de obrigações legais.
+2. A Cliente pode exercer os direitos de acesso, retificação, apagamento, limitação, portabilidade e oposição através do endereço privacidade@lusofibra.pt ou por carta dirigida ao Encarregado de Proteção de Dados, para a morada da sede.
+3. Os dados de tráfego são conservados pelo prazo legalmente previsto.
+
+CLÁUSULA OITAVA (Lei e foro)
+O presente contrato rege-se pela lei portuguesa. Para a resolução de litígios, as partes elegem o foro da comarca de Lisboa, sem prejuízo do recurso aos meios de resolução alternativa de litígios de consumo.
+
+ANEXO I (Morada de instalação)
+Rua Morais Soares, n.º 112, 3.º Esq., 1900-345 Lisboa
+Ponto de referência: em frente à farmácia, prédio com porta verde. Contactar a Cliente pelo 912 384 551 antes da visita.
+
+Feito em Lisboa, a 22 de setembro de 2026, em dois exemplares de igual valor, ficando um na posse de cada outorgante.
+
+A PRIMEIRA OUTORGANTE                        A SEGUNDA OUTORGANTE
+(Henrique Valadares Couto)                   (Maria do Céu Ferreira Antunes)

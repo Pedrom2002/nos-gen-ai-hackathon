@@ -26,6 +26,24 @@ def extract_lines(pdf_path: str | Path) -> list[str]:
     return clean_lines(text)
 
 
+def decode_text(data: bytes) -> str:
+    """Decode a text file: UTF-16 (with BOM), UTF-8 or Windows-1252."""
+    if data[:2] in (b"\xff\xfe", b"\xfe\xff"):
+        return data.decode("utf-16")
+    try:
+        return data.decode("utf-8-sig")
+    except UnicodeDecodeError:
+        return data.decode("cp1252", errors="replace")
+
+
+def read_document(path: str | Path) -> list[str]:
+    """Return the clean lines of a PDF or a plain text file (.txt, .csv)."""
+    path = Path(path)
+    if path.suffix.lower() == ".pdf":
+        return extract_lines(path)
+    return clean_lines(decode_text(path.read_bytes()))
+
+
 if __name__ == "__main__":
     if len(sys.argv) != 2:
         sys.exit("usage: python -m anonimizador.extract <file.pdf>")

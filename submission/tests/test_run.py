@@ -11,7 +11,7 @@ pytestmark = pytest.mark.skipif(
 )
 
 
-def fake_generate(prompt, model, json_output):
+def fake_generate(prompt, model, json_output, **kwargs):
     """Mask only the patient's name, as a model would."""
     assert json_output
     lines = extract_lines(run.DEFAULT_PDF)
@@ -44,9 +44,12 @@ def test_run_writes_submission_prompt_and_log(tmp_path):
     logs = list((tmp_path / "runs").glob("*.json"))
     assert len(logs) == 1
     assert summary["lines"] == len(original)
-    assert [w["text"] for w in summary["masked_words"]] == [
-        "Maria", "Conceição", "Oliveira", "Santos",
-    ]
+    texts = [w["text"] for w in summary["masked_words"]]
+    assert texts[:4] == ["Maria", "Conceição", "Oliveira", "Santos"]
+    # The fake model only masks the name; the safety net catches the rest.
+    assert "12345678-9ZX0" in texts
+    assert "maria.santos@emailpessoal.pt" in texts
+    assert summary["safety_net_masks"] > 0
 
 
 def test_consecutive_runs_keep_separate_logs(tmp_path):

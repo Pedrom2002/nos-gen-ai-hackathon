@@ -88,6 +88,14 @@ def _call_with_retries(client, prompt: str, model: str, temperature: float,
     raise AssertionError("unreachable")
 
 
+def _passes(validate, text: str) -> bool:
+    try:
+        validate(text)
+    except Exception:
+        return False
+    return True
+
+
 def generate(prompt: str, model: str = DEFAULT_MODEL,
              temperature: float = 0.0, json_output: bool = False, *,
              cache_dir: str | Path = CACHE_DIR, client=None,
@@ -97,13 +105,16 @@ def generate(prompt: str, model: str = DEFAULT_MODEL,
     Cached responses are returned without calling the API. ``validate``
     (optional) is called with the text before caching; if it raises, the
     response is not cached and InvalidResponseError is raised instead, so
-    the caller can try again. The client and the sleep function can be
-    injected for tests.
+    the caller can try again. A cached response that fails ``validate``
+    (cached before the check existed) is ignored and requested again. The
+    client and the sleep function can be injected for tests.
     """
     key = cache_key(prompt, model, temperature, json_output)
     cache_file = Path(cache_dir) / f"{key}.json"
     if cache_file.exists():
-        return json.loads(cache_file.read_text(encoding="utf-8"))["response"]
+        cached = json.loads(cache_file.read_text(encoding="utf-8"))["response"]
+        if validate is None or _passes(validate, cached):
+            return cached
 
     client = client or make_client()
     text = _call_with_retries(

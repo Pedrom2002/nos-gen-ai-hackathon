@@ -76,7 +76,10 @@ def build_report(original_lines: list[str], result) -> dict:
         )
         entity = entity or {}
         items.append({
+            "id": f"L{span.line + 1}-{span.first}",
             "line": span.line + 1,
+            "first": span.first,
+            "last": span.last,
             "text": span.text,
             "words": span.last - span.first + 1,
             "category": entity.get("category", "Identificação"),

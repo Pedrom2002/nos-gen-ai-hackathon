@@ -15,7 +15,13 @@ describe("kindOf", () => {
   });
   it("refuses what Lethe cannot open", () => {
     expect(kindOf({ name: "foto.heic", type: "image/heic" })).toBeNull();
-    expect(kindOf({ name: "arquivo.docx", type: "" })).toBeNull();
+    expect(kindOf({ name: "arquivo.odt", type: "" })).toBeNull();
+  });
+
+  it("sends DOCX and CSV to the backend, which reads them", () => {
+    expect(kindOf({ name: "arquivo.docx", type: "" })).toBe("docx");
+    expect(kindOf({ name: "x", type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document" })).toBe("docx");
+    expect(kindOf({ name: "registos.csv", type: "" })).toBe("text");
     expect(kindOf({ name: "semextensao", type: "" })).toBeNull();
   });
 });

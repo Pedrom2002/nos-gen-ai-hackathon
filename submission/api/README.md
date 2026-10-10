@@ -22,7 +22,7 @@ ALLOWED_ORIGINS=https://<id>.lovable.app
 
 - Documents live only in memory: no disk, no database. `DELETE /api/documents/{id}` removes one.
 - Request logging is disabled, and document text never appears in logs or error messages.
-- Uploads: PDF (text or scanned), DOCX, PNG, JPG, TXT (UTF-8, UTF-16, Windows-1252) or CSV, at most 10 MB (scanned PDFs: 20 pages). Images and scans are read by Tesseract on the server; they never go to the model, only their text does.
+- Uploads: PDF (text or scanned), DOCX, PNG, JPG, TXT (UTF-8, UTF-16, Windows-1252) or CSV, at most 25 MB (scanned PDFs: 20 pages). Images and scans are read by Tesseract on the server; they never go to the model, only their text does.
 
 ## Routes
 

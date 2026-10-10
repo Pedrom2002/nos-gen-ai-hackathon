@@ -23,6 +23,10 @@ export interface DocumentState {
   items: ApiItem[];
   summary: { items: number; masked_words: number; by_category: Record<string, number> };
   leaks: { checked: number; leaks: { line: number; text: string }[] };
+  kind?: "text" | "pdf" | "scanned" | "image" | "docx";
+  redactable?: boolean;  // download/redacted gives the file with the words removed
+  uncertain?: number;    // OCR words read with low confidence
+  unread?: number;       // text lines OCR saw but could not read
 }
 
 export interface Detected { text: string; category: string; reason: string; gdpr_basis?: string; role?: string; refs?: string[]; at?: WordRange[] }
@@ -31,6 +35,10 @@ export interface AnalysisResult {
   text: string;          // the document as the backend read it
   entities: Detected[];
   summary: string;
+  /** The backend can return the original file with the masked words removed. */
+  redactable?: boolean;
+  /** Text lines the backend's OCR saw but could not read (no redacted file then). */
+  unread?: number;
 }
 
 // "/" keeps the requests on the page's origin, where the Vite dev server
@@ -86,7 +94,36 @@ export function fromState(state: DocumentState): AnalysisResult {
     if (item.role) entity.role = item.role;
     byText.set(text, entity);
   }
-  return { docId: state.id, text: state.lines.join("\n"), entities: [...byText.values()], summary: describe(state) };
+  return {
+    docId: state.id, text: state.lines.join("\n"), entities: [...byText.values()], summary: describe(state),
+    redactable: !!state.redactable && !state.unread, unread: state.unread ?? 0,
+  };
+}
+
+/** The file name from Content-Disposition (RFC 5987 or plain), or a fallback. */
+export function filenameFrom(header: string | null, fallback: string): string {
+  const star = /filename\*=UTF-8''([^;]+)/i.exec(header ?? "");
+  if (star?.[1]) { try { return decodeURIComponent(star[1]); } catch { /* fall through */ } }
+  const plain = /filename="?([^";]+)"?/i.exec(header ?? "");
+  return plain?.[1] ?? fallback;
+}
+
+/**
+ * The original file with the masked words removed for good, as the backend
+ * builds it from the current review. The backend checks the file before it
+ * sends it; when that check fails, the error says why and no file comes.
+ */
+export async function downloadRedacted(docId: string): Promise<{ blob: Blob; filename: string }> {
+  const res = await fetch(`${BASE}/api/documents/${docId}/download/redacted`);
+  if (!res.ok) {
+    let detail = `O servidor respondeu com erro ${res.status}.`;
+    try {
+      const body = (await res.json()) as { detail?: unknown };
+      if (typeof body.detail === "string") detail = body.detail;
+    } catch { /* not JSON */ }
+    throw new Error(detail);
+  }
+  return { blob: await res.blob(), filename: filenameFrom(res.headers.get("content-disposition"), "documento_censurado") };
 }
 
 /** Send the file itself when it was not edited, so a PDF is read the way run.py reads it. */

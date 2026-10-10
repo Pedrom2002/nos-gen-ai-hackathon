@@ -1,6 +1,10 @@
 import type { Lang } from "./i18n";
 
 const pt = {
+  "downloadRedacted": "Descarregar ficheiro censurado",
+  "unreadLines": "{n} linha(s) não foram lidas pelo OCR, por isso não há ficheiro censurado. Tire uma fotografia mais nítida e de frente.",
+  "redactedPreview": "Pré-visualização do ficheiro censurado",
+  "ocrFallback": "O servidor não tem OCR: foi enviado o texto lido neste navegador.",
   "demoMode": "Modo demo: sem ligação ao servidor, os resultados são simulados",
   "dropTitle": "Larga aqui o teu documento",
   "fileTypes": ".pdf, .txt ou imagem",
@@ -77,6 +81,10 @@ const pt = {
 };
 export type UIStrings = typeof pt;
 const en: UIStrings = {
+  "downloadRedacted": "Download redacted file",
+  "unreadLines": "{n} line(s) could not be read by OCR, so there is no redacted file. Take a sharper photo, straight on.",
+  "redactedPreview": "Preview of the redacted file",
+  "ocrFallback": "The server has no OCR: the text read in this browser was sent instead.",
   "demoMode": "Demo mode: no server connected, results are simulated",
   "dropTitle": "Drop your document here",
   "fileTypes": ".pdf, .txt or image",
@@ -152,6 +160,10 @@ const en: UIStrings = {
   }
 };
 const fr: UIStrings = {
+  "downloadRedacted": "Télécharger le fichier caviardé",
+  "unreadLines": "{n} ligne(s) n’ont pas pu être lues par l’OCR : pas de fichier caviardé. Prenez une photo plus nette, de face.",
+  "redactedPreview": "Aperçu du fichier caviardé",
+  "ocrFallback": "Le serveur n’a pas d’OCR : le texte lu dans ce navigateur a été envoyé.",
   "demoMode": "Mode démo : aucun serveur connecté, les résultats sont simulés",
   "dropTitle": "Déposez votre document ici",
   "fileTypes": ".pdf, .txt ou image",
@@ -227,6 +239,10 @@ const fr: UIStrings = {
   }
 };
 const it: UIStrings = {
+  "downloadRedacted": "Scarica il file oscurato",
+  "unreadLines": "{n} riga/righe non lette dall’OCR: nessun file oscurato. Scatta una foto più nitida e frontale.",
+  "redactedPreview": "Anteprima del file oscurato",
+  "ocrFallback": "Il server non ha l’OCR: è stato inviato il testo letto in questo browser.",
   "demoMode": "Modalità demo: nessun server collegato, i risultati sono simulati",
   "dropTitle": "Trascina qui il documento",
   "fileTypes": ".pdf, .txt o immagine",
@@ -302,6 +318,10 @@ const it: UIStrings = {
   }
 };
 const de: UIStrings = {
+  "downloadRedacted": "Geschwärzte Datei herunterladen",
+  "unreadLines": "{n} Zeile(n) konnte die OCR nicht lesen, daher gibt es keine geschwärzte Datei. Machen Sie ein schärferes Foto von vorne.",
+  "redactedPreview": "Vorschau der geschwärzten Datei",
+  "ocrFallback": "Der Server hat keine OCR: Der in diesem Browser gelesene Text wurde gesendet.",
   "demoMode": "Demomodus: kein Server verbunden, die Ergebnisse sind simuliert",
   "dropTitle": "Dokument hier ablegen",
   "fileTypes": ".pdf, .txt oder Bild",
@@ -377,6 +397,10 @@ const de: UIStrings = {
   }
 };
 const ar: UIStrings = {
+  "downloadRedacted": "تنزيل الملف المحجوب",
+  "unreadLines": "تعذّر على OCR قراءة {n} سطر، لذلك لا يوجد ملف محجوب. التقط صورة أوضح ومن الأمام.",
+  "redactedPreview": "معاينة الملف المحجوب",
+  "ocrFallback": "لا يتوفر OCR على الخادم: أُرسل النص المقروء في هذا المتصفح.",
   "demoMode": "وضع العرض: لا يوجد خادم متصل، النتائج محاكاة",
   "dropTitle": "أفلت مستندك هنا",
   "fileTypes": ".pdf أو .txt أو صورة",
@@ -452,6 +476,10 @@ const ar: UIStrings = {
   }
 };
 const ja: UIStrings = {
+  "downloadRedacted": "黒塗りファイルをダウンロード",
+  "unreadLines": "OCR で {n} 行を読み取れなかったため、黒塗りファイルはありません。正面から鮮明に撮影してください。",
+  "redactedPreview": "黒塗りファイルのプレビュー",
+  "ocrFallback": "サーバーに OCR がないため、このブラウザーで読み取ったテキストを送信しました。",
   "demoMode": "デモモード：サーバー未接続のため、結果はシミュレーションです",
   "dropTitle": "ここに文書をドロップ",
   "fileTypes": ".pdf、.txt または画像",
@@ -527,6 +555,10 @@ const ja: UIStrings = {
   }
 };
 const zh: UIStrings = {
+  "downloadRedacted": "下载已遮盖的文件",
+  "unreadLines": "OCR 有 {n} 行无法识别，因此没有遮盖后的文件。请从正面拍摄更清晰的照片。",
+  "redactedPreview": "已遮盖文件的预览",
+  "ocrFallback": "服务器没有 OCR：已发送在此浏览器中识别的文本。",
   "demoMode": "演示模式：未连接服务器，结果为模拟数据",
   "dropTitle": "将文档拖放到这里",
   "fileTypes": ".pdf、.txt 或图片",

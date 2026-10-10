@@ -10,6 +10,8 @@ export interface ReadProgress { stage: "reading" | "ocr"; pct: number }
 export async function readSource(file: File, kind: SourceKind, onProgress: (p: ReadProgress) => void): Promise<SourceDoc> {
   onProgress({ stage: "reading", pct: 0 });
   if (kind === "text") return { kind, file, text: await file.text(), pages: [], ocr: false, previewUrl: null };
+  // The browser has no DOCX reader: the backend reads it and shows its text.
+  if (kind === "docx") return { kind, file, text: "", pages: [], ocr: false, previewUrl: null };
   if (kind === "image") {
     const canvas = await loadImagePage(file);
     const { width, height } = canvas;

@@ -73,3 +73,20 @@ describe("fromState positions", () => {
     expect(anonymize(r.text, ents)).toBe(state.output.join("\n"));
   });
 });
+
+describe("redacted files", () => {
+  it("reads the file name the backend sends", async () => {
+    const { filenameFrom } = await import("@/services/anonymizer");
+    expect(filenameFrom("attachment; filename*=UTF-8''foto%20m%C3%A3e_censurado.png", "x")).toBe("foto mãe_censurado.png");
+    expect(filenameFrom('attachment; filename="report.md"', "x")).toBe("report.md");
+    expect(filenameFrom(null, "documento_censurado")).toBe("documento_censurado");
+  });
+
+  it("offers the redacted file only when every line was read", () => {
+    expect(fromState({ ...state, kind: "image", redactable: true, unread: 0 }).redactable).toBe(true);
+    const unread = fromState({ ...state, kind: "image", redactable: true, unread: 2 });
+    expect(unread.redactable).toBe(false);
+    expect(unread.unread).toBe(2);
+    expect(fromState(state).redactable).toBe(false);
+  });
+});

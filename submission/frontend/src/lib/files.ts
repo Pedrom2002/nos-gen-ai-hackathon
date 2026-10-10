@@ -1,0 +1,37 @@
+import type { SourceKind } from "@/lib/document";
+
+// The one place that says which files Lethe opens. The input's accept list,
+// the badges on the dropzone and the drop validation all read from here.
+const IMAGE_TYPES: Record<string, string[]> = { "image/png": [".png"], "image/jpeg": [".jpg", ".jpeg"], "image/webp": [".webp"] };
+const IMAGE_EXTENSIONS = Object.values(IMAGE_TYPES).flat();
+
+export const ACCEPT = [".pdf", ".txt", ...IMAGE_EXTENSIONS, "application/pdf", "text/plain", ...Object.keys(IMAGE_TYPES)].join(",");
+export const BADGES = ["pdf", "txt", "png", "jpg", "webp"] as const;
+/** The backend refuses bigger uploads; above this the text goes instead of the file. */
+export const MAX_UPLOAD_BYTES = 5 * 1024 * 1024;
+/** Hard stop for what the browser will try to open. */
+export const MAX_LOCAL_BYTES = 25 * 1024 * 1024;
+
+const extensionOf = (name: string) => { const m = /\.[^.]+$/.exec(name); return m ? m[0].toLowerCase() : ""; };
+
+/** What a file is, by MIME type first and extension as a fallback; null when Lethe cannot open it. */
+export function kindOf(file: Pick<File, "name" | "type">): SourceKind | null {
+  const type = file.type.toLowerCase();
+  if (type === "application/pdf") return "pdf";
+  if (type in IMAGE_TYPES) return "image";
+  if (type === "text/plain" || type === "text/csv") return "text";
+  const ext = extensionOf(file.name);
+  if (ext === ".pdf") return "pdf";
+  if (IMAGE_EXTENSIONS.includes(ext)) return "image";
+  if (ext === ".txt" || ext === ".csv") return "text";
+  return null;
+}
+
+export type Validation = { ok: true; kind: SourceKind } | { ok: false; reason: "type" | "size" };
+
+export function validateFile(file: Pick<File, "name" | "type" | "size">): Validation {
+  const kind = kindOf(file);
+  if (!kind) return { ok: false, reason: "type" };
+  if (file.size > MAX_LOCAL_BYTES) return { ok: false, reason: "size" };
+  return { ok: true, kind };
+}

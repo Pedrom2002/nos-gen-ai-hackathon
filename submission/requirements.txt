@@ -1,7 +1,8 @@
-pymupdf
+pymupdf>=1.24.3
 google-genai
 fastapi
 uvicorn[standard]
 python-multipart
 python-dotenv
 flake8
+pytest

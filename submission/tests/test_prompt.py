@@ -17,7 +17,7 @@ def test_prompt_contains_numbered_document_and_line_count():
 def test_prompt_states_key_rules():
     prompt = build_prompt(LINES)
     assert "exatamente um asterisco" in prompt
-    assert "art. 9.º" in prompt
+    assert "identificam uma pessoa" in prompt
     assert '"masked_lines"' in prompt and '"entities"' in prompt
 
 
@@ -27,9 +27,12 @@ def test_prompt_asks_for_the_role_of_each_entity():
     assert all(role in prompt for role in ROLES)
 
 
-def test_variant_b_also_masks_diagnoses():
-    assert "diagnósticos" not in build_prompt(LINES, "A")
-    assert "diagnósticos" in build_prompt(LINES, "B")
+def test_variant_b_also_masks_ages_and_employers():
+    a, b = build_prompt(LINES, "A"), build_prompt(LINES, "B")
+    assert "idade e local de trabalho" in a
+    assert "idade das pessoas e o nome do empregador" not in a
+    assert "idade das pessoas e o nome do empregador" in b
+    assert "idade e local de trabalho" not in b
 
 
 def test_unknown_variant_is_rejected():
@@ -64,8 +67,8 @@ def test_parse_rejects_json_that_is_not_an_object():
         parse_response("[]")
 
 
-def test_prompt_covers_review_rules():
+def test_prompt_keeps_clinical_content_and_document_reference():
     prompt = build_prompt(LINES)
-    assert "antirretrovirais" in prompt
-    assert "há 5 anos" in prompt
-    assert "Professora universitária" in prompt
+    assert "incluindo VIH" in prompt
+    assert "data e referência do documento" in prompt
+    assert "desde 2018" in prompt

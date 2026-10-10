@@ -61,7 +61,8 @@ def run(pdf: Path = DEFAULT_PDF, model: str = DEFAULT_MODEL,
     }
     runs_dir = Path(runs_dir)
     runs_dir.mkdir(parents=True, exist_ok=True)
-    stamp = summary["timestamp"].replace(":", "")
+    # Microseconds keep two runs in the same second from overwriting.
+    stamp = datetime.now().strftime("%Y%m%dT%H%M%S%f")
     (runs_dir / f"{stamp}_{variant}.json").write_text(
         json.dumps(summary, ensure_ascii=False, indent=2), encoding="utf-8"
     )

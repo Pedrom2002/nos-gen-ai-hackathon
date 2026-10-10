@@ -1,10 +1,15 @@
 """Prompt construction and response parsing.
 
+Rule (confirmed with the challenge mentors): mask only what identifies a
+person. Clinical content, characteristics that do not identify anyone on
+their own, and the document's date and reference stay visible.
+
 The prompt combines several techniques: a role (data protection officer),
-an explicit taxonomy based on the GDPR, rules for what to keep, strict
-formatting rules (one asterisk per word), a short worked example that is
-not taken from the evaluated document, a self-check list and a structured
-JSON output that also explains every decision.
+an explicit list of identifiers, an explicit list of what to keep, a
+self-test for doubtful cases, strict formatting rules (one asterisk per
+word), a worked example that is not taken from the evaluated document, a
+self-check list and a structured JSON output that explains every decision.
+Variant B also masks ages and employers, to compare against the score.
 """
 
 import json
@@ -16,50 +21,39 @@ ROLES = ("titular", "familiar", "contacto", "profissional", "outro")
 _ROLE = """\
 És um encarregado de proteção de dados (DPO) especializado no RGPD e em \
 documentos portugueses. A tua tarefa é anonimizar o documento abaixo: \
-substituir por asteriscos todas as palavras que identificam uma pessoa \
-ou revelam dados sensíveis sobre ela, sem alterar mais nada."""
+substituir por asteriscos apenas as palavras que identificam uma pessoa \
+concreta, deixando todo o resto exatamente igual. O objetivo é que ninguém \
+consiga saber quem são as pessoas, mantendo útil o conteúdo do documento."""
 
-_MASK_ALWAYS = """\
-MASCARAR (dados pessoais, art. 4.º RGPD):
-- Nomes de pessoas: titular, familiares, contactos, profissionais de saúde \
+_MASK = """\
+MASCARAR (identificam uma pessoa):
+- Nomes de pessoas: titular, familiares, contactos e profissionais \
 (também nomes próprios isolados, como "João").
-- Datas de nascimento e idades de pessoas.
-- Identificadores: NIF, Cartão de Cidadão, NISS, n.º de utente, apólices, \
-números de cédula ou registo profissional, IDs biométricos.
-- Morada completa: rua, número, andar, localidade.
-- Telefones e emails (incluindo os de profissionais).
-- Dados financeiros: números de cartão, validade, CVV, IBAN, rendimentos.
-- Sexo, estado civil e o local de trabalho ou estudo (empregador, escola).
-
-MASCARAR (categorias especiais, art. 9.º RGPD), mesmo em texto corrido:
-- Origem racial ou étnica (ex.: "caucasiana").
-- Estado serológico ou doenças estigmatizantes (ex.: "HIV positivo").
-- Dados genéticos (ex.: mutações como "BRCA1").
-- Religião e convicções.
-- Dependências e consumos de substâncias.
-- Medicação ou tratamento que revela uma condição mascarada (ex.: \
-"antirretrovirais" revela VIH).
-- Anos ou datas ligados a uma condição sensível (ex.: "desde 2018" num \
-diagnóstico de VIH)."""
+- Data de nascimento.
+- Números de identificação: NIF, Cartão de Cidadão, NISS, n.º de utente, \
+apólices, cédula ou registo profissional, IDs biométricos.
+- Morada: rua, número, andar, localidade.
+- Telefones e emails, incluindo os de profissionais.
+- Dados de pagamento: número do cartão, validade, CVV, IBAN."""
 
 _MASK_VARIANT_B = """\
-- Também todos os diagnósticos e doenças da pessoa referidos em texto \
-corrido (ex.: "hipertensão", "diabetes")."""
+- Também a idade das pessoas e o nome do empregador ou da escola."""
 
 _KEEP = """\
-MANTER (não mascarar):
+MANTER (não identificam ninguém sozinhos):
+- Conteúdo clínico: diagnósticos e doenças (incluindo VIH), exames, \
+resultados, medicação, tratamentos, hábitos, dependências, sintomas, medidas.
+- Características: sexo, origem étnica, estado civil, religião, profissão, \
+rendimento{keep_extra}.
 - Etiquetas de campos e títulos ("Nome:", "Telefone:", "Histórico Médico:").
 - Título do documento, nome da instituição, data e referência do documento.
 - Palavras de relação ("irmão", "amiga próxima", "mãe").
-- Conteúdo clínico genérico: exames, medicação comum, medidas, sintomas, \
-especialidades, nomes de planos ou produtos.
-- A profissão ou função ("Professora universitária"), desde que o \
-empregador seja mascarado.
-- Durações, frequências e quantidades ("há 5 anos", "2x/dia", "2 filhos").
-- Palavras comuns que não identificam ninguém."""
+- Anos de acontecimentos, durações, frequências e quantidades \
+("desde 2018", "há 5 anos", "2x/dia", "2 filhos")."""
 
-_KEEP_VARIANT_B = """\
-- Exames, medicação e medidas continuam a manter-se."""
+_DOUBT = """\
+NA DÚVIDA, pergunta: este dado, sozinho, permite saber quem é a pessoa ou \
+contactá-la? Se sim, mascara. Se não, mantém."""
 
 _FORMAT = """\
 REGRAS DE FORMATO:
@@ -67,24 +61,22 @@ REGRAS DE FORMATO:
 é tudo o que está entre espaços, incluindo pontuação colada: \
 "Flores," passa a "*" e "+351 912 345 678" passa a "* * * *".
 2. Não mudes, não corrijas, não traduzas e não reordenes nenhuma outra \
-palavra. Mantém a mesma ordem e o mesmo número de linhas.
-3. Na dúvida sobre um dado que identifica uma pessoa, mascara: um dado \
-que escapa é pior do que um asterisco a mais."""
+palavra. Mantém a mesma ordem e o mesmo número de linhas."""
 
 _EXAMPLE = """\
-EXEMPLO (documento diferente do teu):
+EXEMPLO (documento diferente do teu, com as regras acima):
 Entrada:
 L1: Ficha de Cliente - Clínica Sol
 L2: Nome: Rui Costa Lima
 L3: Contacto: 916 222 333, rui.lima@mail.pt
-L4: O cliente, 52 anos, é budista e diabético.
+L4: O cliente, 52 anos, é budista e diabético desde 2015.
 L5: Médico: Dr. Paulo Reis
 Saída:
 {"masked_lines": [
   "Ficha de Cliente - Clínica Sol",
   "Nome: * * *",
   "Contacto: * * * *",
-  "O cliente, * anos, é * e diabético.",
+  "O cliente, 52 anos, é budista e diabético desde 2015.",
   "Médico: Dr. * *"],
  "entities": [
   {"text": "Rui Costa Lima", "category": "Pessoa", "article": "4.º",
@@ -93,10 +85,6 @@ Saída:
    "role": "titular", "reason": "Telefone pessoal"},
   {"text": "rui.lima@mail.pt", "category": "Contacto", "article": "4.º",
    "role": "titular", "reason": "Email pessoal"},
-  {"text": "52", "category": "Pessoa", "article": "4.º",
-   "role": "titular", "reason": "Idade do titular"},
-  {"text": "budista", "category": "Saúde e art. 9.º", "article": "9.º",
-   "role": "titular", "reason": "Convicção religiosa"},
   {"text": "Paulo Reis", "category": "Pessoa", "article": "4.º",
    "role": "profissional", "reason": "Nome do médico"}]}"""
 
@@ -104,7 +92,8 @@ _CHECKLIST = """\
 ANTES DE RESPONDER, verifica:
 - Todos os nomes de pessoas, incluindo os que aparecem só uma vez?
 - Todos os números que identificam alguém (telefones, IDs, cartões)?
-- Nenhuma etiqueta de campo nem palavra comum foi mascarada?
+- Nenhum diagnóstico, característica, data do documento ou etiqueta foi \
+mascarado?
 - O número de linhas é igual ao da entrada?"""
 
 _OUTPUT = """\
@@ -112,26 +101,26 @@ FORMATO DA RESPOSTA: apenas um objeto JSON, sem texto à volta, com:
 - "masked_lines": lista com cada linha do documento já anonimizada, pela \
 mesma ordem e sem o prefixo "Ln:".
 - "entities": lista com cada dado mascarado: "text" (texto original), \
-"category" (Identificação, Pessoa, Contacto, Saúde e art. 9.º, \
-Financeiro, Biométrico), "article" ("4.º" ou "9.º"), "role" (a quem \
-pertence o dado: titular, familiar, contacto, profissional para quem \
-trata, assina ou emite o documento, ou outro) e "reason" (frase curta)."""
+"category" (Identificação, Pessoa, Contacto, Financeiro, Biométrico), \
+"article" ("4.º"), "role" (a quem pertence o dado: titular, familiar, \
+contacto, profissional para quem trata, assina ou emite o documento, ou \
+outro) e "reason" (frase curta)."""
 
 
 def build_prompt(lines: list[str], variant: str = "A") -> str:
     """Return the full prompt for a document given as a list of lines."""
     if variant not in VARIANTS:
         raise ValueError(f"variant must be one of {VARIANTS}")
-    mask = _MASK_ALWAYS
-    keep = _KEEP
+    mask = _MASK
+    keep = _KEEP.format(keep_extra=", idade e local de trabalho")
     if variant == "B":
         mask = f"{mask}\n{_MASK_VARIANT_B}"
-        keep = f"{keep}\n{_KEEP_VARIANT_B}"
+        keep = _KEEP.format(keep_extra="")
     document = "\n".join(
         f"L{number}: {line}" for number, line in enumerate(lines, 1)
     )
     sections = [
-        _ROLE, mask, keep, _FORMAT, _EXAMPLE, _CHECKLIST, _OUTPUT,
+        _ROLE, mask, keep, _DOUBT, _FORMAT, _EXAMPLE, _CHECKLIST, _OUTPUT,
         f"DOCUMENTO ({len(lines)} linhas):\n{document}",
     ]
     return "\n\n".join(sections) + "\n"

@@ -2,7 +2,7 @@ import json
 
 import pytest
 
-from anonimizador.prompt import build_prompt, parse_response
+from anonimizador.prompt import ROLES, build_prompt, parse_response
 
 LINES = ["Relatório - Clínica", "Nome: Ana Correia"]
 
@@ -19,6 +19,12 @@ def test_prompt_states_key_rules():
     assert "exatamente um asterisco" in prompt
     assert "art. 9.º" in prompt
     assert '"masked_lines"' in prompt and '"entities"' in prompt
+
+
+def test_prompt_asks_for_the_role_of_each_entity():
+    prompt = build_prompt(LINES)
+    assert '"role"' in prompt
+    assert all(role in prompt for role in ROLES)
 
 
 def test_variant_b_also_masks_diagnoses():

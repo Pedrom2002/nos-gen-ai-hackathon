@@ -270,3 +270,24 @@ def test_short_numbers_are_not_uncertain_identifiers():
     assert not any(map(looks_like_identifier, ["72kg", "50mg", "BRCA1"]))
     assert all(map(looks_like_identifier,
                    ["123456/89", "mariaQgexemplo.pt", "x@y", "912"]))
+
+
+def test_ocr_fixes_are_taken_word_by_word_only_when_safe():
+    from anonimizador.ocr_fix import fix_lines, merge
+    assert merge("Informações Financelras:", "Informações Financeiras:") \
+        == "Informações Financeiras:"
+    # A different word count would move the bars: keep the OCR reading.
+    assert merge("Peso: 72Kkg", "Peso: 72 kg") == "Peso: 72Kkg"
+    # A different name is not a typo fix.
+    assert merge("Nome: Maria", "Nome: Joana") == "Nome: Maria"
+
+    def fixer(prompt, **kwargs):
+        return '{"lines": ["CVV 123", "Rendimento: €62.500"]}'
+
+    assert fix_lines(["OVV 123", "Rendimento; €62,500"],
+                     generate_fn=fixer) == ["CVV 123", "Rendimento: €62.500"]
+
+    def broken(prompt, **kwargs):
+        raise RuntimeError("model down")
+
+    assert fix_lines(["OVV 123"], generate_fn=broken) == ["OVV 123"]

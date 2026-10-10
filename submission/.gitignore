@@ -1,0 +1,13 @@
+# Local files kept out of the repository
+.env
+.env.*
+!.env.example
+.venv/
+venv/
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+node_modules/
+dist/
+data/cache/
+data/runs/

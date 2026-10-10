@@ -36,8 +36,8 @@ export function IntroAnimation() {
     if (reduced || alreadySeen) { setPhase("hidden"); return; }
     document.documentElement.setAttribute("data-intro", "playing");
     writeStorage(KEY, "1", "session");
-    const a = setTimeout(() => { flyToHeader(); setPhase("out"); }, 2400);
-    const b = setTimeout(() => setPhase("hidden"), 3500);
+    const a = setTimeout(() => { flyToHeader(); setPhase("out"); }, 1850);
+    const b = setTimeout(() => setPhase("hidden"), 2950);
     return () => { clearTimeout(a); clearTimeout(b); };
   }, []);
 

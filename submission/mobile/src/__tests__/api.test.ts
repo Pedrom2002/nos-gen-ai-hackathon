@@ -1,3 +1,15 @@
+const cacheFiles: Record<string, string> = {};
+jest.mock("expo-file-system", () => ({
+  Paths: { cache: {} },
+  File: class {
+    uri: string;
+    exists = false;
+    constructor(_dir: unknown, name: string) { this.uri = `file:///cache/${name}`; }
+    write(content: string) { cacheFiles[this.uri] = content; }
+    delete() {}
+  },
+}));
+
 import { ApiError, createClient, normalizeBase } from "@/api";
 
 const json = (body: unknown, status = 200) =>
@@ -59,4 +71,22 @@ test("gives up on a silent server with a clear message", async () => {
   const api = createClient("h.example", fetchFn as unknown as typeof fetch, 50);
   await expect(api.health()).resolves.toBe(false);
   await expect(api.analyze({ text: "x" })).rejects.toThrow("Não foi possível ligar ao servidor");
+});
+
+test("sends pasted text as a documento.txt file the API can read", async () => {
+  // Jest runs on Node, whose FormData is not the one React Native uses:
+  // record what is appended, which is what React Native would send.
+  const appended: [string, unknown][] = [];
+  const realFormData = globalThis.FormData;
+  globalThis.FormData = class {
+    append(key: string, value: unknown) { appended.push([key, value]); }
+  } as unknown as typeof FormData;
+  try {
+    const api = createClient("h.example", (() => json(STATE)) as unknown as typeof fetch);
+    await api.analyze({ text: "Nome: Rui Costa" });
+  } finally {
+    globalThis.FormData = realFormData;
+  }
+  expect(appended).toEqual([["file", { uri: "file:///cache/documento.txt", name: "documento.txt", type: "text/plain" }]]);
+  expect(cacheFiles["file:///cache/documento.txt"]).toBe("Nome: Rui Costa");
 });

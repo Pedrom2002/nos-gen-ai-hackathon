@@ -168,19 +168,11 @@
 /* Intro animation */
 .lethe-intro { transition: opacity .7s ease, filter .7s ease; }
 .lethe-intro-out { opacity: 0; filter: blur(6px); pointer-events: none; }
-.lethe-intro-wave { stroke-dasharray: 1; stroke-dashoffset: .97; animation: lethe-draw 1.3s cubic-bezier(.6,.05,.3,1) forwards; }
-.lethe-intro-star { opacity: 0; transform-box: fill-box; transform-origin: center; animation: lethe-shatter .9s cubic-bezier(.2,.7,.2,1) forwards; }
-.lethe-intro-name { opacity: 0; animation: lethe-name .8s ease 1.6s forwards; }
+.lethe-intro-logo { clip-path: inset(-10% 100% -10% 0); animation: lethe-reveal 1.5s cubic-bezier(.6,.05,.3,1) .15s forwards; }
 /* Reduced motion: the overlay never plays and its parts start hidden, so it must not
    cover the page at all — including before React runs and can remove it. */
 @media (prefers-reduced-motion: reduce) { .lethe-intro { display: none; } }
-@keyframes lethe-draw { to { stroke-dashoffset: 0; } }
-@keyframes lethe-shatter {
-  0% { opacity: 0; transform: translate(var(--dx), var(--dy)) scale(.2) rotate(-90deg); filter: blur(2px); }
-  60% { opacity: 1; }
-  100% { opacity: var(--o); transform: none; filter: none; }
-}
-@keyframes lethe-name { from { opacity: 0; letter-spacing: .6em; } to { opacity: 1; letter-spacing: .3em; } }
+@keyframes lethe-reveal { to { clip-path: inset(-10% 0 -10% 0); } }
 
 /* Document import and river interactions share the active accent. */
 :root {

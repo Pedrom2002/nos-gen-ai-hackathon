@@ -32,9 +32,11 @@ MASCARAR (identificam uma pessoa):
 - Data de nascimento.
 - Números de identificação: NIF, Cartão de Cidadão, NISS, n.º de utente, \
 apólices, cédula ou registo profissional, IDs biométricos.
-- Morada: rua, número, andar, localidade.
+- Morada: rua, número, andar, código postal, localidade.
 - Telefones e emails, incluindo os de profissionais.
-- Dados de pagamento: número do cartão, validade, CVV, IBAN."""
+- Dados de pagamento: número do cartão, validade, CVV, IBAN, n.º de conta.
+- Credenciais e acessos: palavras-passe, PIN, nomes de utilizador, \
+respostas a perguntas de segurança, endereços IP, coordenadas GPS."""
 
 _MASK_VARIANT_B = """\
 - Também a idade das pessoas e o nome do empregador ou da escola."""
@@ -61,7 +63,11 @@ REGRAS DE FORMATO:
 é tudo o que está entre espaços, incluindo pontuação colada: \
 "Flores," passa a "*" e "+351 912 345 678" passa a "* * * *".
 2. Não mudes, não corrijas, não traduzas e não reordenes nenhuma outra \
-palavra. Mantém a mesma ordem e o mesmo número de linhas."""
+palavra. Mantém a mesma ordem e o mesmo número de linhas.
+3. Um identificador partido em várias linhas (ex.: um IBAN ou uma morada \
+que continua na linha seguinte) mascara-se em todas as linhas.
+4. Identificadores antigos, riscados ou corrigidos continuam a ser \
+identificadores, mesmo com letras estilizadas."""
 
 _EXAMPLE = """\
 EXEMPLO (documento diferente do teu, com as regras acima):

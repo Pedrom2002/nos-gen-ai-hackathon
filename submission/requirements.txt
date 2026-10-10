@@ -1,5 +1,6 @@
 pymupdf>=1.24.3
 google-genai
+httpx
 fastapi
 uvicorn[standard]
 python-multipart

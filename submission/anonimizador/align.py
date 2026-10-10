@@ -62,6 +62,32 @@ def _flatten(lines: list[str]) -> list[tuple[int, int, str]]:
     ]
 
 
+def count_dropped(original_lines: list[str], model_lines: list[str]) -> int:
+    """Count original words the model left out of its answer.
+
+    Collapsed masks ("*" for a three-word name) are not dropped: alignment
+    expands them. Only words with no counterpart at all are counted.
+    """
+    line_of = [
+        n for n, line in enumerate(original_lines) for _ in line.split()
+    ]
+    orig = [_norm(w) for line in original_lines for w in line.split()]
+    model = [_norm(w) for line in model_lines for w in line.split()]
+    matcher = SequenceMatcher(None, orig, model, autojunk=False)
+    dropped = 0
+    for tag, i1, i2, j1, j2 in matcher.get_opcodes():
+        if tag == "delete":
+            dropped += i2 - i1
+        elif tag == "replace" and all(w == MASK for w in model[j1:j2]):
+            # Same rule as _masked_positions: a collapsed mask covers at
+            # most the rest of its line; words after that were left out.
+            rest_of_line = sum(
+                1 for i in range(i1, i2) if line_of[i] == line_of[i1]
+            )
+            dropped += max(0, (i2 - i1) - max(j2 - j1, rest_of_line))
+    return dropped
+
+
 def _masked_positions(original: list[str], model: list[str],
                       line_of: list[int]) -> set[int]:
     """Return the indexes of original words that the model masked."""

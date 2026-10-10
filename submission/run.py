@@ -13,10 +13,10 @@ import json
 from datetime import datetime
 from pathlib import Path
 
-from anonimizador.align import align
 from anonimizador.extract import extract_lines
 from anonimizador.llm import DEFAULT_MODEL, generate
-from anonimizador.prompt import VARIANTS, build_prompt, parse_response
+from anonimizador.pipeline import anonymize
+from anonimizador.prompt import VARIANTS
 
 SUBMISSION_DIR = Path(__file__).resolve().parent
 DEFAULT_PDF = SUBMISSION_DIR.parent / "raw_data" / "document_to_anonymize.pdf"
@@ -32,10 +32,8 @@ def run(pdf: Path = DEFAULT_PDF, model: str = DEFAULT_MODEL,
     Returns a summary of the run, which is also saved in ``runs_dir``.
     """
     lines = extract_lines(pdf)
-    prompt = build_prompt(lines, variant)
-    answer = generate_fn(prompt, model=model, json_output=True)
-    masked_lines, entities = parse_response(answer)
-    result = align(lines, masked_lines, keep_punct=keep_punct)
+    result = anonymize(lines, model, variant, keep_punct, generate_fn)
+    prompt = result.prompt
 
     out_dir = Path(out_dir)
     # Always write LF line endings, as in the repository's .editorconfig.
@@ -52,12 +50,13 @@ def run(pdf: Path = DEFAULT_PDF, model: str = DEFAULT_MODEL,
         "variant": variant,
         "keep_punct": keep_punct,
         "lines": len(lines),
-        "model_lines": len(masked_lines),
+        "model_lines": result.model_lines,
+        "safety_net_masks": len(result.safety_masked),
         "masked_words": [
             {"line": w.line + 1, "index": w.index, "text": w.text}
             for w in result.masked
         ],
-        "entities": entities,
+        "entities": result.entities,
     }
     runs_dir = Path(runs_dir)
     runs_dir.mkdir(parents=True, exist_ok=True)

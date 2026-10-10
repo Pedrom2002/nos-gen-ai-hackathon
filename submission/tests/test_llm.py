@@ -85,6 +85,29 @@ def test_json_output_requests_json_mime_type(tmp_path):
     assert client.models.calls[0].response_mime_type == "application/json"
 
 
+def test_dropped_connection_is_retried(tmp_path):
+    import httpx
+    drop = httpx.RemoteProtocolError("Server disconnected")
+    client = FakeClient(drop, "ok")
+    delays = []
+    assert llm.generate("p", cache_dir=tmp_path, client=client,
+                        sleep=delays.append) == "ok"
+    assert delays == [2.0]
+
+
+def test_invalid_response_is_not_cached(tmp_path):
+    def must_be_json(text):
+        if not text.startswith("{"):
+            raise ValueError("not json")
+
+    with pytest.raises(llm.InvalidResponseError):
+        llm.generate("p", cache_dir=tmp_path, client=FakeClient("oops"),
+                     validate=must_be_json)
+    assert not list(tmp_path.glob("*.json"))
+    assert llm.generate("p", cache_dir=tmp_path, client=FakeClient("{}"),
+                        validate=must_be_json) == "{}"
+
+
 def test_missing_api_key_gives_clear_error(tmp_path, monkeypatch):
     monkeypatch.delenv("GEMINI_API_KEY", raising=False)
     monkeypatch.setattr(llm, "SUBMISSION_DIR", tmp_path)

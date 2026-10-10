@@ -27,5 +27,7 @@ def extract_lines(pdf_path: str | Path) -> list[str]:
 
 
 if __name__ == "__main__":
+    if len(sys.argv) != 2:
+        sys.exit("usage: python -m anonimizador.extract <file.pdf>")
     for line in extract_lines(sys.argv[1]):
         print(line)

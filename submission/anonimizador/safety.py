@@ -7,6 +7,7 @@ over the whole document, so an IBAN split across two lines is still found.
 """
 
 import re
+import unicodedata
 
 from anonimizador.align import MaskedWord, mask_token
 
@@ -26,17 +27,30 @@ PATTERNS = {
 _COMBINED = re.compile("|".join(f"(?:{p})" for p in PATTERNS.values()))
 
 
+def plain(word: str) -> str:
+    """Undo styling: math bold/italic letters become plain, and combining
+    marks (strike-through, underline) are dropped."""
+    decomposed = unicodedata.normalize("NFKD", word)
+    return "".join(c for c in decomposed if not unicodedata.combining(c))
+
+
 def _word_spans(lines: list[str]) -> tuple[str, list[tuple]]:
-    """Join the lines and return (text, [(start, end, line, index)])."""
+    """Join the plain words and return (text, [(start, end, line, index)]).
+
+    Words are normalised one by one, so word positions stay the same as in
+    the original lines.
+    """
     spans = []
+    parts = []
     offset = 0
     for line_no, line in enumerate(lines):
-        for index, match in enumerate(re.finditer(r"\S+", line)):
-            spans.append(
-                (offset + match.start(), offset + match.end(), line_no, index)
-            )
-        offset += len(line) + 1
-    return "\n".join(lines), spans
+        words = [plain(word) or word for word in line.split()]
+        for index, word in enumerate(words):
+            spans.append((offset, offset + len(word), line_no, index))
+            offset += len(word) + 1
+        parts.append(" ".join(words))
+        offset += 0 if words else 1
+    return "\n".join(parts), spans
 
 
 def find_identifier_words(lines: list[str]) -> set[tuple[int, int]]:

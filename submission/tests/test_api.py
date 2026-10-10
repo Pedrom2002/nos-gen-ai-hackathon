@@ -156,3 +156,26 @@ def test_dev_server_passes_the_cors_preflight(client):
         "Origin": "https://evil.example",
         "Access-Control-Request-Method": "GET"})
     assert "access-control-allow-origin" not in blocked.headers
+
+
+def test_anonymize_route_matches_the_frontend_contract(client):
+    text = "\n".join(main.extract_lines(main.OFFICIAL_PDF))
+    response = client.post("/api/anonymize", json={"text": text + "\n\n"})
+    assert response.status_code == 200
+    body = response.json()
+    assert body["masked_text"] == "\n".join(GOLD) + "\n"
+    name = next(e for e in body["entities"] if e["text"] == NAME)
+    assert name["category"] == "nome"
+    allowed = {"nome", "identificador", "contacto", "financeiro",
+               "biometrico", "outro"}
+    assert {e["category"] for e in body["entities"]} <= allowed
+    assert body["leaks"]["leaks"] == []
+    assert "0 fugas" in body["summary"]
+    assert body["prompt"].strip()
+    # The document stays available to the review routes.
+    assert client.get(f"/api/documents/{body['id']}").status_code == 200
+
+
+def test_anonymize_route_rejects_empty_text(client):
+    response = client.post("/api/anonymize", json={"text": "  \n "})
+    assert response.status_code == 422

@@ -22,7 +22,7 @@ from dotenv import load_dotenv
 from pydantic import BaseModel
 
 from anonimizador import llm
-from anonimizador.extract import extract_lines, read_bytes
+from anonimizador.extract import clean_lines, extract_lines, read_bytes
 from anonimizador.pipeline import anonymize
 from anonimizador.pseudonymize import ask as gateway_ask
 from anonimizador.report import build_report, to_markdown
@@ -93,6 +93,20 @@ class Question(BaseModel):
     question: str
 
 
+class PastedText(BaseModel):
+    text: str
+
+
+# Categories of the Lovable frontend (frontend/src/services/anonymizer.ts).
+FRONTEND_CATEGORIES = {
+    "Pessoa": "nome",
+    "Identificação": "identificador",
+    "Contacto": "contacto",
+    "Financeiro": "financeiro",
+    "Biométrico": "biometrico",
+}
+
+
 def _session(doc_id: str) -> Session:
     if doc_id not in STORE:
         raise HTTPException(404, "Documento não encontrado ou já apagado.")
@@ -156,6 +170,35 @@ async def upload(file: UploadFile = File(...)) -> dict:
 @app.post("/api/documents/official")
 def official() -> dict:
     return _create(OFFICIAL_PDF.name, extract_lines(OFFICIAL_PDF))
+
+
+@app.post("/api/anonymize")
+def anonymize_text(body: PastedText) -> dict:
+    """One-shot route for the frontend: pasted text in, entities out.
+
+    ``masked_text`` comes from the tested pipeline, so the file the
+    frontend downloads is the same as ``run.py`` would write.
+    """
+    state = _create("texto.txt", clean_lines(body.text))
+    entities = [
+        {"text": item["text"],
+         "category": FRONTEND_CATEGORIES.get(item["category"], "outro"),
+         "reason": item["reason"],
+         "gdpr_basis": "Art. 4.º(1) RGPD"}
+        for item in state["items"]
+    ]
+    summary = state["summary"]
+    return {
+        "id": state["id"],
+        "entities": entities,
+        "summary": f"{summary['masked_words']} palavras mascaradas em "
+                   f"{summary['items']} dados que identificam uma pessoa. "
+                   f"Verificação: {len(state['leaks']['leaks'])} fugas em "
+                   f"{state['leaks']['checked']} valores.",
+        "prompt": STORE[state["id"]].result.prompt,
+        "masked_text": "\n".join(state["output"]) + "\n",
+        "leaks": state["leaks"],
+    }
 
 
 @app.get("/api/documents/{doc_id}")

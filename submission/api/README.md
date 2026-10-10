@@ -31,6 +31,7 @@ ALLOWED_ORIGINS=https://<id>.lovable.app
 | GET | `/api/health` | | `{ "status": "ok" }` |
 | POST | `/api/documents` | multipart `file` | `DocumentState` |
 | POST | `/api/documents/official` | | `DocumentState` for the official NOS PDF |
+| POST | `/api/anonymize` | `{ "text": "..." }` | `{ id, entities, summary, prompt, masked_text, leaks }` for the Lovable frontend (see `frontend/README.md`) |
 | GET | `/api/documents/{id}` | | `DocumentState` |
 | PUT | `/api/documents/{id}/decisions` | `{ "keep": ["L5-1"] }` | `DocumentState` after the review |
 | GET | `/api/documents/{id}/download/submission` | | `submission.txt` (masked text) |

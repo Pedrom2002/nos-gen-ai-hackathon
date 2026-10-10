@@ -93,13 +93,18 @@ export function createClient(
       }
     },
     async analyze({ file, text }) {
-      const form = new FormData();
-      if (file) {
-        // React Native's FormData takes a {uri, name, type} file reference.
-        form.append("file", { uri: file.uri, name: file.name, type: file.type } as unknown as Blob);
-      } else {
-        form.append("file", new Blob([text ?? ""], { type: "text/plain" }), "documento.txt");
+      // React Native's FormData only sends files as {uri, name, type}; a Blob
+      // loses its name and the API needs the ".txt" to read it. Pasted text
+      // is written to the cache first and sent like any other file.
+      let upload = file;
+      if (!upload) {
+        const draft = new File(Paths.cache, "documento.txt");
+        if (draft.exists) draft.delete();
+        draft.write(text ?? "");
+        upload = { uri: draft.uri, name: "documento.txt", type: "text/plain" };
       }
+      const form = new FormData();
+      form.append("file", { uri: upload.uri, name: upload.name, type: upload.type } as unknown as Blob);
       const res = await call("/documents", { method: "POST", body: form });
       return fromState((await res.json()) as DocumentState);
     },

@@ -34,7 +34,7 @@ def test_run_cli_writes_outputs_and_reports_no_leaks(tmp_path, fake_model,
     run.main(["--out-dir", str(tmp_path), "--runs-dir",
               str(tmp_path / "runs")])
     out = capsys.readouterr().out
-    assert "60 lines, 46 words masked" in out
+    assert "60 lines, 52 words masked" in out
     assert "Leak check: 0 leaks" in out
     for name in ("submission.txt", "prompt.txt", "report.md"):
         assert (tmp_path / name).exists()
@@ -51,7 +51,7 @@ def test_ask_cli_shows_both_answers(fake_model, capsys):
 def test_evaluate_docs_cli_prints_a_table(tmp_path, fake_model, capsys):
     evaluate_docs.main([str(run.DEFAULT_PDF), "--out-dir", str(tmp_path)])
     out = capsys.readouterr().out
-    assert "| document_to_anonymize.pdf | 60 | 46 |" in out
+    assert "| document_to_anonymize.pdf | 60 | 52 |" in out
 
 
 def test_metric_report_text():

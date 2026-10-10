@@ -36,4 +36,4 @@ def test_missing_words_count_as_wrong():
 def test_gold_file_matches_document_shape():
     gold = read_lines(GOLD_FILE)
     assert len(gold) == 60
-    assert sum(word == "*" for line in gold for word in line.split()) == 46
+    assert sum(word == "*" for line in gold for word in line.split()) == 52

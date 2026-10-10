@@ -38,17 +38,21 @@ apólices, cédula ou registo profissional, IDs biométricos.
 - Telefones e emails, incluindo os de profissionais.
 - Dados de pagamento: número do cartão, validade, CVV, IBAN, n.º de conta.
 - Credenciais e acessos: palavras-passe, PIN, nomes de utilizador, \
-respostas a perguntas de segurança, endereços IP, coordenadas GPS."""
+respostas a perguntas de segurança, endereços IP, coordenadas GPS.
+- O local de trabalho ou a escola de uma pessoa (o nome da empresa ou \
+instituição onde trabalha ou estuda), porque junto com a profissão \
+identifica-a. A profissão em si mantém-se.
+- O salário ou rendimento declarado de uma pessoa (o valor)."""
 
 _MASK_VARIANT_B = """\
-- Também a idade das pessoas e o nome do empregador ou da escola."""
+- Também a idade das pessoas."""
 
 _KEEP = """\
 MANTER (não identificam ninguém sozinhos):
 - Conteúdo clínico: diagnósticos e doenças (incluindo VIH), exames, \
 resultados, medicação, tratamentos, hábitos, dependências, sintomas, medidas.
-- Características: sexo, origem étnica, estado civil, religião, profissão, \
-rendimento{keep_extra}.
+- Características: sexo, origem étnica, estado civil, religião, \
+profissão{keep_extra}.
 - Etiquetas de campos e títulos ("Nome:", "Telefone:", "Histórico Médico:").
 - Título do documento, nome da instituição, data e referência do documento.
 - Palavras de relação ("irmão", "amiga próxima", "mãe").
@@ -92,13 +96,15 @@ L2: Nome: Rui Costa Lima
 L3: Contacto: 916 222 333, rui.lima@mail.pt
 L4: O cliente, 52 anos, é budista e diabético desde 2015.
 L5: Médico: Dr. Paulo Reis
+L6: Contacto de emergência: Sara Lima (irmã)
 Saída:
 {"masked_lines": [
   "Ficha de Cliente - Clínica Sol",
   "Nome: * * *",
   "Contacto: * * * *",
   "O cliente, 52 anos, é budista e diabético desde 2015.",
-  "Médico: Dr. * *"],
+  "Médico: Dr. * *",
+  "Contacto de emergência: * * (irmã)"],
  "entities": [
   {"text": "Rui Costa Lima", "category": "Pessoa", "article": "4.º",
    "role": "titular", "reason": "Nome do titular"},
@@ -107,7 +113,9 @@ Saída:
   {"text": "rui.lima@mail.pt", "category": "Contacto", "article": "4.º",
    "role": "titular", "reason": "Email pessoal"},
   {"text": "Paulo Reis", "category": "Pessoa", "article": "4.º",
-   "role": "profissional", "reason": "Nome do médico"}]}"""
+   "role": "profissional", "reason": "Nome do médico"},
+  {"text": "Sara Lima", "category": "Pessoa", "article": "4.º",
+   "role": "familiar", "reason": "Nome do contacto; (irmã) mantém-se"}]}"""
 
 _CHECKLIST = """\
 ANTES DE RESPONDER, verifica:
@@ -133,7 +141,7 @@ def build_prompt(lines: list[str], variant: str = "A") -> str:
     if variant not in VARIANTS:
         raise ValueError(f"variant must be one of {VARIANTS}")
     mask = _MASK
-    keep = _KEEP.format(keep_extra=", idade e local de trabalho")
+    keep = _KEEP.format(keep_extra=", idade")
     if variant == "B":
         mask = f"{mask}\n{_MASK_VARIANT_B}"
         keep = _KEEP.format(keep_extra="")

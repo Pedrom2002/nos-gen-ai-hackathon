@@ -66,7 +66,7 @@
   --muted: oklch(0.955 0 0);
   --muted-foreground: oklch(0.5 0 0);
   --accent: oklch(0.93 0.04 255);
-  --accent-foreground: oklch(0.3 0.06 200);
+  --accent-foreground: oklch(0.3 0.06 255);
   --destructive: oklch(0.6 0.22 25);
   --destructive-foreground: oklch(0.99 0 0);
   --border: oklch(0.89 0 0);
@@ -101,7 +101,7 @@
   --secondary-foreground: oklch(0.95 0 0);
   --muted: oklch(0.25 0 0);
   --muted-foreground: oklch(0.7 0 0);
-  --accent: oklch(0.3 0.06 200);
+  --accent: oklch(0.29 0.05 255);
   --accent-foreground: oklch(0.92 0.04 255);
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 14%);
@@ -270,3 +270,4 @@
 .step-check { animation: step-pop .45s cubic-bezier(.3,1.5,.5,1) both; }
 @keyframes step-pop { from { transform: scale(.5); opacity: .4; } to { transform: none; opacity: 1; } }
 @keyframes step-ring { from { box-shadow: 0 0 0 0 color-mix(in oklab, var(--primary) 55%, transparent); } to { box-shadow: 0 0 0 12px color-mix(in oklab, var(--primary) 0%, transparent); } }
+html[data-intro="playing"] #lethe-header-logo { visibility: hidden; }

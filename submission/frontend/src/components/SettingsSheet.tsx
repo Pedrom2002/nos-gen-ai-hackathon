@@ -23,9 +23,9 @@ export function SettingsSheet() {
   return (
     <Sheet>
       <SheetTrigger asChild>
-        <Button variant="ghost" aria-label={t.settings} className="inline-flex items-center gap-2 rounded-md text-sm text-muted-foreground hover:text-foreground">
-          <span className="grid h-7 w-7 place-items-center rounded-md text-xs font-semibold text-foreground">
-            <Gear className="h-4 w-4" />
+        <Button variant="ghost" aria-label={t.settings} className="group inline-flex items-center gap-2 rounded-md text-sm text-muted-foreground transition-colors hover:bg-primary/10 hover:text-primary focus-visible:bg-primary/10 focus-visible:text-primary data-[state=open]:bg-primary/10 data-[state=open]:text-primary">
+          <span className="grid h-7 w-7 place-items-center rounded-md text-xs font-semibold">
+            <Gear className="h-4 w-4 transition-transform duration-500 ease-out group-hover:rotate-90 group-data-[state=open]:rotate-90" />
           </span>
           {t.settings}
         </Button>
@@ -38,7 +38,7 @@ export function SettingsSheet() {
               <Label className="mb-2 block">{t.theme}</Label>
               <div className="grid grid-cols-3 gap-2">
                 {([["light", Sun, t.light], ["dark", Moon, t.dark], ["system", Monitor, t.system]] as const).map(([id, Icon, label]) => (
-                  <Button variant="ghost" key={id} aria-pressed={s.theme === id} onClick={() => set({ theme: id })} className={`flex h-auto min-h-16 min-w-0 flex-col items-center gap-1 rounded-xl border p-3 text-xs transition ${s.theme === id ? "border-primary bg-primary/10 font-semibold" : "hover:bg-muted"}`}>
+                  <Button variant="ghost" key={id} aria-pressed={s.theme === id} onClick={() => set({ theme: id })} className={`flex h-auto min-h-16 min-w-0 flex-col items-center gap-1 rounded-xl border p-3 text-xs transition-all duration-200 hover:-translate-y-0.5 hover:bg-primary/10 hover:text-foreground ${s.theme === id ? "border-primary bg-primary/10 font-semibold" : "hover:border-primary/50"}`}>
                     <Icon className="h-4 w-4" />{label}
                   </Button>
                 ))}
@@ -49,14 +49,14 @@ export function SettingsSheet() {
           <Section icon={Languages} title={t.language}>
             <div className="grid grid-cols-2 gap-2">
               {LANGS.map((l) => (
-                <Button variant="ghost" key={l.id} aria-pressed={s.lang === l.id} onClick={() => set({ lang: l.id })} className={`flex items-center gap-2 rounded-xl border px-3 py-2 text-sm transition ${s.lang === l.id ? "border-primary bg-primary/10 font-semibold" : "hover:bg-muted"}`}>
+                <Button variant="ghost" key={l.id} aria-pressed={s.lang === l.id} onClick={() => set({ lang: l.id })} className={`flex items-center gap-2 rounded-xl border px-3 py-2 text-sm transition-all duration-200 hover:-translate-y-0.5 hover:bg-primary/10 hover:text-foreground ${s.lang === l.id ? "border-primary bg-primary/10 font-semibold" : "hover:border-primary/50"}`}>
                   <span className="shrink-0">{l.flag}</span><span className="min-w-0 whitespace-normal break-words">{l.label}</span>
                 </Button>
               ))}
             </div>
           </Section>
 
-          <Button variant="ghost" onClick={reset} className="inline-flex w-full items-center justify-center gap-2 rounded-xl border px-3 py-2 text-sm hover:bg-muted">
+          <Button variant="ghost" onClick={reset} className="inline-flex w-full items-center justify-center gap-2 rounded-xl border px-3 py-2 text-sm transition-colors hover:border-primary/50 hover:bg-primary/10 hover:text-foreground">
             <RotateCcw className="h-4 w-4" />{t.reset}
           </Button>
         </div>

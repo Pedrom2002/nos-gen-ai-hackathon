@@ -190,7 +190,7 @@ function Index() {
           <div className="mx-auto max-w-6xl px-4 sm:px-6">
             <nav className="grid h-16 grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
               <div className="flex min-w-0 items-center gap-3">
-                <LetheWordmark className="h-9 shrink-0" />
+                <LetheWordmark id="lethe-header-logo" className="h-9 shrink-0" />
               </div>
               <SettingsSheet />
             </nav>
@@ -198,7 +198,7 @@ function Index() {
           </div>
         </header>
 
-        <main className={`mx-auto w-full min-w-0 max-w-6xl flex-1 px-4 pt-6 sm:px-6 sm:pt-8 ${step === 1 ? "pb-40 lg:pb-16" : "pb-16"}`}>
+        <main className={`mx-auto flex w-full min-w-0 max-w-6xl flex-1 flex-col px-4 pt-6 sm:px-6 sm:pt-8 ${step === 1 ? "pb-40 lg:pb-16" : "pb-16"}`}>
           <h1 className="sr-only">{STEPS[step]}</h1>
           <div className="mb-6 flex min-w-0 flex-col items-center gap-3">
             <ol aria-label={STEPS.join(" · ")} className="flex w-full max-w-2xl min-w-0 items-center justify-center gap-1 sm:flex md:gap-2">
@@ -218,7 +218,7 @@ function Index() {
           {step === 0 && loading && <RiverLoading text={text} />}
 
           {step === 0 && !loading && error && (
-            <section role="alert" className="mx-auto mb-6 max-w-3xl rounded-lg border border-destructive/30 bg-card p-5 animate-fade-up">
+            <section role="alert" className="mx-auto mb-6 w-full max-w-3xl rounded-lg border border-destructive/30 bg-card p-5 animate-fade-up">
               <div className="flex items-start gap-3"><AlertTriangle className="mt-1 size-6 shrink-0 text-destructive" /><div className="min-w-0"><h2 className="font-semibold">{u.errorTitle}</h2><p className="mt-2 break-words text-sm text-muted-foreground">{error}</p></div></div>
               <div className="mt-5 flex flex-wrap gap-2"><Button onClick={run}><RotateCw className="size-4" />{u.retry}</Button><Button variant="outline" onClick={clear}>{u.home}</Button></div>
             </section>
@@ -280,25 +280,31 @@ function Index() {
               <div className="border-t pt-8">
                 <h2 className="text-base font-semibold tracking-tight">{t.reportTitle}</h2>
 
-                <dl className="mt-5 grid grid-cols-3 gap-x-4 sm:gap-x-0">
+                <dl className="mt-5 grid grid-cols-3 divide-x overflow-hidden rounded-lg border bg-card">
                   {[
-                    { label: t.entities, value: String(st.count), tone: "" },
-                    { label: t.pctWords, value: `${st.pct}%`, tone: "" },
-                    { label: t.risk, value: x.risk[st.risk] ?? st.risk, tone: st.risk === "Alto" ? "text-destructive" : st.risk === "Médio" ? "text-warning" : "text-success" },
+                    { label: t.entities, value: String(st.count), tone: "", bar: "var(--primary)", fill: Math.min(100, st.count * 5) },
+                    { label: t.pctWords, value: `${st.pct}%`, tone: "", bar: "var(--primary)", fill: Math.min(100, st.pct) },
+                    { label: t.risk, value: x.risk[st.risk] ?? st.risk, tone: st.risk === "Alto" ? "text-destructive" : st.risk === "Médio" ? "text-warning" : "text-success", bar: st.risk === "Alto" ? "var(--destructive)" : st.risk === "Médio" ? "var(--warning)" : "var(--success)", fill: st.risk === "Alto" ? 100 : st.risk === "Médio" ? 60 : 25 },
                   ].map((s) => (
-                    <div key={s.label} className="min-w-0 sm:border-l sm:border-border sm:pl-5 sm:first:border-l-0 sm:first:pl-0">
+                    <div key={s.label} className="relative min-w-0 px-3 pb-4 pt-3.5 sm:px-5">
                       <dt className="text-[10px] font-medium uppercase leading-snug tracking-[0.12em] text-muted-foreground sm:text-[11px] sm:tracking-[0.14em]">{s.label}</dt>
-                      <dd className={`mt-1 text-lg font-semibold tabular-nums sm:text-xl ${s.tone}`}>{s.value}</dd>
+                      <dd className={`mt-1.5 text-2xl font-semibold tabular-nums sm:text-3xl ${s.tone}`}>{s.value}</dd>
+                      <span aria-hidden="true" className="absolute inset-x-0 bottom-0 h-0.5 bg-border"><span className="block h-full" style={{ width: `${s.fill}%`, background: s.bar }} /></span>
                     </div>
                   ))}
                 </dl>
 
-                <div className="mt-7">
+                <div className="mt-6 rounded-lg border bg-card p-4 sm:p-5">
                   <h3 className="text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">{u.byCategory}</h3>
-                  <ul className="mt-2 max-w-sm">
+                  <div aria-hidden="true" className="mt-3 flex h-2 gap-0.5 overflow-hidden rounded-sm">
+                    {CATEGORIES.filter((c) => st.perCat[c.id]).map((c) => (
+                      <span key={c.id} style={{ flexGrow: st.perCat[c.id], background: c.color }} />
+                    ))}
+                  </div>
+                  <ul className="mt-4 grid gap-x-8 gap-y-1 sm:grid-cols-2">
                     {CATEGORIES.filter((c) => st.perCat[c.id]).map((c) => (
                       <li key={c.id} className="flex items-center gap-2 py-1 text-sm">
-                        <span aria-hidden="true" className="size-1.5 shrink-0 rounded-full" style={{ background: c.color }} />
+                        <span aria-hidden="true" className="size-2 shrink-0 rounded-sm" style={{ background: c.color }} />
                         <span className="min-w-0 truncate">{x.cats[c.id]}</span>
                         <span aria-hidden="true" className="min-w-3 flex-1 border-b border-dotted border-border" />
                         <span className="shrink-0 font-semibold tabular-nums">{st.perCat[c.id]}</span>
@@ -307,39 +313,34 @@ function Index() {
                   </ul>
                 </div>
 
-                <div tabIndex={0} role="region" aria-label={t.reportTitle} className="mt-7 overflow-x-auto">
+                <div tabIndex={0} role="region" aria-label={t.reportTitle} className="mt-6 overflow-x-auto rounded-lg border bg-card">
                   <table className="w-full border-collapse text-sm">
                     <thead>
-                      <tr className="border-y border-border text-left text-[11px] uppercase tracking-[0.14em] text-muted-foreground">
-                        <th className="py-2 pr-3 font-medium sm:pr-5">{x.thEntity}</th>
-                        <th className="py-2 pr-3 font-medium sm:pr-5">{x.thCategory}</th>
-                        <th className="py-2 font-medium">{x.thReason}</th>
+                      <tr className="border-b bg-muted/40 text-left text-[11px] uppercase tracking-[0.14em] text-muted-foreground">
+                        <th className="px-4 py-2.5 font-medium">{x.thEntity}</th>
+                        <th className="px-4 py-2.5 font-medium">{x.thCategory}</th>
+                        <th className="px-4 py-2.5 font-medium">{x.thReason}</th>
                       </tr>
                     </thead>
-                    <tbody>
-                      {active.map((e) => (
-                        <tr key={e.id} className="border-b border-border/70 align-top">
-                          <td className="py-2.5 pr-3 font-mono text-[13px] [overflow-wrap:anywhere] sm:pr-5">{partialMask(e.text)}</td>
-                          <td className="py-2.5 pr-3 sm:pr-5">{x.cats[catOf(e.category).id]}</td>
-                          <td className="py-2.5 text-muted-foreground [overflow-wrap:anywhere]">{reason(e)}</td>
-                        </tr>
-                      ))}
+                    <tbody className="divide-y">
+                      {active.map((e) => {
+                        const cat = catOf(e.category);
+                        return (
+                          <tr key={e.id} className="align-top transition-colors hover:bg-muted/30">
+                            <td className="px-4 py-3"><span className="inline-block rounded-md border-l-2 bg-muted px-2.5 py-1 font-mono text-[13px] font-medium text-foreground [overflow-wrap:anywhere]" style={{ borderLeftColor: cat.color }}>{e.text}</span></td>
+                            <td className="px-4 py-3"><span className="inline-flex items-center gap-2 whitespace-nowrap"><span aria-hidden="true" className="size-2 rounded-sm" style={{ background: cat.color }} />{x.cats[cat.id]}</span></td>
+                            <td className="px-4 py-3 text-muted-foreground [overflow-wrap:anywhere]">{reason(e)}</td>
+                          </tr>
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>
-
-                {summary && (
-                  <div className="mt-7 border-l border-border pl-4">
-                    <h3 className="text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">{x.modelExpl}</h3>
-                    <p className="mt-2 max-w-2xl whitespace-pre-wrap text-sm leading-6 text-muted-foreground">{summary}</p>
-                  </div>
-                )}
               </div>
             </section>
           )}
         </main>
 
-        <footer className="pb-6 text-center text-sm text-muted-foreground"><div className="mx-auto max-w-6xl px-4 sm:px-6"><div className="border-t pt-6"><p>Lethe</p></div></div></footer>
         {dragging && <div aria-hidden="true" className="pointer-events-none fixed inset-3 z-40 grid place-items-center rounded-lg border-2 border-dashed border-primary bg-background/90 text-primary"><p className="px-5 text-center text-xl font-semibold">{u.dropTitle}</p></div>}
       </div>
     </div>

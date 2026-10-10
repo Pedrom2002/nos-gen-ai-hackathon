@@ -5,7 +5,7 @@ import { useSettings } from "@/lib/settings";
 import { UI } from "@/lib/i18n-ui";
 import { findSpans, type Entity } from "@/lib/anonymizer";
 
-// Display only: preserve each source token's width and blank lines. Official
+// Display only: mask each source token with one asterisk per character, so widths and blank lines stay aligned. Official
 // output still comes exclusively from anonymize() in the page.
 export function RiverComparison({ text, entities, output }: { text: string; entities: Entity[]; output: string }) {
   const { t, s } = useSettings();
@@ -68,7 +68,7 @@ export function RiverComparison({ text, entities, output }: { text: string; enti
     findSpans(text, entities.filter((e) => e.enabled)).forEach((span, i) => {
       parts.push(text.slice(cursor, span.start));
       text.slice(span.start, span.end).split(/(\s+)/).forEach((token, j) => {
-        parts.push(!token.trim() ? token : <span key={`${i}-${j}`} className="river-masked-word"><span className="invisible">{token}</span><span className="absolute left-0 top-0 text-primary">*</span></span>);
+        parts.push(!token.trim() ? token : <span key={`${i}-${j}`} className="river-masked-word text-primary/80">{"*".repeat([...token].length)}</span>);
       });
       cursor = span.end;
     });

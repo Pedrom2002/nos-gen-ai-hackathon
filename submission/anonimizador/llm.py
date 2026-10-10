@@ -12,6 +12,7 @@ import os
 import time
 from pathlib import Path
 
+import httpx
 from dotenv import load_dotenv
 from google import genai
 from google.genai import errors, types
@@ -26,6 +27,18 @@ BASE_DELAY = 2.0
 
 class MissingApiKeyError(RuntimeError):
     """Raised when GEMINI_API_KEY is not configured."""
+
+
+class InvalidResponseError(RuntimeError):
+    """Raised when a response fails validation; it is not cached."""
+
+
+def _is_retryable(exc: Exception) -> bool:
+    if isinstance(exc, errors.APIError):
+        return exc.code in RETRY_CODES
+    # Dropped connections ("Server disconnected without sending a
+    # response") and timeouts are temporary too.
+    return isinstance(exc, (httpx.TransportError, ConnectionError))
 
 
 def cache_key(prompt: str, model: str, temperature: float,
@@ -64,8 +77,8 @@ def _call_with_retries(client, prompt: str, model: str, temperature: float,
             response = client.models.generate_content(
                 model=model, contents=prompt, config=config
             )
-        except errors.APIError as exc:
-            if exc.code not in RETRY_CODES or attempt == MAX_RETRIES:
+        except Exception as exc:
+            if not _is_retryable(exc) or attempt == MAX_RETRIES:
                 raise
             sleep(BASE_DELAY * 2 ** attempt)
             continue
@@ -78,11 +91,14 @@ def _call_with_retries(client, prompt: str, model: str, temperature: float,
 def generate(prompt: str, model: str = DEFAULT_MODEL,
              temperature: float = 0.0, json_output: bool = False, *,
              cache_dir: str | Path = CACHE_DIR, client=None,
-             sleep=time.sleep) -> str:
+             sleep=time.sleep, validate=None) -> str:
     """Send a prompt to Gemini and return the response text.
 
-    Cached responses are returned without calling the API. The client and
-    the sleep function can be injected for tests.
+    Cached responses are returned without calling the API. ``validate``
+    (optional) is called with the text before caching; if it raises, the
+    response is not cached and InvalidResponseError is raised instead, so
+    the caller can try again. The client and the sleep function can be
+    injected for tests.
     """
     key = cache_key(prompt, model, temperature, json_output)
     cache_file = Path(cache_dir) / f"{key}.json"
@@ -93,6 +109,13 @@ def generate(prompt: str, model: str = DEFAULT_MODEL,
     text = _call_with_retries(
         client, prompt, model, temperature, json_output, sleep
     )
+    if validate is not None:
+        try:
+            validate(text)
+        except Exception as exc:
+            raise InvalidResponseError(
+                f"Resposta inválida do modelo {model}: {exc}"
+            ) from exc
     cache_file.parent.mkdir(parents=True, exist_ok=True)
     cache_file.write_text(
         json.dumps({"model": model, "response": text}, ensure_ascii=False),

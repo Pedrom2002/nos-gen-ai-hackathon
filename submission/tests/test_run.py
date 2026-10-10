@@ -52,6 +52,13 @@ def test_run_writes_submission_prompt_and_log(tmp_path):
     assert summary["safety_net_masks"] > 0
 
 
+def test_missing_output_folder_is_created(tmp_path):
+    out_dir = tmp_path / "novo" / "pasta"
+    run.run(out_dir=out_dir, runs_dir=tmp_path / "runs",
+            generate_fn=fake_generate)
+    assert (out_dir / "submission.txt").exists()
+
+
 def test_consecutive_runs_keep_separate_logs(tmp_path):
     for _ in range(2):
         run.run(out_dir=tmp_path, runs_dir=tmp_path / "runs",

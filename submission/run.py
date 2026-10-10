@@ -38,6 +38,7 @@ def run(pdf: Path = DEFAULT_PDF, model: str = DEFAULT_MODEL,
     prompt = result.prompt
 
     out_dir = Path(out_dir)
+    out_dir.mkdir(parents=True, exist_ok=True)
     # Always write LF line endings, as in the repository's .editorconfig.
     (out_dir / "submission.txt").write_text(
         "\n".join(result.lines) + "\n", encoding="utf-8", newline="\n"

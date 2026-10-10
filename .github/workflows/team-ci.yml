@@ -25,6 +25,11 @@ jobs:
           cache: pip
           cache-dependency-path: submission/requirements.txt
 
+      - name: Install Tesseract OCR (Portuguese) for images and scans
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y tesseract-ocr tesseract-ocr-por fonts-dejavu-core
+
       - name: Install dependencies
         run: pip install -r submission/requirements.txt
 

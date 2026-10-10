@@ -15,7 +15,7 @@ Lethe masks the words that identify a person in a Portuguese document. It uses o
 | Leak check on the official document | 0 leaks in 24 masked values |
 | Words masked in the official document | 46, in 26 items |
 | Extra test documents | 17 (PDF, TXT in UTF-8 and UTF-16, CSV), 920 words masked, 0 errors |
-| Python tests | 143, coverage gate 90% |
+| Python tests | 163, coverage gate 90% |
 | Frontend tests | 20 |
 
 The local metric (`anonimizador/metric.py`) reproduces the two figures of the official evaluation logs:
@@ -84,6 +84,27 @@ flowchart LR
 
 Variant B also masks ages and employers. It exists to compare scores and is not the submitted one.
 
+## Other formats and redacted files
+
+Besides the challenge PDF, Lethe reads scanned PDFs, photos and images (PNG, JPG), DOCX, TXT and CSV. Every input still produces `submission.txt` and the report through the same pipeline. Images, PDFs and DOCX files also come back redacted, in their own format (`python run.py --pdf FILE --redact`, or `GET /api/documents/{id}/download/redacted`).
+
+- **Images and scans:** they are read by [Tesseract](https://github.com/tesseract-ocr/tesseract) on the machine, in Portuguese, so the image never leaves it; only its text goes to the model. Each word keeps its box.
+  - The redaction paints opaque black over the masked words. It never blurs or pixelates, since those can be reversed. The boxes are padded so accents and descenders are covered too.
+  - The image is rebuilt from its pixels only and saved as PNG, so EXIF data (GPS, the embedded thumbnail), XMP and text chunks are gone.
+  - A scanned PDF is rebuilt from the redacted page images only.
+- **Phone photos:** the page is found in the photo and flattened (perspective correction) and its lighting is evened out before OCR. The bars are then mapped back onto the original photo as polygons that follow the slant of the text. Before anonymising, the model fixes OCR misreads ("Financelras" becomes "Financeiras", "OVV" becomes "CVV"). The fixes are taken word by word, and only when a line keeps its word count and each word stays close to what OCR read, so every word keeps its place in the image and no name or number can be swapped. Two real phone photos of the official document (taken of a screen, in perspective) give text **identical to `submission.txt`**: 60/60 lines, 100% Similarity and Accuracy.
+- **OCR misreads:** OCR words read with low confidence that look like identifiers (3 or more digits, `@` or a domain) are masked as a precaution. OCR can turn `maria@x.pt` into `mariaQx.pt`, which neither the model nor the patterns would recognise.
+- **Text OCR could not read:** ink left outside every word box that has the shape of a text line means text that was never checked. The redacted file is then refused, with a request for a sharper photo.
+- **Text PDFs:** PyMuPDF redactions delete the text, image pixels and drawings under each word. Hidden text, metadata, attachments, JavaScript, links and form data are scrubbed, and the file is saved in full, never incrementally.
+- **DOCX:** masked words are rewritten inside the runs, so formatting is kept. This covers the body, tables, headers, footers and footnotes. Tracked changes are resolved, and comments, images, embedded objects and author fields are removed.
+- **Fail closed:** every redacted file is read back by an independent check before it is returned:
+  - a new OCR pass on images, and pure-black pixels inside every box;
+  - the extracted text and internal objects of PDFs;
+  - every XML part of DOCX files;
+  - no metadata in any of them.
+
+  If a word cannot be located or the check finds anything, no file is returned, only the text.
+
 ## Review interface
 
 `frontend/` is the review screen, built with Lovable and connected to the API. It lets you:
@@ -108,7 +129,7 @@ Without `VITE_API_URL` the interface runs in demo mode with simulated results, a
 
 ## Setup
 
-Requirements: Python 3.10+, Node.js 20+ and a Gemini API key.
+Requirements: Python 3.10+, Node.js 20+ and a Gemini API key. For images and scanned PDFs, also [Tesseract](https://github.com/UB-Mannheim/tesseract/wiki) with Portuguese (`apt install tesseract-ocr-por` on Linux; on Windows, the UB-Mannheim installer, or `por.traineddata` in `%LOCALAPPDATA%\tessdata`).
 
 ```bash
 cd submission
@@ -189,6 +210,10 @@ Python:
 - [python-dotenv](https://github.com/theskumar/python-dotenv): API key loading
 - [pytest](https://docs.pytest.org/), [pytest-cov](https://pytest-cov.readthedocs.io/) and [flake8](https://flake8.pycqa.org/): tests and lint
 - [difflib](https://docs.python.org/3/library/difflib.html) (standard library): word alignment
+- [Tesseract OCR](https://github.com/tesseract-ocr/tesseract) through [pytesseract](https://github.com/madmaze/pytesseract): reading images and scans
+- [Pillow](https://python-pillow.org/): image redaction
+- [NumPy](https://numpy.org/) and [SciPy](https://scipy.org/): page detection, perspective and lighting correction
+- [python-docx](https://python-docx.readthedocs.io/): DOCX reading and redaction
 
 Frontend:
 - [Lovable](https://lovable.dev/): first version of the interface

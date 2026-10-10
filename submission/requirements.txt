@@ -8,3 +8,8 @@ python-dotenv
 flake8
 pytest
 pytest-cov
+Pillow
+python-docx
+pytesseract
+numpy
+scipy

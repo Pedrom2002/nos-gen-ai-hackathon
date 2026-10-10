@@ -72,3 +72,22 @@ def test_prompt_keeps_clinical_content_and_document_reference():
     assert "incluindo VIH" in prompt
     assert "data e referência do documento" in prompt
     assert "desde 2018" in prompt
+
+
+def test_school_rules_are_added_only_to_school_documents():
+    school = ["Agrupamento de Escolas de Benfica", "Aluno N.º 12345"]
+    assert "CONTEXTO ESCOLAR" in build_prompt(school)
+    assert "Aluno N.º" in build_prompt(school)
+    assert "CONTEXTO ESCOLAR" not in build_prompt(LINES)
+
+
+def test_official_prompt_is_unchanged():
+    from pathlib import Path
+
+    from anonimizador.extract import extract_lines
+
+    submission = Path(__file__).resolve().parents[1]
+    lines = extract_lines(submission.parent / "raw_data"
+                          / "document_to_anonymize.pdf")
+    committed = (submission / "prompt.txt").read_text(encoding="utf-8")
+    assert build_prompt(lines) == committed.replace("\r\n", "\n")

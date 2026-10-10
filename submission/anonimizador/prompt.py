@@ -15,6 +15,8 @@ Variant B also masks ages and employers, to compare against the score.
 import json
 import re
 
+from anonimizador.context import detect_contexts
+
 VARIANTS = ("A", "B")
 ROLES = ("titular", "familiar", "contacto", "profissional", "outro")
 
@@ -52,6 +54,19 @@ rendimento{keep_extra}.
 - Palavras de relação ("irmão", "amiga próxima", "mãe").
 - Anos de acontecimentos, durações, frequências e quantidades \
 ("desde 2018", "há 5 anos", "2x/dia", "2 filhos")."""
+
+# Extra rules for the document's context, added only when it is detected
+# (see context.py), so other documents get exactly the same prompt.
+_CONTEXT_RULES = {
+    "escolar": """\
+CONTEXTO ESCOLAR (detetado no documento):
+- Mascara também os números e códigos de aluno ou estudante: o que vem \
+a seguir a "Aluno N.º", "N.º de aluno", "N.º de estudante", "Matrícula", \
+"N.º de processo", "Cartão de estudante" ou "N.º:", em qualquer formato \
+("12345", "a2021145", "up201904512", "2021 0457").
+- Mantém o ano letivo, o ano e a turma ("9.º B"), as disciplinas, as notas \
+e as faltas.""",
+}
 
 _DOUBT = """\
 NA DÚVIDA, pergunta: este dado, sozinho, permite saber quem é a pessoa ou \
@@ -125,8 +140,13 @@ def build_prompt(lines: list[str], variant: str = "A") -> str:
     document = "\n".join(
         f"L{number}: {line}" for number, line in enumerate(lines, 1)
     )
+    context_rules = [
+        _CONTEXT_RULES[c] for c in sorted(detect_contexts(lines))
+        if c in _CONTEXT_RULES
+    ]
     sections = [
-        _ROLE, mask, keep, _DOUBT, _FORMAT, _EXAMPLE, _CHECKLIST, _OUTPUT,
+        _ROLE, mask, keep, *context_rules,
+        _DOUBT, _FORMAT, _EXAMPLE, _CHECKLIST, _OUTPUT,
         f"DOCUMENTO ({len(lines)} linhas):\n{document}",
     ]
     return "\n\n".join(sections) + "\n"

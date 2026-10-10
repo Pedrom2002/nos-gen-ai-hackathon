@@ -28,14 +28,18 @@ números de cédula ou registo profissional, IDs biométricos.
 - Morada completa: rua, número, andar, localidade.
 - Telefones e emails (incluindo os de profissionais).
 - Dados financeiros: números de cartão, validade, CVV, IBAN, rendimentos.
-- Sexo, estado civil e local de trabalho ou estudo da pessoa.
+- Sexo, estado civil e o local de trabalho ou estudo (empregador, escola).
 
 MASCARAR (categorias especiais, art. 9.º RGPD), mesmo em texto corrido:
 - Origem racial ou étnica (ex.: "caucasiana").
 - Estado serológico ou doenças estigmatizantes (ex.: "HIV positivo").
 - Dados genéticos (ex.: mutações como "BRCA1").
 - Religião e convicções.
-- Dependências e consumos de substâncias."""
+- Dependências e consumos de substâncias.
+- Medicação ou tratamento que revela uma condição mascarada (ex.: \
+"antirretrovirais" revela VIH).
+- Anos ou datas ligados a uma condição sensível (ex.: "desde 2018" num \
+diagnóstico de VIH)."""
 
 _MASK_VARIANT_B = """\
 - Também todos os diagnósticos e doenças da pessoa referidos em texto \
@@ -46,8 +50,11 @@ MANTER (não mascarar):
 - Etiquetas de campos e títulos ("Nome:", "Telefone:", "Histórico Médico:").
 - Título do documento, nome da instituição, data e referência do documento.
 - Palavras de relação ("irmão", "amiga próxima", "mãe").
-- Conteúdo clínico genérico: exames, medicação, medidas, sintomas, \
+- Conteúdo clínico genérico: exames, medicação comum, medidas, sintomas, \
 especialidades, nomes de planos ou produtos.
+- A profissão ou função ("Professora universitária"), desde que o \
+empregador seja mascarado.
+- Durações, frequências e quantidades ("há 5 anos", "2x/dia", "2 filhos").
 - Palavras comuns que não identificam ninguém."""
 
 _KEEP_VARIANT_B = """\
@@ -134,6 +141,8 @@ def parse_response(text: str) -> tuple[list[str], list[dict]]:
     left by the model is removed.
     """
     data = json.loads(_FENCE.sub("", text.strip()))
+    if not isinstance(data, dict):
+        raise ValueError("expected a JSON object with masked_lines")
     lines = [
         re.sub(r"^L\d+:\s?", "", str(line))
         for line in data.get("masked_lines", [])

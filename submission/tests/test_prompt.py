@@ -51,3 +51,15 @@ def test_parse_tolerates_fences_and_line_prefixes():
 def test_parse_rejects_non_json():
     with pytest.raises(json.JSONDecodeError):
         parse_response("Nome: * *")
+
+
+def test_parse_rejects_json_that_is_not_an_object():
+    with pytest.raises(ValueError, match="JSON object"):
+        parse_response("[]")
+
+
+def test_prompt_covers_review_rules():
+    prompt = build_prompt(LINES)
+    assert "antirretrovirais" in prompt
+    assert "há 5 anos" in prompt
+    assert "Professora universitária" in prompt

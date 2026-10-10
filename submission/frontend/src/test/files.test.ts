@@ -36,8 +36,8 @@ describe("validateFile", () => {
 
 describe("ACCEPT and BADGES", () => {
   it("advertise every format the validation opens", () => {
-    for (const ext of [".pdf", ".txt", ".png", ".jpg", ".jpeg", ".webp"]) expect(ACCEPT.split(",")).toContain(ext);
-    for (const mime of ["application/pdf", "text/plain", "image/png", "image/jpeg", "image/webp"]) expect(ACCEPT.split(",")).toContain(mime);
+    for (const ext of [".pdf", ".docx", ".txt", ".csv", ".png", ".jpg", ".jpeg", ".webp"]) expect(ACCEPT.split(",")).toContain(ext);
+    for (const mime of ["application/pdf", "text/plain", "text/csv", "image/png", "image/jpeg", "image/webp"]) expect(ACCEPT.split(",")).toContain(mime);
     for (const badge of BADGES) expect(kindOf({ name: `x.${badge}`, type: "" })).not.toBeNull();
   });
 });

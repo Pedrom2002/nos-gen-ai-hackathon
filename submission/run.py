@@ -4,10 +4,10 @@ Usage (from the submission folder):
     python run.py [--pdf FILE] [--model MODEL] [--variant A|B]
                   [--keep-punct] [--redact]
 
-FILE can be a PDF (text or scanned), an image (PNG, JPG), a DOCX, a TXT or
-a CSV; the default is the challenge PDF. --redact also writes the same file
-with the masked words removed (<name>_censurado.<ext>), checked so that
-they cannot be recovered.
+FILE can be a PDF (text or scanned), an image (PNG, JPG, WebP), a DOCX, a
+TXT or a CSV; the default is the challenge PDF. --redact also writes the
+same file with the masked words removed (<name>_censurado.<ext>), checked
+so that they cannot be recovered.
 
 Pipeline: extract the PDF lines, build the prompt, ask Gemini for the
 masked document, align its answer with the original word by word, and

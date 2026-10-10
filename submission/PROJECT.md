@@ -1,0 +1,202 @@
+# Lethe: anonymising Portuguese documents with an LLM
+
+Team **Enxada de Pedra**, NOS challenge "Call for Anonymizing Prompts", JunctionX Lisbon 2026.
+
+Lethe masks the words that identify a person in a Portuguese document. It uses one `*` per word, keeps the original layout and removes empty lines. A reviewer can check every decision and why it was made, and the system checks that nothing it masked is still readable. Gemini decides what is sensitive; plain, tested code guarantees the format and the safety.
+
+> `submission/README.md` holds the organisers' guidelines and is left untouched. This file documents our solution.
+
+## Results
+
+| | Value |
+|---|---|
+| Official document, Similarity (local metric) | 100% |
+| Official document, Accuracy (local metric) | 100% |
+| Leak check on the official document | 0 leaks in 24 masked values |
+| Words masked in the official document | 46, in 26 items |
+| Extra test documents | 17 (PDF, TXT in UTF-8 and UTF-16, CSV), 920 words masked, 0 errors |
+| Python tests | 143, coverage gate 90% |
+| Frontend tests | 20 |
+
+The local metric (`anonimizador/metric.py`) reproduces the two figures of the official evaluation logs:
+- **Similarity:** the share of words identical to the reference.
+- **Accuracy:** the share of sensitive words fully masked.
+
+The reference (`data/gold/gold.txt`) was annotated by hand under the policy below. Since the rules forbid intermediate submissions, the official score is unknown until the final evaluation.
+
+## What is masked
+
+The policy was confirmed with the challenge mentors: **mask only what identifies a person.**
+
+| Masked | Kept visible |
+|---|---|
+| Names of every person (patient, relatives, contacts, professionals), including first names on their own | Clinical content: symptoms, diagnoses, HIV status, medication, results |
+| Date of birth | Characteristics that do not identify anyone on their own, such as sex, ethnicity or age |
+| ID numbers: NIF, Cartão de Cidadão, NISS, health number, insurance policy, professional licence, biometric IDs | The document's date and reference (`ADM-2025-04-15-089`) |
+| Full address, with postal code and town | Years of past events |
+| Phone numbers and emails, also professional ones | Institutions, room and class numbers, grades |
+| Payment data: card number, expiry date, CVV, IBAN, account number | |
+| Credentials, IP addresses, GPS coordinates | |
+
+## How it works
+
+```mermaid
+flowchart LR
+    A[PDF / TXT / CSV] --> B[Extract lines]
+    B --> C[Prompt + Gemini]
+    C --> D[Align word by word]
+    D --> E[Regex safety net]
+    E --> F[Leak check]
+    F --> G[submission.txt<br/>report.md]
+```
+
+1. **Extract** (`extract.py`): PyMuPDF reads the PDF. Text files are decoded as UTF-16 (BOM), UTF-8 or Windows-1252. Trailing spaces and empty lines are removed.
+2. **Ask the model** (`prompt.py`, `llm.py`): the prompt numbers every line. Gemini answers in JSON with the masked lines plus one explanation per masked value (category, whose data it is, reason).
+   - Answers are cached on disk by a SHA-256 of model, temperature and prompt, so repeated runs cost nothing.
+   - Rate limits (429/503) and network errors are retried.
+   - An invalid answer is retried at temperatures 0.0, 0.3 and 0.6 and is never cached.
+3. **Align** (`align.py`): the model's lines are compared with the original word by word (`difflib`). Only "word becomes `*`" changes are accepted, so the model can never rewrite, add or drop text. An answer that loses more than 20% of the words is rejected.
+4. **Safety net** (`safety.py`): regular expressions mask identifiers the model missed:
+   - emails and Portuguese phone formats;
+   - IBANs of any country, checked by length, even when split across lines;
+   - Cartão de Cidadão numbers;
+   - IP addresses after an "IP" label;
+   - GPS coordinates;
+   - labelled student and employee numbers.
+
+   Words are NFKD-normalised first, so styled Unicode letters and struck-through text are caught too.
+5. **Leak check** (`verify.py`): every masked value is searched for again in the final text. The run prints `Leak check: 0 leaks in 24 values checked`.
+6. **Report** (`report.py`): groups masked words into items with category, owner, reason and source (model or safety net). The shared `report.md` hides the original values.
+
+### The prompt
+
+`prompt.txt` is the exact prompt used for `submission.txt`. A test checks that it is identical to `build_prompt(lines, "A")`. It combines:
+
+- **Role:** a data protection officer who knows the GDPR and Portuguese documents.
+- **Policy:** an explicit list of what to mask and what to keep, matching the table above.
+- **Doubtful cases:** a self-test ("does this data, on its own, tell who the person is or how to contact them? If so, mask it").
+- **Format rules:** one `*` per word, punctuation glued to a word goes with it, and identifiers split across lines or struck through are still identifiers.
+- **Worked example:** a short example that is not taken from the evaluated document.
+- **Self-check list:** what the model must verify before answering.
+- **Structured output:** JSON, so every decision comes with its explanation.
+- **Context hints:** for school and similar documents, detected from the text (`context.py`).
+- **Determinism:** temperature 0.
+
+Variant B also masks ages and employers. It exists to compare scores and is not the submitted one.
+
+## Review interface
+
+`frontend/` is the review screen, built with Lovable and connected to the API. It lets you:
+
+- **Load a document:** import a PDF or TXT, or paste text.
+- **Review the items:** see every item highlighted by category with its reason, keep any of them visible or mask extra words by selecting them, and undo or redo each change.
+- **Compare and download:** compare the original and the anonymised text, then download `submission.txt` and the report.
+
+Backend items are masked at the exact positions the backend found. The frontend's output equals the backend output byte for byte, which was checked on the official document.
+
+Keyboard: `J`/`↓` next item, `K`/`↑` previous item, `Enter` or `Space` toggles the item, `Ctrl+Z` undo, `Ctrl+Shift+Z` redo.
+
+Without `VITE_API_URL` the interface runs in demo mode with simulated results, and says so in the header.
+
+### Privacy by design
+
+- Documents live only in the API's memory, with no database and no files. `DELETE /api/documents/{id}` removes one.
+- Request logging is off, and document text never appears in logs or error messages.
+- The browser only stores the theme and the language.
+- Only the text is sent to the model. The API key stays in `submission/.env`, which is never committed.
+- `ask.py` and `POST /api/documents/{id}/ask` show a pseudonymisation gateway: identifiers are replaced by placeholders such as `[PESSOA_1]` before a question reaches the model, then restored in the answer.
+
+## Setup
+
+Requirements: Python 3.10+, Node.js 20+ and a Gemini API key.
+
+```bash
+cd submission
+pip install -r requirements.txt
+cp .env.example .env            # then set GEMINI_API_KEY in .env
+```
+
+## Usage
+
+```bash
+# 1. Generate submission.txt, prompt.txt and report.md from the official PDF
+python run.py                    # options: --pdf, --model, --variant A|B, --keep-punct
+
+# 2. Start the API (docs at http://localhost:8000/docs)
+uvicorn api.main:app --port 8000 --no-access-log
+
+# 3. Start the review interface (http://localhost:8080)
+cd frontend
+cp .env.example .env             # VITE_API_URL=/ proxies /api to the API
+npm install
+npm run dev
+```
+
+Other commands:
+
+```bash
+python -m anonimizador.metric submission.txt data/gold/gold.txt   # local score
+python -m anonimizador.evaluate_docs data/test_docs               # 17 extra documents
+python ask.py "Que medicação toma a paciente?"                    # gateway demo
+python -m pytest                                                  # Python tests
+cd frontend && npm test                                           # frontend tests
+```
+
+## Repository layout
+
+```
+submission/
+├── submission.txt        output for the official document (deliverable)
+├── prompt.txt            exact prompt used (deliverable)
+├── report.md             what was masked and why, values hidden
+├── run.py                generates the deliverables
+├── ask.py                pseudonymisation gateway demo
+├── anonimizador/         pipeline: extract, prompt, llm, align, safety, verify, report, metric
+├── api/                  FastAPI backend for the review interface (see api/README.md)
+├── frontend/             review interface (see frontend/README.md)
+├── data/gold/            hand-annotated reference for the official document
+├── data/test_docs/       17 fictitious documents to test generalisation
+└── tests/                pytest suite
+```
+
+## Decisions and limitations
+
+- **The LLM decides, the code guarantees.** The model only chooses what to mask. Alignment, the safety net and the leak check make sure the format is right and known identifier patterns never get through.
+- **Model choice:** `gemini-3.1-flash-lite` answers in about a second and reaches 100% on the reference. `gemini-3.8-flash` took 12 to 15 seconds per call and hit rate limits more often.
+- **No database:** documents are sensitive by definition, so nothing is stored.
+- **Limitations:**
+  - scanned PDFs need OCR first (the API says so);
+  - the test documents are cleaner than real ones;
+  - context-dependent identifiers without a pattern (a nickname, a rare job title in a small town) rely on the model alone.
+- **Next steps:**
+  - OCR for scanned documents;
+  - more real, annotated documents to measure recall;
+  - per-organisation policies for what counts as identifying.
+
+## Team
+
+Pedrom2002, TAF00, RicePerson101 and euick0 (Eric Golovatenko Simões).
+
+## References
+
+Models and services:
+- [Google Gemini API](https://ai.google.dev/gemini-api/docs) (`gemini-3.1-flash-lite`) through the [google-genai](https://github.com/googleapis/python-genai) SDK
+
+Python:
+- [PyMuPDF](https://pymupdf.readthedocs.io/): PDF text extraction
+- [FastAPI](https://fastapi.tiangolo.com/), [Uvicorn](https://www.uvicorn.org/) and [python-multipart](https://github.com/Kludex/python-multipart): API
+- [HTTPX](https://www.python-httpx.org/): network error handling
+- [python-dotenv](https://github.com/theskumar/python-dotenv): API key loading
+- [pytest](https://docs.pytest.org/), [pytest-cov](https://pytest-cov.readthedocs.io/) and [flake8](https://flake8.pycqa.org/): tests and lint
+- [difflib](https://docs.python.org/3/library/difflib.html) (standard library): word alignment
+
+Frontend:
+- [Lovable](https://lovable.dev/): first version of the interface
+- [React](https://react.dev/), [TypeScript](https://www.typescriptlang.org/) and [Vite](https://vite.dev/)
+- [TanStack Start, Router and Query](https://tanstack.com/)
+- [Tailwind CSS](https://tailwindcss.com/), [shadcn/ui](https://ui.shadcn.com/) on [Radix UI](https://www.radix-ui.com/), [lucide](https://lucide.dev/) icons and [Sonner](https://sonner.emilkowal.ski/) toasts
+- [pdf.js](https://mozilla.github.io/pdf.js/): reading PDFs in the browser
+- [Vitest](https://vitest.dev/) and [Testing Library](https://testing-library.com/): tests
+- [Inter](https://rsms.me/inter/) and [JetBrains Mono](https://www.jetbrains.com/lp/mono/) fonts through Google Fonts
+
+CI: [GitHub Actions](https://docs.github.com/actions), used in the team fork only.

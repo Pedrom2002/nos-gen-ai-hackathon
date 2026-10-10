@@ -36,7 +36,7 @@ export function RiverLoading({ text }: { text: string }) {
     return () => { clearInterval(status); cancelAnimationFrame(frame); };
   }, [text]);
   return (
-    <section className="mx-auto max-w-3xl animate-fade-up py-3" aria-busy="true" aria-label={t.analyzing}>
+    <section className="mx-auto w-full max-w-3xl animate-fade-up py-3" aria-busy="true" aria-label={t.analyzing}>
       <h2 className="mb-7 text-center text-xl font-semibold">{t.analyzing.replace(/[…\.]+$/, "")}<span className="river-ellipsis text-primary" aria-hidden="true"><span>.</span><span>.</span><span>.</span></span></h2>
       <div ref={card} className="river-loading relative isolate overflow-hidden rounded-lg border bg-card p-5 sm:p-8">
         <div aria-hidden="true" className="relative min-h-56 select-none whitespace-pre-wrap break-words font-mono text-xs leading-7 text-muted-foreground [overflow-wrap:anywhere] sm:text-sm">

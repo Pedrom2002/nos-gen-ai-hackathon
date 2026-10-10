@@ -144,7 +144,7 @@ export function ReviewPanel({ backLabel, generateLabel, onBack, onGenerate, text
         </Popover>
       </div>
       <div className="grid min-w-0 gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
-        <div className="min-w-0 rounded-lg border bg-card p-4 sm:p-5">
+        <div className="min-w-0 rounded-lg border bg-card p-4 sm:p-5 lg:min-h-[75dvh]">
           {grouped.length > 0 && <div className="category-scroll mb-5 flex flex-nowrap gap-2 overflow-x-auto border-b px-1 pb-4 lg:flex-wrap" role="group" aria-label={u.categoryFilter}>
             {grouped.map(({ c, items }) => <Button key={c.id} variant="outline" aria-pressed={filters.includes(c.id)} onClick={() => setFilters((old) => old.includes(c.id) ? old.filter((id) => id !== c.id) : [...old, c.id])} className={`h-auto min-h-9 shrink-0 gap-2 whitespace-nowrap px-2.5 py-1 text-xs ${filters.includes(c.id) ? "border-primary bg-primary/10" : ""}`}>
               <span className="size-2 shrink-0 rounded-full" style={{ background: c.color }} />{x.cats[c.id]}<span className="text-muted-foreground">{items.length}</span>

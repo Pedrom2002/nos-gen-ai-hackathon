@@ -23,7 +23,8 @@ OFFICIAL = Path(__file__).resolve().parents[2] / "raw_data" / \
     "document_to_anonymize.pdf"
 SECRET = {"Maria", "Santos", "123456789", "maria@exemplo.pt"}
 FONTS = [Path(r"C:\Windows\Fonts\arial.ttf"),
-         Path("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf")]
+         Path("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"),
+         Path("/System/Library/Fonts/Supplemental/Arial.ttf")]
 FONT = next((f for f in FONTS if f.exists()), None)
 needs_ocr = pytest.mark.skipif(
     not ocr.available() or FONT is None,
@@ -263,6 +264,111 @@ def test_a_line_ocr_missed_is_detected_and_blocks_the_file():
     source.unread = 1
     with pytest.raises(RedactionError, match="não foram lidas"):
         redact(source, secret_words(source.lines), "foto.png")
+
+
+def first_words(lines):
+    return [line.split()[0] for line in ocr.line_texts(lines)]
+
+
+@needs_ocr
+def test_a_line_ocr_skipped_is_read_again_and_put_back_in_order():
+    image = document_image()
+    lines = ocr.read_image(image)
+    missing_nif = [line for line in lines
+                   if not any(w.text == "NIF:" for w in line)]
+    merged, still_unread = ocr.recover_unread(image, missing_nif)
+    assert still_unread == []
+    # OCR may misread a digit when reading the line alone ("123456/89").
+    assert first_words(merged) == first_words(lines)
+    assert ocr.unread_lines(image, merged) == 0
+
+
+def reads_back(lines):
+    """A stand-in for reading a strip again: the words of ``lines`` whose
+    boxes cross the strip, as a perfect reader would give them."""
+    def read_zone(image, zone):
+        return [w for line in lines for w in line
+                if w.box.top < zone.bottom and w.box.bottom > zone.top]
+    return read_zone
+
+
+needs_font = pytest.mark.skipif(FONT is None, reason="no TrueType font")
+ROWS = ["Relatório de Admissão", "Nome: Maria Santos", "NIF: 123456789",
+        "Email: maria@exemplo.pt"]
+
+
+def known_lines():
+    """The words of document_image() with the exact boxes they were drawn
+    in, so the test does not depend on what Tesseract reads."""
+    font = ImageFont.truetype(str(FONT), 40)
+    lines = []
+    for row, text in enumerate(ROWS):
+        words = text.split(" ")
+        line = []
+        for i, word in enumerate(words):
+            prefix = " ".join(words[:i]) + (" " if i else "")
+            x = 50 + font.getlength(prefix)
+            left, top, right, bottom = font.getbbox(word)
+            box = ocr.Box(round(x + left), 40 + row * 90 + top,
+                          round(x + right), 40 + row * 90 + bottom)
+            line.append(ocr.OcrWord(word, box, 95.0))
+        lines.append(line)
+    return lines
+
+
+@needs_font
+def test_ink_sticking_out_of_words_already_read_widens_them(monkeypatch):
+    image = document_image()
+    lines = known_lines()
+    # Boxes too narrow for their words, as on a tilted line: the ink that
+    # sticks out looks like an unread line, but the words are already there.
+    narrow = [[ocr.OcrWord(w.text, ocr.Box(
+        w.box.left, w.box.top,
+        w.box.left + int((w.box.right - w.box.left) * 0.75),
+        w.box.bottom), w.confidence) for w in line] for line in lines]
+    assert ocr.unread_lines(image, lines) == 0
+    assert ocr.unread_lines(image, narrow) >= 1
+    monkeypatch.setattr(ocr, "_read_zone", reads_back(lines))
+    merged, still_unread = ocr.recover_unread(image, narrow)
+    assert still_unread == []
+    assert first_words(merged) == first_words(narrow)
+    assert [len(line) for line in merged] == [len(line) for line in narrow]
+    # The words that stuck out now have the whole word in their box, so a
+    # mask paints all of its ink; no box got smaller.
+    before = [w.box for line in narrow for w in line]
+    after = [w.box for line in merged for w in line]
+    assert all(new.left <= old.left and new.right >= old.right
+               for old, new in zip(before, after))
+    assert any(new.right > old.right for old, new in zip(before, after))
+
+
+def ink_bar():
+    image = Image.new("RGB", (1500, 200), "white")
+    ImageDraw.Draw(image).rectangle([50, 80, 900, 110], fill="black")
+    return image
+
+
+def test_a_zone_nothing_can_be_read_in_stays_unread(monkeypatch):
+    monkeypatch.setattr(ocr, "_read_zone", lambda image, zone: [])
+    merged, still_unread = ocr.recover_unread(ink_bar(), [])
+    assert merged == []
+    assert len(still_unread) == 1
+
+
+def test_noise_without_letters_or_digits_is_not_a_recovered_line(monkeypatch):
+    noise = [ocr.OcrWord("|", ocr.Box(60, 80, 70, 110), 90.0)]
+    monkeypatch.setattr(ocr, "_read_zone", lambda image, zone: noise)
+    merged, still_unread = ocr.recover_unread(ink_bar(), [])
+    assert merged == []
+    assert len(still_unread) == 1
+
+
+def test_low_confidence_words_are_not_recovered(monkeypatch):
+    weak = [ocr.OcrWord("abc", ocr.Box(60, 80, 400, 110), 10.0)]
+    monkeypatch.setattr(ocr, "_read_zone", lambda image, zone: weak)
+    merged, still_unread = ocr.recover_unread(ink_bar(), [])
+    assert merged == []
+    assert len(still_unread) == 1
 
 
 def test_short_numbers_are_not_uncertain_identifiers():

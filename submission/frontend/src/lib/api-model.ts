@@ -40,7 +40,7 @@ export interface AnalysisResult {
   summary: string;
   /** The backend can return the original file with the masked words removed. */
   redactable?: boolean;
-  /** Text lines the backend's OCR saw but could not read (no redacted file then). */
+  /** Text lines the backend's OCR saw but could not read (the backend then offers no redacted file). */
   unread?: number;
 }
 
@@ -81,7 +81,7 @@ export function fromState(state: DocumentState): AnalysisResult {
   }
   return {
     docId: state.id, text: state.lines.join("\n"), entities: [...byText.values()], summary: describe(state),
-    redactable: !!state.redactable && !state.unread, unread: state.unread ?? 0,
+    redactable: !!state.redactable, unread: state.unread ?? 0,
   };
 }
 

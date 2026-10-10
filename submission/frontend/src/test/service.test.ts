@@ -82,10 +82,11 @@ describe("redacted files", () => {
     expect(filenameFrom(null, "documento_censurado")).toBe("documento_censurado");
   });
 
-  it("offers the redacted file even when OCR missed lines, and reports how many", () => {
+  it("follows the backend's redactable flag and reports how many lines OCR missed", () => {
     expect(fromState({ ...state, kind: "image", redactable: true, unread: 0 }).redactable).toBe(true);
-    const unread = fromState({ ...state, kind: "image", redactable: true, unread: 2 });
-    expect(unread.redactable).toBe(true);
+    // The backend sets redactable to false when lines were never read: the frontend does not decide.
+    const unread = fromState({ ...state, kind: "image", redactable: false, unread: 2 });
+    expect(unread.redactable).toBe(false);
     expect(unread.unread).toBe(2);
     expect(fromState(state).redactable).toBe(false);
   });

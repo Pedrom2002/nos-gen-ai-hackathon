@@ -37,7 +37,7 @@ export interface AnalysisResult {
   summary: string;
   /** The backend can return the original file with the masked words removed. */
   redactable?: boolean;
-  /** Text lines the backend's OCR saw but could not read; the redacted file still comes, with a warning. */
+  /** Text lines the backend's OCR saw but could not read (the backend then offers no redacted file). */
   unread?: number;
 }
 

@@ -250,7 +250,7 @@ def test_misread_email_is_still_removed_from_the_photo():
 
 
 @needs_ocr
-def test_a_line_ocr_missed_is_detected_but_the_file_still_comes():
+def test_a_line_ocr_missed_is_detected_and_blocks_the_file():
     image = document_image()
     lines = ocr.read_image(image)
     assert ocr.unread_lines(image, lines) == 0
@@ -262,9 +262,8 @@ def test_a_line_ocr_missed_is_detected_but_the_file_still_comes():
     image.save(buffer, format="PNG")
     source = load_source(buffer.getvalue(), ".png")
     source.unread = 1
-    result = redact(source, secret_words(source.lines), "foto.png")
-    assert result.filename == "foto_censurado.png"
-    assert b"123456789" not in result.data
+    with pytest.raises(RedactionError, match="não foram lidas"):
+        redact(source, secret_words(source.lines), "foto.png")
 
 
 def test_short_numbers_are_not_uncertain_identifiers():

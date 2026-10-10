@@ -43,7 +43,7 @@ export function DocumentInput({ text, name, dragging, reading, onText, onFile, o
           </div>
         </div>
         <div className={`flex justify-center transition-[margin] ${paste ? "my-6" : "mt-6"}`}>
-          <Button variant="ghost" className="gap-2 text-muted-foreground hover:text-foreground" aria-expanded={paste} aria-controls="document-paste" onClick={() => { setPaste((p) => !p); requestAnimationFrame(() => textarea.current?.focus()); }}><ClipboardPaste className="size-4" aria-hidden="true" />{u.pasteText}<ChevronDown className={`size-4 transition-transform ${paste ? "rotate-180" : ""}`} aria-hidden="true" /></Button>
+          <Button variant="ghost" className="gap-2 text-muted-foreground transition-colors hover:bg-primary/10 hover:text-primary" aria-expanded={paste} aria-controls="document-paste" onClick={() => { setPaste((p) => !p); requestAnimationFrame(() => textarea.current?.focus()); }}><ClipboardPaste className="size-4" aria-hidden="true" />{u.pasteText}<ChevronDown className={`size-4 transition-transform ${paste ? "rotate-180" : ""}`} aria-hidden="true" /></Button>
         </div>
       </>}
       <div id="document-paste" className={`document-expand ${paste || !!text.trim() ? "document-expand-open" : ""}`} inert={!paste && !text.trim()}>

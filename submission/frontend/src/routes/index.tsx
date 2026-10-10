@@ -4,21 +4,16 @@ import { useEffect, useMemo, useReducer, useRef, useState } from "react";
 import { toast } from "sonner";
 import {
   ArrowLeft, ArrowLeftRight, ArrowRight, Columns2, Copy, Download,
-  FileDown, Check, AlertTriangle, RotateCw, SearchX, FileText, Image as ImageIcon, Loader2, FileImage,
+  FileDown, Check, AlertTriangle, RotateCw, SearchX,
 } from "lucide-react";
 import { DocumentInput } from "@/components/DocumentInput";
 import { ReviewSkeleton } from "@/components/ReviewSkeleton";
 import { RiverComparison } from "@/components/RiverComparison";
-import { PageComparison } from "@/components/PageComparison";
-import { PageStack } from "@/components/PageStack";
 import { FocusedText } from "@/components/FocusedText";
-import { usePageImages } from "@/hooks/usePageImages";
 import type { SourceDoc } from "@/lib/document";
 import { MAX_UPLOAD_BYTES, validateFile } from "@/lib/files";
 import { disposeSource, readSource, type ReadProgress } from "@/lib/source";
 import { terminateOcr } from "@/lib/ocr";
-import { alignText, redactionBoxes } from "@/lib/redaction";
-import { redactedImageBlob, redactedPdfBlob } from "@/lib/export";
 import { UI } from "@/lib/i18n-ui";
 import { emptyHistory, reviewHistory } from "@/lib/review-history";
 import { analyzeDocument, deleteDocument, isMockMode, syncDecisions } from "@/services/anonymizer";
@@ -48,11 +43,11 @@ export const Route = createFileRoute("/")({
 });
 
 
-function download(name: string, content: string | Blob, type = "text/plain") {
-  const url = URL.createObjectURL(typeof content === "string" ? new Blob([content], { type: `${type};charset=utf-8` }) : content);
+function download(name: string, content: string, type = "text/plain") {
+  const url = URL.createObjectURL(new Blob([content], { type: `${type};charset=utf-8` }));
   const a = document.createElement("a");
   a.href = url; a.download = name; a.click();
-  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  URL.revokeObjectURL(url);
 }
 
 function Index() {
@@ -61,9 +56,10 @@ function Index() {
   const [history, dispatch] = useReducer(reviewHistory, emptyHistory);
   const entities = history.present;
   const [fileName, setFileName] = useState("");
-  // The last file loaded, with its text and page geometry. A text-layer PDF
-  // goes to the backend itself when the text was not edited, so it is read
-  // as run.py reads it; OCR'd files always go as text (the API has no OCR).
+  // The last file loaded, with its text. A text-layer PDF goes to the backend
+  // itself when the text was not edited, so it is read as run.py reads it;
+  // images and scans always go as text, because the API has no OCR. Their
+  // page geometry is kept for the day the backend can redact images too.
   const [source, setSource] = useState<SourceDoc | null>(null);
   // The drop handler may hold an older render's handleFile, so it releases
   // the previous document through a ref rather than the captured state.
@@ -74,21 +70,15 @@ function Index() {
   const [busy, setBusy] = useState<ReadProgress | null>(null);
   const reading = busy !== null;
   const [resultView, setResultView] = useState<"side" | "slide">("side");
-  const [docView, setDocView] = useState<"text" | "pages">("pages");
-  const [exporting, setExporting] = useState(false);
   const [sliderSeen, setSliderSeen] = useState(false);
   const [focusId, setFocusId] = useState("");
-  const hasPages = (source?.pages.length ?? 0) > 0;
-  const showPages = hasPages && docView === "pages";
-  const pageUrls = usePageImages(source, step === 2 && hasPages);
   useEffect(() => { if (step !== 2) setFocusId(""); }, [step]);
   useEffect(() => { window.scrollTo({ top: 0, behavior: "smooth" }); }, [step]);
   useEffect(() => {
     if (!focusId) return;
-    const visible = (m: Element) => ("checkVisibility" in m ? (m as HTMLElement).checkVisibility() : (m as HTMLElement).offsetParent !== null);
-    const mark = [...document.querySelectorAll<HTMLElement>("[data-focus-mark]")].find(visible);
+    const mark = [...document.querySelectorAll<HTMLElement>("[data-focus-mark]")].find((m) => m.offsetParent !== null);
     mark?.scrollIntoView({ block: "center", behavior: "smooth" });
-  }, [focusId, resultView, docView]);
+  }, [focusId, resultView]);
   const [summary, setSummary] = useState("");
   const [loading, setLoading] = useState(false);
   const { t, s: cfg } = useSettings();
@@ -99,11 +89,6 @@ function Index() {
 
   const output = useMemo(() => anonymize(text, entities), [text, entities]);
   const st = useMemo(() => stats(text, entities), [text, entities]);
-  // The page boxes come from the same spans anonymize() masks. Aligning the
-  // text onto the page words is the slow part and depends only on both texts.
-  const pages = useMemo(() => source?.pages ?? [], [source]);
-  const alignment = useMemo(() => alignText(text, pages), [text, pages]);
-  const redaction = useMemo(() => redactionBoxes(text, entities, pages, alignment), [text, entities, pages, alignment]);
 
   const handleFile = async (f: File) => {
     const check = validateFile(f);
@@ -124,18 +109,6 @@ function Index() {
       console.error(e);
       toast.error(x.readFail);
     } finally { setBusy(null); }
-  };
-
-  const exportRedacted = async () => {
-    if (!source || exporting) return;
-    setExporting(true);
-    try {
-      if (source.kind === "image") download("lethe-anonimizado.png", await redactedImageBlob(source, redaction.boxes));
-      else download("lethe-anonimizado.pdf", await redactedPdfBlob(source, redaction.boxes));
-    } catch (e) {
-      console.error(e);
-      toast.error(x.unknownErr);
-    } finally { setExporting(false); }
   };
 
   const run = async () => {
@@ -161,7 +134,6 @@ function Index() {
       });
       dispatch({ type: "reset", entities: ents });
       setResultView("side");
-      setDocView("pages");
       setSliderSeen(false);
       setSummary(r.summary);
       setStep(1);
@@ -308,47 +280,25 @@ function Index() {
 
           {step === 2 && (
             <section className="animate-fade-up space-y-8">
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <div className="min-w-0 text-sm text-muted-foreground">
-                  {showPages && redaction.unplaced > 0 && <span role="status" className="inline-flex items-center gap-2 rounded-md border border-amber-600/40 bg-amber-500/10 px-2 py-1 text-xs font-medium text-amber-700 dark:text-amber-300"><AlertTriangle className="size-3.5" aria-hidden="true" />{u.unplaced.replace("{n}", String(redaction.unplaced))}</span>}
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  {hasPages && (
-                    <div className="inline-flex rounded-lg border bg-muted/40 p-1" role="group" aria-label={u.docView}>
-                      {([["pages", ImageIcon, u.viewDocument], ["text", FileText, u.viewText]] as const).map(([id, Icon, label]) => (
-                        <Button key={id} variant="ghost" aria-pressed={docView === id} onClick={() => setDocView(id)} className={`h-9 gap-2 rounded-md px-3 text-sm ${docView === id ? "bg-card text-foreground shadow-sm hover:bg-card" : "text-muted-foreground hover:bg-transparent hover:text-foreground"}`}><Icon className="size-4" aria-hidden="true" />{label}</Button>
-                      ))}
-                    </div>
-                  )}
-                  <div className="inline-flex rounded-lg border bg-muted/40 p-1" role="group" aria-label={u.comparison}>
-                    {([["side", Columns2, u.sideBySide], ["slide", ArrowLeftRight, u.slideView]] as const).map(([id, Icon, label]) => (
-                      <Button key={id} variant="ghost" aria-pressed={resultView === id} onClick={() => { setResultView(id); if (id === "slide") setSliderSeen(true); }} className={`h-9 gap-2 rounded-md px-3 text-sm ${resultView === id ? "bg-card text-foreground shadow-sm hover:bg-card" : "text-muted-foreground hover:bg-transparent hover:text-foreground"}`}><Icon className="size-4" aria-hidden="true" />{label}</Button>
-                    ))}
-                  </div>
+              <div className="flex justify-end">
+                <div className="inline-flex rounded-lg border bg-muted/40 p-1" role="group" aria-label={u.comparison}>
+                  {([["side", Columns2, u.sideBySide], ["slide", ArrowLeftRight, u.slideView]] as const).map(([id, Icon, label]) => (
+                    <Button key={id} variant="ghost" aria-pressed={resultView === id} onClick={() => { setResultView(id); if (id === "slide") setSliderSeen(true); }} className={`h-9 gap-2 rounded-md px-3 text-sm ${resultView === id ? "bg-card text-foreground shadow-sm hover:bg-card" : "text-muted-foreground hover:bg-transparent hover:text-foreground"}`}><Icon className="size-4" aria-hidden="true" />{label}</Button>
+                  ))}
                 </div>
               </div>
               <div className={resultView === "slide" ? "" : "hidden"}>
-                {sliderSeen && (showPages
-                  ? <PageComparison pages={pages} urls={pageUrls} boxes={redaction.boxes} focusId={focusId} />
-                  : <RiverComparison text={text} entities={entities} output={output} focusId={focusId} />)}
+                {sliderSeen && <RiverComparison text={text} entities={entities} output={output} focusId={focusId} />}
               </div>
               <div className={resultView === "side" ? "grid min-w-0 gap-4 md:grid-cols-2" : "hidden"}>
                 {[[t.original, text, true], [t.anonymized, output, false]].map(([h, c, orig]) => (
                   <div key={String(h)} className="min-w-0 rounded-lg border bg-card p-4 sm:p-5">
                     <h2 className="mb-3 text-sm font-semibold text-muted-foreground">{h}</h2>
-                    {showPages
-                      ? <div tabIndex={0} aria-label={String(h)} className="max-h-[70dvh] overflow-auto rounded-md bg-muted/40" onScroll={(e) => {
-                        // Keep the two page columns at the same place while one of them scrolls.
-                        const me = e.currentTarget, other = me.parentElement?.parentElement?.querySelector<HTMLElement>(`[data-page-scroll]:not([data-page-scroll="${orig ? "o" : "a"}"])`);
-                        if (other && Math.abs(other.scrollTop - me.scrollTop) > 1) other.scrollTop = me.scrollTop;
-                      }} data-page-scroll={orig ? "o" : "a"}>
-                        <PageStack pages={pages} urls={pageUrls} boxes={redaction.boxes} mode={orig ? "original" : "redacted"} focusId={focusId} pageLabel={(n) => u.pageN.replace("{n}", String(n))} />
-                      </div>
-                      : <pre tabIndex={0} aria-label={String(h)} className="max-h-[60dvh] overflow-auto whitespace-pre-wrap break-words font-mono text-sm leading-6 [overflow-wrap:anywhere]">
-                        {orig ? <FocusedText text={text} entities={entities} focusId={focusId} /> : String(c).split("*").map((part, i, arr) => (
-                          <span key={i}>{part}{i < arr.length - 1 && <span className="lethe-wash text-primary" style={{ animationDelay: `${Math.min(i * 40, 1600)}ms` }}>*</span>}</span>
-                        ))}
-                      </pre>}
+                    <pre tabIndex={0} aria-label={String(h)} className="max-h-[60dvh] overflow-auto whitespace-pre-wrap break-words font-mono text-sm leading-6 [overflow-wrap:anywhere]">
+                      {orig ? <FocusedText text={text} entities={entities} focusId={focusId} /> : String(c).split("*").map((part, i, arr) => (
+                        <span key={i}>{part}{i < arr.length - 1 && <span className="lethe-wash text-primary" style={{ animationDelay: `${Math.min(i * 40, 1600)}ms` }}>*</span>}</span>
+                      ))}
+                    </pre>
                   </div>
                 ))}
               </div>
@@ -356,7 +306,6 @@ function Index() {
                 <Button variant="ghost" onClick={() => setStep(1)} className="inline-flex items-center gap-2 rounded-xl border px-4 py-2 hover:bg-muted"><ArrowLeft className="h-4 w-4" /> {t.review}</Button>
                 <Button variant="ghost" onClick={async () => { try { await navigator.clipboard.writeText(output); toast.success(t.copied); } catch { toast.error(u.copyFailed); } }} className="inline-flex items-center gap-2 rounded-xl border px-4 py-2 hover:bg-muted"><Copy className="h-4 w-4" /> {t.copy}</Button>
                 <Button variant="ghost" onClick={() => download("submission.txt", output)} className="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2 font-medium text-primary-foreground hover:opacity-90"><Download className="h-4 w-4" /> {t.downloadTxt}</Button>
-                {hasPages && <Button variant="ghost" disabled={exporting} onClick={exportRedacted} className="inline-flex items-center gap-2 rounded-xl border px-4 py-2 hover:bg-muted">{exporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileImage className="h-4 w-4" />} {source?.kind === "image" ? u.downloadImage : u.downloadPdf}</Button>}
                 <Button variant="ghost" onClick={() => download("lethe-relatorio.md", report(), "text/markdown")} className="inline-flex items-center gap-2 rounded-xl border px-4 py-2 hover:bg-muted"><FileDown className="h-4 w-4" /> {t.downloadReport}</Button>
               </div>
 

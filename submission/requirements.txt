@@ -7,3 +7,4 @@ python-multipart
 python-dotenv
 flake8
 pytest
+pytest-cov

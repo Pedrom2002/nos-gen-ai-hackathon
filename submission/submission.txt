@@ -4,7 +4,7 @@ Referência: ADM-2025-04-15-089
 Informações do Paciente:
 Nome: * * * *
 Data de Nascimento: *
-Sexo: *
+Sexo: Feminino
 NIF: *
 Cartão de Cidadão: *
 Morada: * * * * * * * *
@@ -12,24 +12,24 @@ Telefone: * * * *
 Email: *
 Número da Segurança Social: *
 Histórico Médico:
-A paciente * * * * de * anos, compareceu à consulta relatando dores
+A paciente * * mulher caucasiana de 47 anos, compareceu à consulta relatando dores
 abdominais intensas. Tem histórico de hipertensão e diabetes tipo 2, diagnosticada há 5 anos. É
-* * desde * atualmente com carga viral indetectável graças ao tratamento com
-*
-A paciente relatou que sua família tem histórico de cancro da mama (mãe falecida aos * anos)
-e doença cardíaca (pai e avô paterno). Exames genéticos realizados em * indicaram
-predisposição ao cancro de mama (mutação * positiva).
+HIV positivo desde 2018, atualmente com carga viral indetectável graças ao tratamento com
+antirretrovirais.
+A paciente relatou que sua família tem histórico de cancro da mama (mãe falecida aos 52 anos)
+e doença cardíaca (pai e avô paterno). Exames genéticos realizados em 2022 indicaram
+predisposição ao cancro de mama (mutação BRCA1 positiva).
 Informações Sociais e Comportamentais:
-Estado civil: *
-Filhos: 2 * * anos e * * anos)
-Religião: * *
-Ocupação: Professora universitária na * * * * *
+Estado civil: Divorciada
+Filhos: 2 * 15 anos e * 12 anos)
+Religião: Católica praticante
+Ocupação: Professora universitária na Faculdade de Direito de Lisboa
 Hábitos: Ex-fumante (parou há 3 anos), consome álcool socialmente (2-3 doses por semana)
-Histórico de uso de substâncias: Tratamento para dependência de ansiolíticos em *
+Histórico de uso de substâncias: Tratamento para dependência de ansiolíticos em 2019
 Informações Financeiras:
 Seguro de saúde: Plano Premium Saúde Total, apólice nº *
 Número do cartão de crédito: * * * * (validade * CVV *
-Rendimento anual declarado: *
+Rendimento anual declarado: €62.500
 Dados Biométricos:
 Impressão digital registrada no sistema: *
 Reconhecimento facial: *

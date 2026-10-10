@@ -85,9 +85,12 @@ def main(argv: list[str] | None = None) -> None:
     parser.add_argument("--variant", choices=VARIANTS, default="A")
     parser.add_argument("--keep-punct", action="store_true",
                         help='keep attached punctuation ("Flores," -> "*,")')
+    parser.add_argument("--out-dir", type=Path, default=SUBMISSION_DIR)
+    parser.add_argument("--runs-dir", type=Path, default=RUNS_DIR)
     args = parser.parse_args(argv)
 
-    summary = run(args.pdf, args.model, args.variant, args.keep_punct)
+    summary = run(args.pdf, args.model, args.variant, args.keep_punct,
+                  args.out_dir, args.runs_dir, generate_fn=generate)
     print(f"{summary['lines']} lines, {len(summary['masked_words'])} words "
           f"masked, {len(summary['entities'])} entities explained "
           f"({summary['model']}, variant {summary['variant']})")

@@ -12,6 +12,16 @@ Work in progress for the NOS challenge at JunctionX Lisbon 2026.
 - `data/`: local cache and evaluation files (cache and runs are not committed)
 - `docs/`: documentation assets
 
+## Signatures and metadata
+
+Signature images, stamps, photos, digital signature fields and PDF metadata never reach the text pipeline, so the model cannot mask them. `sanitize.py` removes them from the PDF. Images are deleted from the file, not covered with a box, and the text is left untouched:
+
+```bash
+python -m anonimizador.sanitize input.pdf output.pdf
+```
+
+The signature is removed even when a profile keeps the signer's name: the name already says who signed, and the image would only help forge it.
+
 ## Setup
 
 ```bash

@@ -14,4 +14,9 @@ export default defineConfig({
     server: { entry: "server" },
   },
   plugins: [mcpPlugin()],
+  vite: {
+    // With VITE_API_URL=/ the page calls /api on its own origin and the dev
+    // server forwards it to the backend (submission/api), so no CORS is needed.
+    server: { proxy: { "/api": "http://localhost:8000" } },
+  },
 });

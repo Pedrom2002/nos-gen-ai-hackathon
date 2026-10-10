@@ -72,10 +72,32 @@ jobs:
       - name: Build
         run: npm run build
 
+  mobile:
+    if: github.repository == 'Pedrom2002/nos-gen-ai-hackathon'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: submission/mobile
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Tests (API client, session, files, sharing, shared web logic)
+        run: npm test -- --ci
+
+      - name: Type check
+        run: npm run typecheck
+
   package:
     # CD: every green push to the team branch publishes the candidate
     # deliverables, so the final submission is always one download away.
-    needs: [test, frontend]
+    needs: [test, frontend, mobile]
     if: >
       github.repository == 'Pedrom2002/nos-gen-ai-hackathon'
       && github.event_name == 'push'

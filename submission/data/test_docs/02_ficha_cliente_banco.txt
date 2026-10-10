@@ -1,0 +1,57 @@
+==============================================================
+ BANCO EXEMPLO, S.A. — FICHA DE ABERTURA DE CONTA (KYC)
+ Balcão: Oeiras Parque (n.º 0412)      Data: 06/08/2026
+==============================================================
+
+[1] IDENTIFICAÇÃO DO 1.º TITULAR
+--------------------------------------------------------------
+Nome completo .............. Beatriz Helena Lacerda Monteiro
+Sexo ....................... Feminino
+Data de nascimento ......... 27/05/1985
+Local de nascimento ........ Coimbra (freguesia de Sé Nova)
+Nacionalidade .............. Portuguesa
+Filiação ................... Fernando Lacerda Monteiro
+                             Maria do Céu Lacerda
+Estado civil ............... Divorciada
+Doc. de identificação ...... Cartão de Cidadão n.º 12740395 8 ZZ4
+Validade ................... 30/01/2030
+NIF ........................ 215 038 762
+NISS ....................... 1 1752 093 418
+Profissão .................. Enfermeira especialista
+Entidade patronal .......... Hospital Exemplo de Lisboa Ocidental
+Rendimento anual bruto ..... 38 400,00 EUR
+Pessoa politicamente exposta: Não
+
+[2] CONTACTOS E MORADA
+--------------------------------------------------------------
+Morada fiscal .............. Rua Professor Dr. Egas Moniz, n.º 9, 5.º A
+                             2780-310 Oeiras
+Telemóvel .................. +351 924 618 305
+Telefone fixo .............. +351 214 402 871
+E-mail ..................... beatriz.lmonteiro@exemplo.pt
+
+[3] CONTA E CARTÕES
+--------------------------------------------------------------
+N.º de conta ............... 0412 0018 7731 2
+IBAN ....................... PT50 0035 0412 0018 7731 2850 4
+Cartão de débito ........... 4539 8812 0047 3361  (val. 08/31, CVV 517)
+Código de acesso homebanking  user: bmonteiro85  (PIN inicial: 4 8 2 0 9 1)
+Pergunta de segurança ...... Nome do primeiro animal de estimação: "Farrusco"
+
+[4] DADOS COMPLEMENTARES
+--------------------------------------------------------------
+Agregado familiar .......... 2 filhos menores:
+                             - Gonçalo Lacerda Monteiro Brito, nasc. 14/03/2014
+                             - Leonor Lacerda Monteiro Brito, nasc. 02/10/2017
+Pensão de alimentos recebida  350,00 EUR/mês (proc. 2290/22.1T8CSC)
+Crédito habitação (outro banco) 612,00 EUR/mês, capital em dívida 96 300,00 EUR
+
+[5] ASSINATURA
+--------------------------------------------------------------
+Assinatura do titular ...... (digitalizada — ver anexo sig_bm_0412.png)
+Endereço IP no registo online: 85.240.117.36
+Geolocalização no registo .. 38.6971 N, 9.3105 W
+Gestor de conta ............ Nuno Correia (func. n.º 30417)
+
+--------------------------------------------------------------
+Documento de teste com dados inteiramente fictícios.

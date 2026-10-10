@@ -266,6 +266,49 @@ def test_a_line_ocr_missed_is_detected_and_blocks_the_file():
         redact(source, secret_words(source.lines), "foto.png")
 
 
+def first_words(lines):
+    return [line.split()[0] for line in ocr.line_texts(lines)]
+
+
+@needs_ocr
+def test_a_line_ocr_skipped_is_read_again_and_put_back_in_order():
+    image = document_image()
+    lines = ocr.read_image(image)
+    missing_nif = [line for line in lines
+                   if not any(w.text == "NIF:" for w in line)]
+    merged, still_unread = ocr.recover_unread(image, missing_nif)
+    assert still_unread == []
+    # OCR may misread a digit when reading the line alone ("123456/89").
+    assert first_words(merged) == first_words(lines)
+    assert ocr.unread_lines(image, merged) == 0
+
+
+@needs_ocr
+def test_ink_sticking_out_of_words_already_read_adds_no_duplicates():
+    image = document_image()
+    lines = ocr.read_image(image)
+    # Boxes too narrow for their words, as on a tilted line: the ink that
+    # sticks out looks like an unread line, but the words are already there.
+    narrow = [[ocr.OcrWord(w.text, ocr.Box(
+        w.box.left, w.box.top,
+        w.box.left + int((w.box.right - w.box.left) * 0.75),
+        w.box.bottom), w.confidence) for w in line] for line in lines]
+    assert ocr.unread_lines(image, narrow) >= 1
+    merged, still_unread = ocr.recover_unread(image, narrow)
+    assert still_unread == []
+    assert first_words(merged) == first_words(narrow)
+    assert [len(line) for line in merged] == [len(line) for line in narrow]
+
+
+@needs_ocr
+def test_a_blank_zone_with_ink_stays_unread():
+    image = Image.new("RGB", (1500, 200), "white")
+    ImageDraw.Draw(image).rectangle([50, 80, 900, 110], fill="black")
+    merged, still_unread = ocr.recover_unread(image, [])
+    assert merged == []
+    assert len(still_unread) == 1
+
+
 def test_short_numbers_are_not_uncertain_identifiers():
     from anonimizador.sources import looks_like_identifier
     assert not any(map(looks_like_identifier, ["72kg", "50mg", "BRCA1"]))

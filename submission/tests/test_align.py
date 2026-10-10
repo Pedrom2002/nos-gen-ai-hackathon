@@ -46,6 +46,23 @@ def test_merged_and_missing_lines_keep_original_layout():
     ]
 
 
+def test_reworded_label_does_not_leak_masked_name():
+    result = align(["Nome: Maria Santos"], ["Nome completo: *"])
+    assert result.lines == ["Nome: * *"]
+
+
+def test_reworded_word_next_to_mask_is_kept():
+    original = ["Maria Santos nasceu em Lisboa"]
+    result = align(original, ["* nasce em Lisboa"])
+    assert result.lines == ["* * nasceu em Lisboa"]
+
+
+def test_dropped_punctuation_next_to_mask_is_kept():
+    original = ["Rua das Flores, 123, Sacavém"]
+    result = align(original, ["Rua das Flores *"])
+    assert result.lines == ["Rua das Flores, * *"]
+
+
 def test_partially_masked_word_counts_as_masked():
     original = ["Email: maria.santos@emailpessoal.pt"]
     model = ["Email: maria.***@emailpessoal.pt"]

@@ -22,7 +22,7 @@ ALLOWED_ORIGINS=https://<id>.lovable.app
 
 - Documents live only in memory: no disk, no database. `DELETE /api/documents/{id}` removes one.
 - Request logging is disabled, and document text never appears in logs or error messages.
-- Uploads: PDF, TXT (UTF-8, UTF-16, Windows-1252) or CSV, at most 5 MB.
+- Uploads: PDF (text or scanned), DOCX, PNG, JPG, TXT (UTF-8, UTF-16, Windows-1252) or CSV, at most 10 MB (scanned PDFs: 20 pages). Images and scans are read by Tesseract on the server; they never go to the model, only their text does.
 
 ## Routes
 
@@ -35,12 +35,13 @@ ALLOWED_ORIGINS=https://<id>.lovable.app
 | PUT | `/api/documents/{id}/decisions` | `{ "keep": ["L5-1"] }` | `DocumentState` after the review |
 | GET | `/api/documents/{id}/download/submission` | | `submission.txt` (masked text) |
 | GET | `/api/documents/{id}/download/report` | | `report.md` (values hidden) |
+| GET | `/api/documents/{id}/download/redacted` | | the original file with the masked words removed for good (PNG for images, PDF, DOCX), with the review applied; 404 for TXT/CSV, 422 if the safety checks fail |
 | POST | `/api/documents/{id}/ask` | `{ "question": "..." }` | `GatewayAnswer` |
 | DELETE | `/api/documents/{id}` | | 204 |
 
 `PUT /decisions` always sends the full list of items to keep visible; an empty list masks everything again.
 
-Errors return `{ "detail": "<message in Portuguese>" }`: 404 unknown document, 413 file too large, 415 unsupported format, 422 empty document, empty question or unknown item, 502 the model did not answer (try again).
+Errors return `{ "detail": "<message in Portuguese>" }`: 404 unknown document, 413 file too large, 415 unsupported format, 422 empty or unreadable document, empty question, unknown item or a redacted file that failed verification, 502 the model did not answer (try again).
 
 ## Types
 
@@ -77,6 +78,12 @@ interface DocumentState {
     checked: number;   // masked values verified in the output
     leaks: { line: number; text: string }[];  // empty = "0 fugas"
   };
+  kind: "text" | "pdf" | "scanned" | "image" | "docx";
+  redactable: boolean; // true if download/redacted is available
+  uncertain: number;   // OCR words read with low confidence (masked if
+                       // they look like identifiers)
+  unread: number;      // text lines OCR saw but could not read; when > 0
+                       // download/redacted answers 422
 }
 
 interface GatewayAnswer {

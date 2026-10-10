@@ -3,10 +3,11 @@
 prompt -> Gemini (JSON) -> word-by-word alignment -> regex safety net.
 """
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 
-from anonimizador.align import MaskedWord, align, count_dropped
+from anonimizador.align import MaskedWord, _render, align, count_dropped
 from anonimizador.llm import DEFAULT_MODEL, InvalidResponseError, generate
+from anonimizador.ocr_fix import fix_lines
 from anonimizador.prompt import build_prompt, parse_response
 from anonimizador.safety import apply_safety_net
 
@@ -28,6 +29,30 @@ class Anonymized:
     safety_masked: list[MaskedWord]
     entities: list[dict]
     model_lines: int
+
+
+def mask_more(original_lines: list[str], result: Anonymized,
+              positions: set[tuple[int, int]],
+              keep_punct: bool = False) -> Anonymized:
+    """Also mask the given (line, word index) positions.
+
+    Used for OCR words read with low confidence that look like identifiers:
+    a misread "@" or digit can hide an email or a number from the model and
+    the patterns, so they are masked as a precaution (as the safety net).
+    """
+    done = {(w.line, w.index) for w in result.masked}
+    extra = [MaskedWord(line, index, original_lines[line].split()[index])
+             for line, index in sorted(positions) if (line, index) not in done]
+    if not extra:
+        return result
+    masked = sorted(result.masked + extra, key=lambda w: (w.line, w.index))
+    per_line: dict[int, set[int]] = {}
+    for word in masked:
+        per_line.setdefault(word.line, set()).add(word.index)
+    lines = [_render(line, per_line.get(n, set()), keep_punct)
+             for n, line in enumerate(original_lines)]
+    return replace(result, lines=lines, masked=masked,
+                   safety_masked=result.safety_masked + extra)
 
 
 def _word_count(lines: list[str]) -> int:
@@ -83,3 +108,17 @@ def anonymize(lines: list[str], model: str = DEFAULT_MODEL,
         entities=entities,
         model_lines=len(masked_lines),
     )
+
+
+def anonymize_source(source, model: str = DEFAULT_MODEL, variant: str = "A",
+                     keep_punct: bool = False,
+                     generate_fn=generate) -> Anonymized:
+    """Anonymise a sources.Source: its lines, plus its uncertain OCR words.
+
+    Text read by OCR is first cleaned of misreads (ocr_fix), word by word,
+    so every word keeps its place in the image.
+    """
+    if source.kind in ("image", "scanned"):
+        source.lines = fix_lines(source.lines, model, generate_fn)
+    result = anonymize(source.lines, model, variant, keep_punct, generate_fn)
+    return mask_more(source.lines, result, source.uncertain, keep_punct)

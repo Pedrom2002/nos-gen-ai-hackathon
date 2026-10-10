@@ -113,47 +113,42 @@ export async function deleteDocument(docId: string): Promise<void> {
 }
 
 const A4 = "Art. 4.º(1) RGPD";
-const A9 = "Art. 9.º(1) RGPD — categoria especial";
 const e = (text: string, category: string, reason: string, gdpr_basis = A4): Detected => ({ text, category, reason, gdpr_basis });
 
+// Demo do documento da NOS, igual à referência validada com os mentores:
+// só se mascara o que identifica uma pessoa. Dados clínicos, a referência
+// do processo e características como a etnia ficam visíveis.
 const SAMPLE_RESULT: Omit<AnalysisResult, "text"> = {
   entities: [
     e("Maria Conceição Oliveira Santos", "nome", "Nome completo da paciente"),
     e("Maria Santos", "nome", "Nome abreviado da paciente"),
-    e("João", "nome", "Primeiro nome de terceiro identificável"),
-    e("Ana", "nome", "Primeiro nome de terceiro identificável"),
-    e("António Santos", "nome", "Nome do contacto de emergência (familiar)"),
-    e("Joana Pereira", "nome", "Nome de profissional/terceiro identificável"),
-    e("irmão", "outro", "Relação familiar que ajuda a identificar o contacto"),
-    e("15 de abril de 2025", "data", "Data da admissão, associável à paciente"),
+    e("João", "nome", "Nome de um familiar"),
+    e("Ana", "nome", "Nome de um familiar"),
+    e("António Santos", "nome", "Nome do contacto de emergência"),
+    e("Joana Pereira", "nome", "Nome de uma pessoa de contacto"),
+    e("Carlos Mendes", "nome", "Nome do médico responsável"),
     e("12/03/1978", "data", "Data de nascimento"),
-    e("47 anos", "data", "Idade da paciente"),
-    e("2018", "data", "Data associada ao diagnóstico de VIH"),
-    e("ADM-2025-04-15-089", "identificador", "Referência única do processo clínico"),
     e("097865413", "identificador", "Número de Identificação Fiscal (NIF)"),
     e("12345678-9ZX0", "identificador", "Número do Cartão de Cidadão"),
     e("11223344556", "identificador", "Número da Segurança Social"),
+    e("987654321", "identificador", "Número da apólice do seguro de saúde"),
+    e("12345-PT", "identificador", "Número da cédula profissional do médico"),
+    e("ID-BIO-12345", "biometrico", "Identificador da impressão digital"),
+    e("FACE-ID-78901", "biometrico", "Identificador do reconhecimento facial"),
     e("Rua das Flores, 123, Apt 45, Sacavém, Lisboa", "morada", "Morada completa de residência"),
     e("+351 912 345 678", "contacto", "Telefone pessoal da paciente"),
-    e("+351961234567", "contacto", "Telefone pessoal do contacto de emergência"),
+    e("+351961234567", "contacto", "Telefone do contacto de emergência"),
+    e("+351939876543", "contacto", "Telefone de uma pessoa de contacto"),
+    e("+351213456789", "contacto", "Telefone do médico"),
     e("maria.santos@emailpessoal.pt", "contacto", "Email pessoal da paciente"),
-    e("antonio.santos@emailpessoal.pt", "contacto", "Email pessoal do contacto de emergência"),
-    e("Feminino", "outro", "Sexo — contribui para a reidentificação"),
-    e("caucasiana", "religiao_etnia", "Origem étnica/racial", A9),
-    e("dores abdominais intensas", "saude", "Sintoma clínico", A9),
-    e("hipertensão", "saude", "Diagnóstico clínico", A9),
-    e("diabetes tipo 2", "saude", "Diagnóstico clínico", A9),
-    e("HIV positivo", "saude", "Estado serológico", A9),
-    e("carga viral indetectável", "saude", "Resultado clínico", A9),
-    e("antirretrovirais", "saude", "Medicação que revela condição de saúde", A9),
-    e("BRCA1", "saude", "Dado genético (mutação hereditária)", A9),
+    e("antonio.santos@emailpessoal.pt", "contacto", "Email do contacto de emergência"),
+    e("carlos.mendes@centromedicalisboa.pt", "contacto", "Email do médico"),
     e("4111 2222 3333 4444", "financeiro", "Número de cartão de crédito"),
     e("09/27", "financeiro", "Validade do cartão de crédito"),
-    e("CVV 123", "financeiro", "Código de segurança do cartão"),
-    e("€62.500", "financeiro", "Rendimento anual declarado"),
+    e("123", "financeiro", "Código de segurança do cartão (CVV)"),
   ],
   summary:
-    "O documento é um relatório clínico de admissão com elevada densidade de dados pessoais. Foram identificados identificadores diretos (nome, NIF, Cartão de Cidadão, Segurança Social, contactos e morada) que permitem identificar a paciente e o seu familiar. Inclui ainda categorias especiais ao abrigo do art. 9.º do RGPD — dados de saúde (hipertensão, diabetes, estado serológico VIH e medicação) e origem étnica — cuja exposição representa risco elevado de discriminação. Os dados financeiros (cartão, CVV, rendimento) permitem fraude direta. Todos foram anonimizados, preservando a estrutura e o significado clínico geral do documento.",
+    "Relatório clínico de admissão. Foram mascarados os dados que identificam pessoas: nomes, data de nascimento, NIF, Cartão de Cidadão, Segurança Social, apólice, identificadores biométricos, morada, telefones, emails e dados do cartão. A informação clínica e a referência do processo mantêm-se, para o documento continuar útil.",
 };
 
 function regexMock(text: string): Omit<AnalysisResult, "text"> {

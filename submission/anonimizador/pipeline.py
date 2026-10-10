@@ -7,6 +7,7 @@ from dataclasses import dataclass, replace
 
 from anonimizador.align import MaskedWord, _render, align, count_dropped
 from anonimizador.llm import DEFAULT_MODEL, InvalidResponseError, generate
+from anonimizador.ocr_fix import fix_lines
 from anonimizador.prompt import build_prompt, parse_response
 from anonimizador.safety import apply_safety_net
 
@@ -112,6 +113,12 @@ def anonymize(lines: list[str], model: str = DEFAULT_MODEL,
 def anonymize_source(source, model: str = DEFAULT_MODEL, variant: str = "A",
                      keep_punct: bool = False,
                      generate_fn=generate) -> Anonymized:
-    """Anonymise a sources.Source: its lines, plus its uncertain OCR words."""
+    """Anonymise a sources.Source: its lines, plus its uncertain OCR words.
+
+    Text read by OCR is first cleaned of misreads (ocr_fix), word by word,
+    so every word keeps its place in the image.
+    """
+    if source.kind in ("image", "scanned"):
+        source.lines = fix_lines(source.lines, model, generate_fn)
     result = anonymize(source.lines, model, variant, keep_punct, generate_fn)
     return mask_more(source.lines, result, source.uncertain, keep_punct)

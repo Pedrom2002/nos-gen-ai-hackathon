@@ -15,7 +15,7 @@ Lethe masks the words that identify a person in a Portuguese document. It uses o
 | Leak check on the official document | 0 leaks in 24 masked values |
 | Words masked in the official document | 46, in 26 items |
 | Extra test documents | 17 (PDF, TXT in UTF-8 and UTF-16, CSV), 920 words masked, 0 errors |
-| Python tests | 158, coverage gate 90% |
+| Python tests | 159, coverage gate 90% |
 | Frontend tests | 20 |
 
 The local metric (`anonimizador/metric.py`) reproduces the two figures of the official evaluation logs:
@@ -92,7 +92,7 @@ Besides the challenge PDF, Lethe reads scanned PDFs, photos and images (PNG, JPG
   - The redaction paints opaque black over the masked words. It never blurs or pixelates, since those can be reversed. The boxes are padded so accents and descenders are covered too.
   - The image is rebuilt from its pixels only and saved as PNG, so EXIF data (GPS, the embedded thumbnail), XMP and text chunks are gone.
   - A scanned PDF is rebuilt from the redacted page images only.
-- **Phone photos:** the page is found in the photo and flattened (perspective correction) and its lighting is evened out before OCR. The bars are then mapped back onto the original photo as polygons that follow the slant of the text. Two real phone photos of the official document gave the same 60 lines as `submission.txt`, with the masks in exactly the same places (Accuracy 100%); the only differences were letters misread by OCR.
+- **Phone photos:** the page is found in the photo and flattened (perspective correction) and its lighting is evened out before OCR. The bars are then mapped back onto the original photo as polygons that follow the slant of the text. Before anonymising, the model fixes OCR misreads ("Financelras" becomes "Financeiras", "OVV" becomes "CVV"). The fixes are taken word by word, and only when a line keeps its word count and each word stays close to what OCR read, so every word keeps its place in the image and no name or number can be swapped. Two real phone photos of the official document (taken of a screen, in perspective) give text **identical to `submission.txt`**: 60/60 lines, 100% Similarity and Accuracy.
 - **OCR misreads:** OCR words read with low confidence that look like identifiers (3 or more digits, `@` or a domain) are masked as a precaution. OCR can turn `maria@x.pt` into `mariaQx.pt`, which neither the model nor the patterns would recognise.
 - **Text OCR could not read:** ink left outside every word box that has the shape of a text line means text that was never checked. The redacted file is then refused, with a request for a sharper photo.
 - **Text PDFs:** PyMuPDF redactions delete the text, image pixels and drawings under each word. Hidden text, metadata, attachments, JavaScript, links and form data are scrubbed, and the file is saved in full, never incrementally.

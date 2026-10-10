@@ -36,7 +36,8 @@ from anonimizador.verify import check_leaks
 
 SUBMISSION_DIR = Path(__file__).resolve().parents[1]
 OFFICIAL_PDF = SUBMISSION_DIR.parent / "raw_data" / "document_to_anonymize.pdf"
-MAX_BYTES = 10 * 1024 * 1024
+# Phone photos at full resolution often pass 10 MB.
+MAX_BYTES = 25 * 1024 * 1024
 UNSUPPORTED = ("Formato não suportado: use PDF, DOCX, imagem (PNG, JPG), "
                "TXT ou CSV.")
 MODEL_DOWN = "O modelo não respondeu. Tente de novo dentro de um minuto."
@@ -183,7 +184,7 @@ async def upload(file: UploadFile = File(...)) -> dict:
         raise HTTPException(415, UNSUPPORTED)
     data = await file.read(MAX_BYTES + 1)
     if len(data) > MAX_BYTES:
-        raise HTTPException(413, "Ficheiro maior do que 10 MB.")
+        raise HTTPException(413, "Ficheiro maior do que 25 MB.")
     # OCR and the model take seconds: run them off the event loop so other
     # requests are still served meanwhile.
     source = await run_in_threadpool(_read, data, suffix)

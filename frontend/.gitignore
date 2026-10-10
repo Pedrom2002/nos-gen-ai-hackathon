@@ -30,3 +30,8 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# The root .gitignore is a Python template; "lib/" and "plan" there would
+# hide the app code and the Lovable plans.
+!src/lib/
+!.lovable/plan/

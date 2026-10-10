@@ -11,7 +11,7 @@ import { RiverLoading } from "@/components/RiverLoading";
 import { RiverComparison } from "@/components/RiverComparison";
 import { UI } from "@/lib/i18n-ui";
 import { emptyHistory, reviewHistory } from "@/lib/review-history";
-import { analyzeDocument } from "@/services/anonymizer";
+import { analyzeDocument, deleteDocument, syncDecisions } from "@/services/anonymizer";
 import {
   CATEGORIES, anonymize, catOf, normalizeCategory, partialMask, stats,
   type CategoryId, type Entity,
@@ -52,6 +52,10 @@ function Index() {
   const [history, dispatch] = useReducer(reviewHistory, emptyHistory);
   const entities = history.present;
   const [fileName, setFileName] = useState("");
+  // The last file loaded and the text it gave. The file itself goes to the
+  // backend when the text was not edited, so a PDF is read as run.py reads it.
+  const [source, setSource] = useState<{ file: File; text: string } | null>(null);
+  const [docId, setDocId] = useState("");
   const [dragging, setDragging] = useState(false);
   const [reading, setReading] = useState(false);
   const [resultView, setResultView] = useState<"side" | "slide">("side");
@@ -73,6 +77,7 @@ function Index() {
     try {
       const t = f.name.toLowerCase().endsWith(".pdf") ? await extractPdfText(f) : await f.text();
       setText(t);
+      setSource({ file: f, text: t });
       setFileName(f.name);
       setStep(0);
       setError("");
@@ -88,14 +93,18 @@ function Index() {
     setLoading(true);
     setError("");
     try {
-      const r = await analyzeDocument(text);
+      const r = await analyzeDocument(text, source && source.text === text ? source.file : null);
+      if (docId) void deleteDocument(docId).catch(() => {});
+      setDocId(r.docId ?? "");
+      // Show the document as the backend read it, so the highlights match its lines.
+      setText(r.text);
       const seen = new Set<string>();
       const ents: Entity[] = [];
       r.entities.forEach((e, i) => {
         const t = e.text?.trim();
-        if (!t || !text.includes(t) || seen.has(t)) return;
+        if (!t || !r.text.includes(t) || seen.has(t)) return;
         seen.add(t);
-        ents.push({ id: `ai-${i}`, text: t, category: normalizeCategory(e.category), reason: e.reason ?? "", gdpr_basis: e.gdpr_basis ?? "Art. 4.º(1) RGPD", enabled: true });
+        ents.push({ id: `ai-${i}`, text: t, category: normalizeCategory(e.category), reason: e.reason ?? "", gdpr_basis: e.gdpr_basis ?? "Art. 4.º(1) RGPD", enabled: true, role: e.role, refs: e.refs });
       });
       dispatch({ type: "reset", entities: ents });
       setResultView("side");
@@ -122,7 +131,20 @@ function Index() {
       gdpr_basis: ["saude", "biometrico", "religiao_etnia"].includes(category) ? "Art. 9.º(1) RGPD" : "Art. 4.º(1) RGPD",
     }]);
   };
-  const clear = () => { setText(""); setFileName(""); setError(""); dispatch({ type: "reset", entities: [] }); setSummary(""); setStep(0); };
+  // Tell the backend what the reviewer kept visible before showing the result,
+  // so its leak check and downloads match the page.
+  const generate = async () => {
+    if (docId) {
+      const keep = entities.filter((e) => !e.enabled).flatMap((e) => e.refs ?? []);
+      try { setSummary(await syncDecisions(docId, keep)); } catch (e) { console.error(e); }
+    }
+    setStep(2);
+  };
+  const clear = () => {
+    setText(""); setFileName(""); setSource(null); setError(""); dispatch({ type: "reset", entities: [] }); setSummary(""); setStep(0);
+    // The backend keeps documents in memory until they are deleted.
+    if (docId) { void deleteDocument(docId).catch(() => {}); setDocId(""); }
+  };
   // Page-wide file dropping; text selections are never treated as files.
   useEffect(() => {
     let depth = 0;
@@ -219,10 +241,10 @@ function Index() {
                   </div>
                 </div>
               )}
-              {entities.length > 0 && <ReviewPanel backLabel={t.back} generateLabel={t.generate} onBack={() => setStep(0)} onGenerate={() => setStep(2)} text={text} entities={entities} onToggle={toggle} onToggleCategory={toggleCat} onAdd={add} onUndo={() => dispatch({ type: "undo" })} onRedo={() => dispatch({ type: "redo" })} canUndo={history.past.length > 0} canRedo={history.future.length > 0} />}
+              {entities.length > 0 && <ReviewPanel backLabel={t.back} generateLabel={t.generate} onBack={() => setStep(0)} onGenerate={generate} text={text} entities={entities} onToggle={toggle} onToggleCategory={toggleCat} onAdd={add} onUndo={() => dispatch({ type: "undo" })} onRedo={() => dispatch({ type: "redo" })} canUndo={history.past.length > 0} canRedo={history.future.length > 0} />}
               {entities.length > 0 && <div className="mt-6 hidden lg:flex lg:justify-between">
                 <Button variant="ghost" onClick={() => setStep(0)} className="inline-flex items-center gap-2 rounded-xl border px-4 py-2 hover:bg-muted"><ArrowLeft className="h-4 w-4" /> {t.back}</Button>
-                <Button variant="ghost" onClick={() => setStep(2)} className="inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 font-medium text-primary-foreground hover:opacity-90">{t.generate} <ArrowRight className="h-4 w-4" /></Button>
+                <Button variant="ghost" onClick={generate} className="inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 font-medium text-primary-foreground hover:opacity-90">{t.generate} <ArrowRight className="h-4 w-4" /></Button>
               </div>}
             </section>
           )}

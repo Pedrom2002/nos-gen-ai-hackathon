@@ -12,7 +12,7 @@ import { RiverComparison } from "@/components/RiverComparison";
 import { FocusedText } from "@/components/FocusedText";
 import { UI } from "@/lib/i18n-ui";
 import { emptyHistory, reviewHistory } from "@/lib/review-history";
-import { analyzeDocument, deleteDocument, syncDecisions } from "@/services/anonymizer";
+import { analyzeDocument, deleteDocument, isMockMode, syncDecisions } from "@/services/anonymizer";
 import {
   CATEGORIES, anonymize, catOf, normalizeCategory, partialMask, stats,
   type CategoryId, type Entity,
@@ -112,7 +112,7 @@ function Index() {
         const t = e.text?.trim();
         if (!t || !r.text.includes(t) || seen.has(t)) return;
         seen.add(t);
-        ents.push({ id: `ai-${i}`, text: t, category: normalizeCategory(e.category), reason: e.reason ?? "", gdpr_basis: e.gdpr_basis ?? "Art. 4.º(1) RGPD", enabled: true, role: e.role, refs: e.refs });
+        ents.push({ id: `ai-${i}`, text: t, category: normalizeCategory(e.category), reason: e.reason ?? "", gdpr_basis: e.gdpr_basis ?? "Art. 4.º(1) RGPD", enabled: true, role: e.role, refs: e.refs, at: e.at });
       });
       dispatch({ type: "reset", entities: ents });
       setResultView("side");
@@ -199,6 +199,8 @@ function Index() {
             <nav className="grid h-16 grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
               <div className="flex min-w-0 items-center gap-3">
                 <LetheWordmark id="lethe-header-logo" className="h-9 shrink-0" />
+                {/* Without VITE_API_URL the results are canned: say so, so a demo never passes for the real model. */}
+                {isMockMode && <span role="status" title={u.demoMode} className="min-w-0 truncate rounded-md border border-amber-600/40 bg-amber-500/10 px-2 py-0.5 text-xs font-medium text-amber-700 dark:text-amber-300">{u.demoMode}</span>}
               </div>
               <SettingsSheet />
             </nav>

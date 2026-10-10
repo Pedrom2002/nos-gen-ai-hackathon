@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { fromState, spanText, type DocumentState } from "@/services/anonymizer";
+import { anonymize } from "@/lib/anonymizer";
 
 const state: DocumentState = {
   id: "abc123",
@@ -52,5 +53,23 @@ describe("fromState", () => {
     expect(s).toContain("0 fugas em 2 valores");
     const leaky = { ...state, leaks: { checked: 2, leaks: [{ line: 2, text: "rui@mail.pt" }] } };
     expect(fromState(leaky).summary).toContain("1 de 2 valores continuam legíveis");
+  });
+});
+
+describe("fromState positions", () => {
+  it("keeps the backend position of every merged item", () => {
+    const twice: DocumentState = {
+      ...state,
+      lines: [...state.lines, "Assina: Paulo Reis"],
+      items: [...state.items, { ...state.items[2]!, id: "L4-1", line: 4, first: 1, last: 2 }],
+    };
+    expect(fromState(twice).entities[2]?.at).toEqual([
+      { line: 3, first: 2, last: 3 }, { line: 4, first: 1, last: 2 }]);
+  });
+
+  it("masks the backend output byte for byte", () => {
+    const r = fromState(state);
+    const ents = r.entities.map((d, i) => ({ id: String(i), text: d.text, category: "outro" as const, reason: "", gdpr_basis: "", enabled: true, at: d.at }));
+    expect(anonymize(r.text, ents)).toBe(state.output.join("\n"));
   });
 });

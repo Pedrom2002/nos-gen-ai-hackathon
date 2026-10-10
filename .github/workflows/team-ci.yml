@@ -35,7 +35,7 @@ jobs:
         working-directory: submission
         run: >
           python -m pytest -q
-          --cov=anonimizador --cov=run --cov=ask
+          --cov=anonimizador --cov=api --cov=run --cov=ask
           --cov-report=term --cov-fail-under=90
 
       - name: Local metric on the committed submission

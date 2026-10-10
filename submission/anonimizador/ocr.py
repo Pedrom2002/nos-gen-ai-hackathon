@@ -14,7 +14,9 @@ import shutil
 from dataclasses import dataclass
 from pathlib import Path
 
-from PIL import Image, ImageOps
+import numpy as np
+from PIL import Image, ImageDraw, ImageFilter, ImageOps
+from scipy import ndimage
 
 LANG = "por"
 # Small photos are read better when enlarged; boxes are scaled back.
@@ -85,6 +87,57 @@ def prepare(image: Image.Image) -> Image.Image:
     return ImageOps.exif_transpose(image).convert("RGB")
 
 
+# Ink darker than this, after evening the light, counts as text.
+INK = 110
+
+
+def even_light(image: Image.Image) -> Image.Image:
+    """Grey image with the lighting evened out.
+
+    Photos are brighter on one side; a single threshold then loses the
+    darker part of the page. Dividing by a blurred copy (the background
+    light) gives the same contrast everywhere.
+    """
+    gray = image.convert("L")
+    small = gray.resize((max(1, gray.width // 8), max(1, gray.height // 8)))
+    background = small.filter(ImageFilter.GaussianBlur(25)).resize(
+        gray.size, Image.BILINEAR)
+    ratio = (np.asarray(gray, float)
+             / np.maximum(np.asarray(background, float), 1) * 230)
+    flat = Image.fromarray(np.clip(ratio, 0, 255).astype("uint8"))
+    return ImageOps.autocontrast(flat, cutoff=1)
+
+
+def unread_lines(image: Image.Image, lines: list[list["OcrWord"]]) -> int:
+    """Count text lines on the image that OCR did not read.
+
+    Ink outside every word box is merged along the line; a blob with the
+    height and length of a line of text means text that was never read,
+    so it was never checked by the model either.
+    """
+    heights = [word.box.height for line in lines for word in line]
+    height = float(np.median(heights)) if heights else 20.0
+    ink = np.asarray(even_light(image)) < INK
+    covered = Image.new("L", image.size, 0)
+    draw = ImageDraw.Draw(covered)
+    for line in lines:
+        for word in line:
+            box = word.box.padded(image.size)
+            draw.rectangle([box.left, box.top, box.right, box.bottom],
+                           fill=255)
+    left = ink & (np.asarray(covered) == 0)
+    left = ndimage.binary_dilation(
+        left, structure=np.ones((1, max(3, int(height * 0.8)))))
+    labels, _ = ndimage.label(left)
+    count = 0
+    for rows, cols in ndimage.find_objects(labels):
+        tall = rows.stop - rows.start
+        wide = cols.stop - cols.start
+        if 0.5 * height <= tall <= 3 * height and wide >= 3 * height:
+            count += 1
+    return count
+
+
 def read_image(image: Image.Image) -> list[list[OcrWord]]:
     """Return the words of an RGB image grouped in lines, in reading order.
 
@@ -92,8 +145,10 @@ def read_image(image: Image.Image) -> list[list[OcrWord]]:
     """
     pytesseract = _pytesseract()
     scale = max(1, -(-MIN_WIDTH // image.width))
-    source = image.resize((image.width * scale, image.height * scale),
-                          Image.LANCZOS) if scale > 1 else image
+    source = even_light(image)
+    if scale > 1:
+        source = source.resize((image.width * scale, image.height * scale),
+                               Image.LANCZOS)
     data = pytesseract.image_to_data(
         source, lang=LANG, config="--psm 3",
         output_type=pytesseract.Output.DICT,

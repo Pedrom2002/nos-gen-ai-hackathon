@@ -79,6 +79,7 @@ def run(pdf: Path = DEFAULT_PDF, model: str = DEFAULT_MODEL,
         "report": report["summary"],
         "leak_check": leaks,
         "uncertain_words": len(source.uncertain),
+        "unread_lines": source.unread,
     }
     if redact_file:
         try:

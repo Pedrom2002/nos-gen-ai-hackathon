@@ -90,16 +90,32 @@ def word_boxes(source: Source, masked: list[MaskedWord]) -> dict:
     return boxes
 
 
-def paint(image: Image.Image, boxes: list) -> tuple[Image.Image, list]:
-    """Return a new image, built from the pixels only, with black boxes."""
+def polygons(boxes: list, size: tuple[int, int], warp=None) -> list:
+    """Padded word boxes as polygons in the image's own pixels.
+
+    Boxes of a straightened photo are mapped back through the warp, so the
+    bar follows the slant of the text in the photo.
+    """
+    space = warp.size if warp else size
+    shapes = []
+    for box in boxes:
+        p = box.padded(space)
+        corners = [(p.left, p.top), (p.right, p.top), (p.right, p.bottom),
+                   (p.left, p.bottom)]
+        shapes.append(warp.to_original(corners) if warp else corners)
+    return shapes
+
+
+def paint(image: Image.Image, boxes: list,
+          warp=None) -> tuple[Image.Image, list]:
+    """Return a new image, built from the pixels only, with black bars."""
     rgb = image.convert("RGB")
     clean = Image.frombytes("RGB", rgb.size, rgb.tobytes())
     draw = ImageDraw.Draw(clean)
-    painted = [box.padded(clean.size) for box in boxes]
-    for box in painted:
-        draw.rectangle([box.left, box.top, box.right - 1, box.bottom - 1],
-                       fill=BLACK)
-    return clean, painted
+    shapes = polygons(boxes, clean.size, warp)
+    for shape in shapes:
+        draw.polygon(shape, fill=BLACK)
+    return clean, shapes
 
 
 def png_bytes(image: Image.Image) -> bytes:
@@ -110,7 +126,7 @@ def png_bytes(image: Image.Image) -> bytes:
 
 def _image(source: Source, masked: list[MaskedWord]):
     boxes = word_boxes(source, masked).get(0, [])
-    image, painted = paint(source.pages[0], boxes)
+    image, painted = paint(source.pages[0], boxes, source.warps[0])
     return png_bytes(image), {0: (image, painted)}
 
 
@@ -120,7 +136,8 @@ def _scanned(source: Source, masked: list[MaskedWord]):
     pages = {}
     scale = 72 / SCAN_DPI
     for page_no, page_image in enumerate(source.pages):
-        image, painted = paint(page_image, boxes.get(page_no, []))
+        image, painted = paint(page_image, boxes.get(page_no, []),
+                               source.warps[page_no])
         pages[page_no] = (image, painted)
         page = doc.new_page(width=image.width * scale,
                             height=image.height * scale)
@@ -269,6 +286,12 @@ def redact(source: Source, masked: list[MaskedWord], name: str,
 
     if not source.redactable:
         raise RedactionError("Este formato só tem saída em texto.")
+    if source.unread:
+        # Text the OCR could not read was never checked: a file with it
+        # visible could leak anything, so only the text output is given.
+        raise RedactionError(
+            f"{source.unread} linha(s) de texto não foram lidas pelo OCR; "
+            f"tire uma fotografia mais nítida e de frente.")
     stem = PurePath(name).stem or "documento"
     pages: dict = {}
     if source.kind == "image":

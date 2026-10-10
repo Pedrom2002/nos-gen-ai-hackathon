@@ -21,4 +21,3 @@
 - Comparison masking is display-only, preserving original whitespace and token widths for alignment; copy and downloads always use the official anonymize output.
 - Keep document import, loading and comparison as focused frontend components; accept page-wide file drops without intercepting text selection drops.
 - Browser storage is read and written only through src/lib/safe-storage.ts, and the opening overlay hides itself even when storage or media queries are refused, so a browser that blocks storage (Safari in an embedded frame, private mode) can never blank the page.
-- Agent MCP server lives in src/lib/mcp (public, stateless anonymize tool reusing the frontend anonymizer) — exposes Lethe to external assistants without accounts.

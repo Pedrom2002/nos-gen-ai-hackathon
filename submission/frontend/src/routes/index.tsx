@@ -64,7 +64,13 @@ function Index() {
   const STEPS = t.steps;
   const [error, setError] = useState("");
 
-  const output = useMemo(() => anonymize(text, entities), [text, entities]);
+  // Texto do pipeline do backend: usado enquanto a revisão não mudar nada,
+  // para o submission.txt ser igual ao que o run.py gera.
+  const [pipelineText, setPipelineText] = useState("");
+  const output = useMemo(
+    () => history.past.length === 0 && pipelineText ? pipelineText.replace(/\n+$/, "") : anonymize(text, entities),
+    [history.past.length, pipelineText, text, entities],
+  );
   const st = useMemo(() => stats(text, entities), [text, entities]);
 
   const handleFile = async (f: File) => {
@@ -98,6 +104,7 @@ function Index() {
         ents.push({ id: `ai-${i}`, text: t, category: normalizeCategory(e.category), reason: e.reason ?? "", gdpr_basis: e.gdpr_basis ?? "Art. 4.º(1) RGPD", enabled: true });
       });
       dispatch({ type: "reset", entities: ents });
+      setPipelineText(r.masked_text ?? "");
       setResultView("side");
       setSliderSeen(false);
       setSummary(r.summary);
@@ -122,7 +129,7 @@ function Index() {
       gdpr_basis: ["saude", "biometrico", "religiao_etnia"].includes(category) ? "Art. 9.º(1) RGPD" : "Art. 4.º(1) RGPD",
     }]);
   };
-  const clear = () => { setText(""); setFileName(""); setError(""); dispatch({ type: "reset", entities: [] }); setSummary(""); setStep(0); };
+  const clear = () => { setPipelineText(""); setText(""); setFileName(""); setError(""); dispatch({ type: "reset", entities: [] }); setSummary(""); setStep(0); };
   // Page-wide file dropping; text selections are never treated as files.
   useEffect(() => {
     let depth = 0;

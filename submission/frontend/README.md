@@ -34,20 +34,23 @@ npm run dev
 
 ## Ligar ao backend
 
-Este projeto é **apenas frontend**. Todo o acesso ao backend está em `src/services/anonymizer.ts`.
+Todo o acesso ao backend está em `src/services/anonymizer.ts`. O backend é a API FastAPI em `submission/api/`.
 
-- Definir `VITE_API_URL` (ex.: `VITE_API_URL=https://api.exemplo.pt`) → o frontend faz `POST ${VITE_API_URL}/anonymize` com corpo JSON `{ "text": "..." }`.
-- Sem `VITE_API_URL` → modo demo com dados simulados.
+1. Na pasta `submission`: `uvicorn api.main:app --port 8000 --no-access-log`
+2. Aqui: criar `.env.local` com `VITE_API_URL=http://localhost:8000` e correr `npm run dev`.
+3. Se o frontend correr noutro domínio (ex.: preview do Lovable), juntar esse domínio a `ALLOWED_ORIGINS` em `submission/.env`.
 
-Contrato da resposta:
+Sem `VITE_API_URL` a app corre em modo demo, com o resultado do documento da NOS igual à referência.
+
+O frontend faz `POST ${VITE_API_URL}/api/anonymize` com `{ "text": "..." }` e recebe:
 
 ```ts
-type Category = "nome"|"data"|"identificador"|"contacto"|"morada"|"saude"|"financeiro"|"biometrico"|"religiao_etnia"|"outro";
-interface Entity { text: string; category: Category; reason: string; gdpr_basis?: string }
-interface AnalysisResult { entities: Entity[]; summary: string; prompt?: string }
+interface AnalysisResult {
+  entities: { text: string; category: Category; reason: string; gdpr_basis?: string }[];
+  summary: string;
+  prompt?: string;
+  masked_text?: string; // texto final do pipeline, igual ao do run.py
+}
 ```
 
-- `text` deve ser o texto **exato** do documento (o frontend procura todas as ocorrências).
-- O mascaramento (`*` por palavra, sem linhas vazias) é feito no frontend, após a validação manual.
-- `prompt` (opcional) pode ser devolvido, mas já não é mostrado na interface.
-- O backend deve permitir CORS a partir do domínio do frontend.
+Enquanto a revisão não mudar nada, o texto anonimizado e o `submission.txt` vêm de `masked_text`. Depois de uma alteração (ligar, desligar ou acrescentar dados), o mascaramento é refeito no browser a partir das entidades ativas.

@@ -7,6 +7,9 @@ venv/
 __pycache__/
 *.pyc
 .ipynb_checkpoints/
+# The root .gitignore drops every lib/ folder (Python template); the
+# frontend keeps its code in src/lib/.
+!frontend/src/lib/
 node_modules/
 dist/
 data/cache/

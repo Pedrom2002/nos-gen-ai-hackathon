@@ -1,5 +1,10 @@
 import { describe, it, expect } from "vitest";
-import { mul, wordsFromOcrLines, wordsFromTextItems, type TextItemLike } from "@/lib/geometry";
+import { charWeight, mul, wordsFromOcrLines, wordsFromTextItems, type TextItemLike } from "@/lib/geometry";
+
+const share = (str: string, from: number, to: number, width: number) => {
+  const w = [...str].map(charWeight), total = w.reduce((a, b) => a + b, 0);
+  return [w.slice(0, from).reduce((a, b) => a + b, 0) / total * width, w.slice(from, to).reduce((a, b) => a + b, 0) / total * width];
+};
 
 // An A4 page at scale 1: pdf.js flips y so the origin is the top-left corner.
 const viewport = { transform: [1, 0, 0, -1, 0, 842], scale: 1 };
@@ -23,17 +28,35 @@ describe("wordsFromTextItems", () => {
     const { words } = wordsFromTextItems([item("Nome: ", 50, 700, 30), item("Maria", 80, 700, 25, true)], viewport, 1);
     expect(words.map((w) => w.text)).toEqual(["Nome:", "Maria"]);
     const [nome, maria] = words;
-    expect(nome).toMatchObject({ line: 1, x: 50, w: 25 });  // 5 of the 6 characters of "Nome: "
+    expect(nome).toMatchObject({ line: 1, x: 50 });
+    expect(nome!.w).toBeCloseTo(share("Nome: ", 0, 5, 30)[1]!);  // the trailing space is not part of the word
     expect(nome!.y).toBeCloseTo(842 - 700 - 10);             // baseline minus the font height
     expect(nome!.h).toBeCloseTo(11.5);
     expect(maria).toMatchObject({ line: 1, x: 80, w: 25 });
+  });
+
+  it("places a word after narrow characters further left than after wide ones", () => {
+    const narrow = wordsFromTextItems([item("ii: Maria", 0, 700, 50, true)], viewport, 1).words[1]!;
+    const wide = wordsFromTextItems([item("mm: Maria", 0, 700, 50, true)], viewport, 1).words[1]!;
+    expect(narrow.x).toBeLessThan(wide.x);
+    expect(narrow.x).toBeCloseTo(share("ii: Maria", 4, 9, 50)[0]!);
+    expect(narrow.x + narrow.w).toBeCloseTo(50);
+  });
+
+  it("weights glyphs roughly like a proportional font", () => {
+    expect(charWeight("i")).toBeLessThan(charWeight("a"));
+    expect(charWeight("a")).toBeLessThan(charWeight("A"));
+    expect(charWeight("A")).toBeLessThan(charWeight("W"));
+    expect(charWeight("é")).toBe(charWeight("e"));
+    expect(charWeight(":")).toBe(charWeight(" "));
   });
 
   it("joins a word split across two items into one box", () => {
     const { lines, words } = wordsFromTextItems([item("Ma", 100, 500, 12), item("ria", 112, 500, 18, true)], viewport, 7);
     expect(lines).toEqual(["Maria"]);
     expect(words).toHaveLength(1);
-    expect(words[0]).toMatchObject({ text: "Maria", line: 7, x: 100, w: 30 });
+    expect(words[0]).toMatchObject({ text: "Maria", line: 7, x: 100 });
+    expect(words[0]!.w).toBeCloseTo(30);
   });
 
   it("numbers lines from firstLine and skips words without a position", () => {
@@ -56,7 +79,7 @@ describe("wordsFromTextItems", () => {
   it("keeps character boxes aligned with UTF-16 indices for astral characters", () => {
     const { words } = wordsFromTextItems([item("😀 ok", 0, 100, 30, true)], viewport, 1);
     expect(words.map((w) => w.text)).toEqual(["😀", "ok"]);
-    expect(words[1]!.x).toBeCloseTo(15);  // four code points share 30 units; "ok" starts at the third
+    expect(words[1]!.x).toBeCloseTo(share("😀 ok", 2, 4, 30)[0]!);  // the emoji counts once, not as two UTF-16 units
   });
 });
 

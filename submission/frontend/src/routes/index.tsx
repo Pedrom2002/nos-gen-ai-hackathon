@@ -7,7 +7,7 @@ import {
   FileDown, Check, AlertTriangle, RotateCw, SearchX,
 } from "lucide-react";
 import { DocumentInput } from "@/components/DocumentInput";
-import { RiverLoading } from "@/components/RiverLoading";
+import { ReviewSkeleton } from "@/components/ReviewSkeleton";
 import { RiverComparison } from "@/components/RiverComparison";
 import { FocusedText } from "@/components/FocusedText";
 import { UI } from "@/lib/i18n-ui";
@@ -101,6 +101,7 @@ function Index() {
     if (!text.trim()) { toast.error(x.emptyDoc); return; }
     setLoading(true);
     setError("");
+    setStep(1);
     try {
       const r = await analyzeDocument(text, source && source.text === text ? source.file : null);
       if (docId) void deleteDocument(docId).catch(() => {});
@@ -124,6 +125,7 @@ function Index() {
       console.error(e);
       const msg = e instanceof Error ? e.message : x.unknownErr;
       setError(msg);
+      setStep(0);
     } finally {
       setLoading(false);
     }
@@ -225,20 +227,20 @@ function Index() {
             </ol>
           </div>
 
-          {step === 0 && loading && <RiverLoading text={text} />}
-
-          {step === 0 && !loading && error && (
+          {step === 0 && error && (
             <section role="alert" className="mx-auto mb-6 w-full max-w-3xl rounded-lg border border-destructive/30 bg-card p-5 animate-fade-up">
               <div className="flex items-start gap-3"><AlertTriangle className="mt-1 size-6 shrink-0 text-destructive" /><div className="min-w-0"><h2 className="font-semibold">{u.errorTitle}</h2><p className="mt-2 break-words text-sm text-muted-foreground">{error}</p></div></div>
               <div className="mt-5 flex flex-wrap gap-2"><Button onClick={run}><RotateCw className="size-4" />{u.retry}</Button><Button variant="outline" onClick={clear}>{u.home}</Button></div>
             </section>
           )}
 
-          {step === 0 && !loading && !error && (
+          {step === 0 && !error && (
             <DocumentInput text={text} name={fileName} dragging={dragging} reading={reading} onFile={handleFile} onText={(value) => { setText(value); setError(""); }} onClear={clear} onAnalyze={run} />
           )}
 
-          {step === 1 && (
+          {step === 1 && loading && <ReviewSkeleton />}
+
+          {step === 1 && !loading && (
             <section>
               {entities.length === 0 && (
                 <div className="mb-4 flex items-center gap-3 rounded-2xl border border-dashed bg-card p-5">

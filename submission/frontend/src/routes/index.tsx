@@ -4,16 +4,20 @@ import { useEffect, useMemo, useReducer, useRef, useState } from "react";
 import { toast } from "sonner";
 import {
   ArrowLeft, ArrowLeftRight, ArrowRight, Columns2, Copy, Download,
-  FileDown, Check, AlertTriangle, RotateCw, SearchX, ShieldCheck,
+  FileDown, Check, AlertTriangle, RotateCw, SearchX, ShieldCheck, FileText, Image as ImageIcon,
 } from "lucide-react";
 import { DocumentInput } from "@/components/DocumentInput";
 import { ReviewSkeleton } from "@/components/ReviewSkeleton";
 import { RiverComparison } from "@/components/RiverComparison";
+import { PageComparison } from "@/components/PageComparison";
+import { PageStack } from "@/components/PageStack";
 import { FocusedText } from "@/components/FocusedText";
+import { usePageImages } from "@/hooks/usePageImages";
 import type { SourceDoc } from "@/lib/document";
 import { MAX_UPLOAD_BYTES, validateFile } from "@/lib/files";
 import { disposeSource, readSource, type ReadProgress } from "@/lib/source";
 import { terminateOcr } from "@/lib/ocr";
+import { alignText, redactionBoxes } from "@/lib/redaction";
 import { UI } from "@/lib/i18n-ui";
 import { emptyHistory, reviewHistory } from "@/lib/review-history";
 import { analyzeDocument, deleteDocument, downloadRedacted, isMockMode, syncDecisions } from "@/services/anonymizer";
@@ -76,15 +80,21 @@ function Index() {
   const [busy, setBusy] = useState<ReadProgress | null>(null);
   const reading = busy !== null;
   const [resultView, setResultView] = useState<"side" | "slide">("side");
+  // Photos and PDFs can be shown as their pages, with the masked words
+  // blacked out in place, or as text; plain text and DOCX only have text.
+  const [docView, setDocView] = useState<"text" | "pages">("pages");
   const [sliderSeen, setSliderSeen] = useState(false);
   const [focusId, setFocusId] = useState("");
+  const hasPages = (source?.pages.length ?? 0) > 0;
+  const showPages = hasPages && docView === "pages";
+  const pageUrls = usePageImages(source, step === 2 && hasPages);
   useEffect(() => { if (step !== 2) setFocusId(""); }, [step]);
   useEffect(() => { window.scrollTo({ top: 0, behavior: "smooth" }); }, [step]);
   useEffect(() => {
     if (!focusId) return;
     const mark = [...document.querySelectorAll<HTMLElement>("[data-focus-mark]")].find((m) => m.offsetParent !== null);
     mark?.scrollIntoView({ block: "center", behavior: "smooth" });
-  }, [focusId, resultView]);
+  }, [focusId, resultView, docView]);
   const [summary, setSummary] = useState("");
   const [loading, setLoading] = useState(false);
   const { t, s: cfg } = useSettings();
@@ -95,6 +105,16 @@ function Index() {
 
   const output = useMemo(() => anonymize(text, entities), [text, entities]);
   const st = useMemo(() => stats(text, entities), [text, entities]);
+  // The page boxes come from the same spans anonymize() masks. Aligning the
+  // backend's text onto the page words read here is the slow part and
+  // depends only on both texts, so it is memoised apart from the entities.
+  const pages = useMemo(() => source?.pages ?? [], [source]);
+  const alignment = useMemo(() => alignText(text, pages), [text, pages]);
+  const redaction = useMemo(() => redactionBoxes(text, entities, pages, alignment), [text, entities, pages, alignment]);
+  // A photo's redacted half is the file the backend built and verified; the
+  // boxes drawn here only locate the focused entity on it.
+  const redactedUrls = useMemo(() => (redactedUrl && source?.kind === "image" ? [redactedUrl] : []), [redactedUrl, source]);
+  const unplaced = showPages && !redactedUrls.length ? redaction.unplaced : 0;
 
   const handleFile = async (f: File) => {
     const check = validateFile(f);
@@ -152,6 +172,7 @@ function Index() {
       });
       dispatch({ type: "reset", entities: ents });
       setResultView("side");
+      setDocView("pages");
       setSliderSeen(false);
       setSummary(r.summary);
       setStep(1);
@@ -315,25 +336,47 @@ function Index() {
 
           {step === 2 && (
             <section className="animate-fade-up space-y-8">
-              <div className="flex justify-end">
-                <div className="inline-flex rounded-lg border bg-muted/40 p-1" role="group" aria-label={u.comparison}>
-                  {([["side", Columns2, u.sideBySide], ["slide", ArrowLeftRight, u.slideView]] as const).map(([id, Icon, label]) => (
-                    <Button key={id} variant="ghost" aria-pressed={resultView === id} onClick={() => { setResultView(id); if (id === "slide") setSliderSeen(true); }} className={`h-9 gap-2 rounded-md px-3 text-sm ${resultView === id ? "bg-card text-foreground shadow-sm hover:bg-card" : "text-muted-foreground hover:bg-transparent hover:text-foreground"}`}><Icon className="size-4" aria-hidden="true" />{label}</Button>
-                  ))}
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div className="min-w-0 text-sm text-muted-foreground">
+                  {unplaced > 0 && <span role="status" className="inline-flex items-center gap-2 rounded-md border border-amber-600/40 bg-amber-500/10 px-2 py-1 text-xs font-medium text-amber-700 dark:text-amber-300"><AlertTriangle className="size-3.5" aria-hidden="true" />{u.unplaced.replace("{n}", String(unplaced))}</span>}
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {hasPages && (
+                    <div className="inline-flex rounded-lg border bg-muted/40 p-1" role="group" aria-label={u.docView}>
+                      {([["pages", ImageIcon, u.viewDocument], ["text", FileText, u.viewText]] as const).map(([id, Icon, label]) => (
+                        <Button key={id} variant="ghost" aria-pressed={docView === id} onClick={() => setDocView(id)} className={`h-9 gap-2 rounded-md px-3 text-sm ${docView === id ? "bg-card text-foreground shadow-sm hover:bg-card" : "text-muted-foreground hover:bg-transparent hover:text-foreground"}`}><Icon className="size-4" aria-hidden="true" />{label}</Button>
+                      ))}
+                    </div>
+                  )}
+                  <div className="inline-flex rounded-lg border bg-muted/40 p-1" role="group" aria-label={u.comparison}>
+                    {([["side", Columns2, u.sideBySide], ["slide", ArrowLeftRight, u.slideView]] as const).map(([id, Icon, label]) => (
+                      <Button key={id} variant="ghost" aria-pressed={resultView === id} onClick={() => { setResultView(id); if (id === "slide") setSliderSeen(true); }} className={`h-9 gap-2 rounded-md px-3 text-sm ${resultView === id ? "bg-card text-foreground shadow-sm hover:bg-card" : "text-muted-foreground hover:bg-transparent hover:text-foreground"}`}><Icon className="size-4" aria-hidden="true" />{label}</Button>
+                    ))}
+                  </div>
                 </div>
               </div>
               <div className={resultView === "slide" ? "" : "hidden"}>
-                {sliderSeen && <RiverComparison text={text} entities={entities} output={output} focusId={focusId} />}
+                {sliderSeen && (showPages
+                  ? <PageComparison pages={pages} urls={pageUrls} redactedUrls={redactedUrls} boxes={redaction.boxes} focusId={focusId} />
+                  : <RiverComparison text={text} entities={entities} output={output} focusId={focusId} />)}
               </div>
               <div className={resultView === "side" ? "grid min-w-0 gap-4 md:grid-cols-2" : "hidden"}>
                 {[[t.original, text, true], [t.anonymized, output, false]].map(([h, c, orig]) => (
                   <div key={String(h)} className="min-w-0 rounded-lg border bg-card p-4 sm:p-5">
                     <h2 className="mb-3 text-sm font-semibold text-muted-foreground">{h}</h2>
-                    <pre tabIndex={0} aria-label={String(h)} className="max-h-[60dvh] overflow-auto whitespace-pre-wrap break-words font-mono text-sm leading-6 [overflow-wrap:anywhere]">
-                      {orig ? <FocusedText text={text} entities={entities} focusId={focusId} /> : String(c).split("*").map((part, i, arr) => (
-                        <span key={i}>{part}{i < arr.length - 1 && <span className="lethe-wash text-primary" style={{ animationDelay: `${Math.min(i * 40, 1600)}ms` }}>*</span>}</span>
-                      ))}
-                    </pre>
+                    {showPages
+                      ? <div tabIndex={0} aria-label={String(h)} data-page-scroll={orig ? "o" : "a"} className="max-h-[70dvh] overflow-auto rounded-md bg-muted/40" onScroll={(e) => {
+                        // Keep the two page columns at the same place while one of them scrolls.
+                        const me = e.currentTarget, other = me.parentElement?.parentElement?.querySelector<HTMLElement>(`[data-page-scroll]:not([data-page-scroll="${orig ? "o" : "a"}"])`);
+                        if (other && Math.abs(other.scrollTop - me.scrollTop) > 1) other.scrollTop = me.scrollTop;
+                      }}>
+                        <PageStack pages={pages} urls={pageUrls} redactedUrls={redactedUrls} boxes={redaction.boxes} mode={orig ? "original" : "redacted"} focusId={focusId} pageLabel={(n) => u.pageN.replace("{n}", String(n))} />
+                      </div>
+                      : <pre tabIndex={0} aria-label={String(h)} className="max-h-[60dvh] overflow-auto whitespace-pre-wrap break-words font-mono text-sm leading-6 [overflow-wrap:anywhere]">
+                        {orig ? <FocusedText text={text} entities={entities} focusId={focusId} /> : String(c).split("*").map((part, i, arr) => (
+                          <span key={i}>{part}{i < arr.length - 1 && <span className="lethe-wash text-primary" style={{ animationDelay: `${Math.min(i * 40, 1600)}ms` }}>*</span>}</span>
+                        ))}
+                      </pre>}
                   </div>
                 ))}
               </div>
@@ -345,7 +388,6 @@ function Index() {
                 {docId && redactable && <Button variant="ghost" onClick={() => void saveRedacted()} className="inline-flex items-center gap-2 rounded-xl border px-4 py-2 hover:bg-muted"><ShieldCheck className="h-4 w-4" /> {u.downloadRedacted}</Button>}
               </div>
               {docId && unread > 0 && <p role="status" className="rounded-lg border border-warning/40 bg-warning/10 px-4 py-3 text-sm">{u.unreadLines.replace("{n}", String(unread))}</p>}
-              {redactedUrl && <figure className="min-w-0 rounded-lg border bg-card p-3"><img src={redactedUrl} alt={u.redactedPreview} className="mx-auto max-h-[70dvh] w-auto rounded" /><figcaption className="mt-2 text-center text-sm text-muted-foreground">{u.redactedPreview}</figcaption></figure>}
 
               <div className="border-t pt-8">
                 <h2 className="text-base font-semibold tracking-tight">{t.reportTitle}</h2>

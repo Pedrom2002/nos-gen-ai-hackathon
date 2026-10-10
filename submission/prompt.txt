@@ -1,0 +1,125 @@
+És um encarregado de proteção de dados (DPO) especializado no RGPD e em documentos portugueses. A tua tarefa é anonimizar o documento abaixo: substituir por asteriscos todas as palavras que identificam uma pessoa ou revelam dados sensíveis sobre ela, sem alterar mais nada.
+
+MASCARAR (dados pessoais, art. 4.º RGPD):
+- Nomes de pessoas: titular, familiares, contactos, profissionais de saúde (também nomes próprios isolados, como "João").
+- Datas de nascimento e idades de pessoas.
+- Identificadores: NIF, Cartão de Cidadão, NISS, n.º de utente, apólices, números de cédula ou registo profissional, IDs biométricos.
+- Morada completa: rua, número, andar, localidade.
+- Telefones e emails (incluindo os de profissionais).
+- Dados financeiros: números de cartão, validade, CVV, IBAN, rendimentos.
+- Sexo, estado civil e local de trabalho ou estudo da pessoa.
+
+MASCARAR (categorias especiais, art. 9.º RGPD), mesmo em texto corrido:
+- Origem racial ou étnica (ex.: "caucasiana").
+- Estado serológico ou doenças estigmatizantes (ex.: "HIV positivo").
+- Dados genéticos (ex.: mutações como "BRCA1").
+- Religião e convicções.
+- Dependências e consumos de substâncias.
+
+MANTER (não mascarar):
+- Etiquetas de campos e títulos ("Nome:", "Telefone:", "Histórico Médico:").
+- Título do documento, nome da instituição, data e referência do documento.
+- Palavras de relação ("irmão", "amiga próxima", "mãe").
+- Conteúdo clínico genérico: exames, medicação, medidas, sintomas, especialidades, nomes de planos ou produtos.
+- Palavras comuns que não identificam ninguém.
+
+REGRAS DE FORMATO:
+1. Cada palavra mascarada passa a exatamente um asterisco "*". Uma palavra é tudo o que está entre espaços, incluindo pontuação colada: "Flores," passa a "*" e "+351 912 345 678" passa a "* * * *".
+2. Não mudes, não corrijas, não traduzas e não reordenes nenhuma outra palavra. Mantém a mesma ordem e o mesmo número de linhas.
+3. Na dúvida sobre um dado que identifica uma pessoa, mascara: um dado que escapa é pior do que um asterisco a mais.
+
+EXEMPLO (documento diferente do teu):
+Entrada:
+L1: Ficha de Cliente - Clínica Sol
+L2: Nome: Rui Costa Lima
+L3: Contacto: 916 222 333, rui.lima@mail.pt
+L4: O cliente, 52 anos, é budista e diabético.
+Saída:
+{"masked_lines": [
+  "Ficha de Cliente - Clínica Sol",
+  "Nome: * * *",
+  "Contacto: * * * *",
+  "O cliente, * anos, é * e diabético."],
+ "entities": [
+  {"text": "Rui Costa Lima", "category": "Pessoa", "article": "4.º",
+   "reason": "Nome do titular"},
+  {"text": "916 222 333,", "category": "Contacto", "article": "4.º",
+   "reason": "Telefone pessoal"},
+  {"text": "rui.lima@mail.pt", "category": "Contacto", "article": "4.º",
+   "reason": "Email pessoal"},
+  {"text": "52", "category": "Pessoa", "article": "4.º",
+   "reason": "Idade do titular"},
+  {"text": "budista", "category": "Saúde e art. 9.º", "article": "9.º",
+   "reason": "Convicção religiosa"}]}
+
+ANTES DE RESPONDER, verifica:
+- Todos os nomes de pessoas, incluindo os que aparecem só uma vez?
+- Todos os números que identificam alguém (telefones, IDs, cartões)?
+- Nenhuma etiqueta de campo nem palavra comum foi mascarada?
+- O número de linhas é igual ao da entrada?
+
+FORMATO DA RESPOSTA: apenas um objeto JSON, sem texto à volta, com:
+- "masked_lines": lista com cada linha do documento já anonimizada, pela mesma ordem e sem o prefixo "Ln:".
+- "entities": lista com cada dado mascarado: "text" (texto original), "category" (Identificação, Pessoa, Contacto, Saúde e art. 9.º, Financeiro, Biométrico), "article" ("4.º" ou "9.º") e "reason" (frase curta).
+
+DOCUMENTO (60 linhas):
+L1: Relatório de Admissão - Centro Médico Lisboa
+L2: Data: 15 de abril de 2025
+L3: Referência: ADM-2025-04-15-089
+L4: Informações do Paciente:
+L5: Nome: Maria Conceição Oliveira Santos
+L6: Data de Nascimento: 12/03/1978
+L7: Sexo: Feminino
+L8: NIF: 097865413
+L9: Cartão de Cidadão: 12345678-9ZX0
+L10: Morada: Rua das Flores, 123, Apt 45, Sacavém, Lisboa
+L11: Telefone: +351 912 345 678
+L12: Email: maria.santos@emailpessoal.pt
+L13: Número da Segurança Social: 11223344556
+L14: Histórico Médico:
+L15: A paciente Maria Santos, mulher caucasiana de 47 anos, compareceu à consulta relatando dores
+L16: abdominais intensas. Tem histórico de hipertensão e diabetes tipo 2, diagnosticada há 5 anos. É
+L17: HIV positivo desde 2018, atualmente com carga viral indetectável graças ao tratamento com
+L18: antirretrovirais.
+L19: A paciente relatou que sua família tem histórico de cancro da mama (mãe falecida aos 52 anos)
+L20: e doença cardíaca (pai e avô paterno). Exames genéticos realizados em 2022 indicaram
+L21: predisposição ao cancro de mama (mutação BRCA1 positiva).
+L22: Informações Sociais e Comportamentais:
+L23: Estado civil: Divorciada
+L24: Filhos: 2 (João, 15 anos e Ana, 12 anos)
+L25: Religião: Católica praticante
+L26: Ocupação: Professora universitária na Faculdade de Direito de Lisboa
+L27: Hábitos: Ex-fumante (parou há 3 anos), consome álcool socialmente (2-3 doses por semana)
+L28: Histórico de uso de substâncias: Tratamento para dependência de ansiolíticos em 2019
+L29: Informações Financeiras:
+L30: Seguro de saúde: Plano Premium Saúde Total, apólice nº 987654321
+L31: Número do cartão de crédito: 4111 2222 3333 4444 (validade 09/27, CVV 123)
+L32: Rendimento anual declarado: €62.500
+L33: Dados Biométricos:
+L34: Impressão digital registrada no sistema: ID-BIO-12345
+L35: Reconhecimento facial: FACE-ID-78901
+L36: Altura: 1,68m
+L37: Peso: 72kg
+L38: Tipo sanguíneo: O+
+L39: Pressão arterial na admissão: 145/90 mmHg
+L40: Notas da Consulta:
+L41: A paciente apresentou-se ansiosa durante a consulta, relatando problemas no trabalho
+L42: relativamente à elevada carga de responsabilidades que adquiriu. Sensação de cansaço, fadiga,
+L43: e constante stress foram ditos fazer parte do seu dia-a-dia, no entanto, apresenta dificuldade em
+L44: dormir/cumprir as horas indicadas de sono.
+L45: Exames solicitados: hemograma completo, glicemia em jejum, perfil lipídico, função hepática e
+L46: renal, ultrassonografia abdominal.
+L47: Prescrição: Metformina 850mg 2x/dia, Losartana 50mg 1x/dia, Alprazolam 0,5mg (apenas em
+L48: caso de crises de ansiedade).
+L49: Contatos de Emergência:
+L50: Nome: António Santos (irmão)
+L51: Telefone: +351961234567
+L52: Email: antonio.santos@emailpessoal.pt
+L53: Nome: Joana Pereira (amiga próxima)
+L54: Telefone: +351939876543
+L55: Assinatura Digital:
+L56: Dr. Carlos Mendes
+L57: CRM: 12345-PT
+L58: Especialidade: Medicina Interna
+L59: Email: carlos.mendes@centromedicalisboa.pt
+L60: Telefone: +351213456789

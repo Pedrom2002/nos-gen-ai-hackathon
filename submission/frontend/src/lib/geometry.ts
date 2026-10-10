@@ -21,10 +21,31 @@ export interface ViewportLike { transform: number[]; scale: number }
 interface CharBox { x: number; y: number; w: number; h: number }
 
 /**
+ * Approximate advance width of a character, in ems of a proportional font
+ * (Helvetica-like). pdf.js only reports the width of a whole run, so each
+ * character gets a share in proportion to this; "i" and ":" take much less
+ * than "m" or "W", which keeps a word's box from drifting along the run.
+ */
+export function charWeight(ch: string): number {
+  const base = ch.normalize("NFD")[0] ?? ch;
+  if (base === " " || base === " ") return 0.28;
+  if (/[.,:;!|'`]/.test(base)) return 0.28;
+  if (/[ijl]/.test(base)) return 0.22;
+  if (/[ftrI()\[\]{}\-\/\\]/.test(base)) return 0.33;
+  if (/[mwMW@%]/.test(base)) return 0.85;
+  if (/[\p{Lu}]/u.test(base)) return base === "J" ? 0.5 : 0.68;
+  if (/[\p{N}]/u.test(base)) return 0.56;
+  if (/[\p{L}]/u.test(base)) return 0.55;
+  if (/[一-鿿぀-ヿ]/.test(base)) return 1;
+  return 0.6;
+}
+
+/**
  * Lines and word boxes of a text-layer page. The text is built exactly as
  * extractPdfText always did (items concatenated, hasEOL breaks the line).
- * Each character gets an even share of its item's width; a word's box is the
- * union of its characters, so a word split across two items still gets one box.
+ * Each character gets a share of its item's width proportional to its
+ * approximate glyph width; a word's box is the union of its characters, so a
+ * word split across two items still gets one box.
  */
 export function wordsFromTextItems(items: TextItemLike[], viewport: ViewportLike, firstLine: number): { lines: string[]; words: GeoWord[] } {
   const lines: string[] = [];
@@ -65,8 +86,10 @@ export function wordsFromTextItems(items: TextItemLike[], viewport: ViewportLike
           box.x = Math.min(...xs); box.y = Math.min(...ys); box.w = Math.max(...xs) - box.x; box.h = Math.max(...ys) - box.y;
           for (const _ of chars) boxes.push({ ...box });
         } else {
-          const cw = w / chars.length;
-          chars.forEach((_, i) => boxes.push({ x: box.x + cw * i, y: box.y, w: cw, h: box.h }));
+          const weights = chars.map(charWeight);
+          const total = weights.reduce((a, b) => a + b, 0) || 1;
+          let x = box.x;
+          weights.forEach((wt) => { const cw = w * wt / total; boxes.push({ x, y: box.y, w: cw, h: box.h }); x += cw; });
         }
       } else for (const _ of chars) boxes.push(null);
       // Boxes are per UTF-16 unit for slicing by match index; pad astral characters.

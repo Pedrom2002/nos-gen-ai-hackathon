@@ -1,15 +1,24 @@
 import { LetheWordmark } from "@/components/LetheLogo";
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useMemo, useReducer, useState } from "react";
+import { useEffect, useMemo, useReducer, useRef, useState } from "react";
 import { toast } from "sonner";
 import {
   ArrowLeft, ArrowLeftRight, ArrowRight, Columns2, Copy, Download,
-  FileDown, Check, AlertTriangle, RotateCw, SearchX,
+  FileDown, Check, AlertTriangle, RotateCw, SearchX, FileText, Image as ImageIcon, Loader2, FileImage,
 } from "lucide-react";
 import { DocumentInput } from "@/components/DocumentInput";
 import { ReviewSkeleton } from "@/components/ReviewSkeleton";
 import { RiverComparison } from "@/components/RiverComparison";
+import { PageComparison } from "@/components/PageComparison";
+import { PageStack } from "@/components/PageStack";
 import { FocusedText } from "@/components/FocusedText";
+import { usePageImages } from "@/hooks/usePageImages";
+import type { SourceDoc } from "@/lib/document";
+import { MAX_UPLOAD_BYTES, validateFile } from "@/lib/files";
+import { disposeSource, readSource, type ReadProgress } from "@/lib/source";
+import { terminateOcr } from "@/lib/ocr";
+import { alignText, redactionBoxes } from "@/lib/redaction";
+import { redactedImageBlob, redactedPdfBlob } from "@/lib/export";
 import { UI } from "@/lib/i18n-ui";
 import { emptyHistory, reviewHistory } from "@/lib/review-history";
 import { analyzeDocument, deleteDocument, isMockMode, syncDecisions } from "@/services/anonymizer";
@@ -17,7 +26,6 @@ import {
   CATEGORIES, anonymize, catOf, normalizeCategory, partialMask, stats,
   type CategoryId, type Entity,
 } from "@/lib/anonymizer";
-import { extractPdfText } from "@/lib/pdf";
 import { ReviewPanel } from "@/components/ReviewPanel";
 import { SettingsSheet } from "@/components/SettingsSheet";
 import { Button } from "@/components/ui/button";
@@ -40,11 +48,11 @@ export const Route = createFileRoute("/")({
 });
 
 
-function download(name: string, content: string, type = "text/plain") {
-  const url = URL.createObjectURL(new Blob([content], { type: `${type};charset=utf-8` }));
+function download(name: string, content: string | Blob, type = "text/plain") {
+  const url = URL.createObjectURL(typeof content === "string" ? new Blob([content], { type: `${type};charset=utf-8` }) : content);
   const a = document.createElement("a");
   a.href = url; a.download = name; a.click();
-  URL.revokeObjectURL(url);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
 function Index() {
@@ -53,22 +61,34 @@ function Index() {
   const [history, dispatch] = useReducer(reviewHistory, emptyHistory);
   const entities = history.present;
   const [fileName, setFileName] = useState("");
-  // The last file loaded and the text it gave. The file itself goes to the
-  // backend when the text was not edited, so a PDF is read as run.py reads it.
-  const [source, setSource] = useState<{ file: File; text: string } | null>(null);
+  // The last file loaded, with its text and page geometry. A text-layer PDF
+  // goes to the backend itself when the text was not edited, so it is read
+  // as run.py reads it; OCR'd files always go as text (the API has no OCR).
+  const [source, setSource] = useState<SourceDoc | null>(null);
+  // The drop handler may hold an older render's handleFile, so it releases
+  // the previous document through a ref rather than the captured state.
+  const sourceRef = useRef<SourceDoc | null>(null);
+  const replaceSource = (next: SourceDoc | null) => { disposeSource(sourceRef.current); sourceRef.current = next; setSource(next); };
   const [docId, setDocId] = useState("");
   const [dragging, setDragging] = useState(false);
-  const [reading, setReading] = useState(false);
+  const [busy, setBusy] = useState<ReadProgress | null>(null);
+  const reading = busy !== null;
   const [resultView, setResultView] = useState<"side" | "slide">("side");
+  const [docView, setDocView] = useState<"text" | "pages">("pages");
+  const [exporting, setExporting] = useState(false);
   const [sliderSeen, setSliderSeen] = useState(false);
   const [focusId, setFocusId] = useState("");
+  const hasPages = (source?.pages.length ?? 0) > 0;
+  const showPages = hasPages && docView === "pages";
+  const pageUrls = usePageImages(source, step === 2 && hasPages);
   useEffect(() => { if (step !== 2) setFocusId(""); }, [step]);
   useEffect(() => { window.scrollTo({ top: 0, behavior: "smooth" }); }, [step]);
   useEffect(() => {
     if (!focusId) return;
-    const mark = [...document.querySelectorAll<HTMLElement>("[data-focus-mark]")].find((m) => m.offsetParent !== null);
+    const visible = (m: Element) => ("checkVisibility" in m ? (m as HTMLElement).checkVisibility() : (m as HTMLElement).offsetParent !== null);
+    const mark = [...document.querySelectorAll<HTMLElement>("[data-focus-mark]")].find(visible);
     mark?.scrollIntoView({ block: "center", behavior: "smooth" });
-  }, [focusId, resultView]);
+  }, [focusId, resultView, docView]);
   const [summary, setSummary] = useState("");
   const [loading, setLoading] = useState(false);
   const { t, s: cfg } = useSettings();
@@ -79,22 +99,43 @@ function Index() {
 
   const output = useMemo(() => anonymize(text, entities), [text, entities]);
   const st = useMemo(() => stats(text, entities), [text, entities]);
+  // The page boxes come from the same spans anonymize() masks. Aligning the
+  // text onto the page words is the slow part and depends only on both texts.
+  const pages = useMemo(() => source?.pages ?? [], [source]);
+  const alignment = useMemo(() => alignText(text, pages), [text, pages]);
+  const redaction = useMemo(() => redactionBoxes(text, entities, pages, alignment), [text, entities, pages, alignment]);
 
   const handleFile = async (f: File) => {
-    if (!/\.(pdf|txt)$/i.test(f.name)) { toast.error(u.invalidFile); return; }
-    setReading(true);
+    const check = validateFile(f);
+    if (!check.ok) {
+      toast.error(check.reason === "size" ? u.fileTooLarge.replace("{name}", f.name).replace("{max}", "25") : u.invalidFile);
+      return;
+    }
+    setBusy({ stage: "reading", pct: 0 });
     try {
-      const t = f.name.toLowerCase().endsWith(".pdf") ? await extractPdfText(f) : await f.text();
-      setText(t);
-      setSource({ file: f, text: t });
+      const doc = await readSource(f, check.kind, setBusy);
+      setText(doc.text);
+      replaceSource(doc);
       setFileName(f.name);
       setStep(0);
       setError("");
-      if (!t.trim()) toast.info(x.emptyDoc); else toast.success(u.fileLoaded.replace("{name}", f.name));
+      if (!doc.text.trim()) toast.info(doc.ocr ? u.ocrEmpty : x.emptyDoc); else toast.success(u.fileLoaded.replace("{name}", f.name));
     } catch (e) {
       console.error(e);
       toast.error(x.readFail);
-    } finally { setReading(false); }
+    } finally { setBusy(null); }
+  };
+
+  const exportRedacted = async () => {
+    if (!source || exporting) return;
+    setExporting(true);
+    try {
+      if (source.kind === "image") download("lethe-anonimizado.png", await redactedImageBlob(source, redaction.boxes));
+      else download("lethe-anonimizado.pdf", await redactedPdfBlob(source, redaction.boxes));
+    } catch (e) {
+      console.error(e);
+      toast.error(x.unknownErr);
+    } finally { setExporting(false); }
   };
 
   const run = async () => {
@@ -103,7 +144,9 @@ function Index() {
     setError("");
     setStep(1);
     try {
-      const r = await analyzeDocument(text, source && source.text === text ? source.file : null);
+      // Only a text-layer PDF or a plain text file the backend can open goes up as is.
+      const raw = source && source.text === text && !source.ocr && source.kind !== "image" && source.file.size <= MAX_UPLOAD_BYTES;
+      const r = await analyzeDocument(text, raw ? source.file : null);
       if (docId) void deleteDocument(docId).catch(() => {});
       setDocId(r.docId ?? "");
       // Show the document as the backend read it, so the highlights match its lines.
@@ -118,6 +161,7 @@ function Index() {
       });
       dispatch({ type: "reset", entities: ents });
       setResultView("side");
+      setDocView("pages");
       setSliderSeen(false);
       setSummary(r.summary);
       setStep(1);
@@ -152,7 +196,9 @@ function Index() {
     setStep(2);
   };
   const clear = () => {
-    setText(""); setFileName(""); setSource(null); setError(""); dispatch({ type: "reset", entities: [] }); setSummary(""); setStep(0);
+    setText(""); setFileName(""); replaceSource(null); setError(""); dispatch({ type: "reset", entities: [] }); setSummary(""); setStep(0);
+    // The OCR worker and its models are only worth keeping while a document is open.
+    void terminateOcr();
     // The backend keeps documents in memory until they are deleted.
     if (docId) { void deleteDocument(docId).catch(() => {}); setDocId(""); }
   };
@@ -235,7 +281,7 @@ function Index() {
           )}
 
           {step === 0 && !error && (
-            <DocumentInput text={text} name={fileName} dragging={dragging} reading={reading} onFile={handleFile} onText={(value) => { setText(value); setError(""); }} onClear={clear} onAnalyze={run} />
+            <DocumentInput text={text} name={fileName} dragging={dragging} busy={busy} preview={source?.previewUrl ?? null} kind={source?.kind ?? null} ocr={!!source?.ocr} onFile={handleFile} onText={(value) => { setText(value); setError(""); }} onClear={clear} onAnalyze={run} />
           )}
 
           {step === 1 && loading && <ReviewSkeleton />}
@@ -262,25 +308,47 @@ function Index() {
 
           {step === 2 && (
             <section className="animate-fade-up space-y-8">
-              <div className="flex justify-end">
-                <div className="inline-flex rounded-lg border bg-muted/40 p-1" role="group" aria-label={u.comparison}>
-                  {([["side", Columns2, u.sideBySide], ["slide", ArrowLeftRight, u.slideView]] as const).map(([id, Icon, label]) => (
-                    <Button key={id} variant="ghost" aria-pressed={resultView === id} onClick={() => { setResultView(id); if (id === "slide") setSliderSeen(true); }} className={`h-9 gap-2 rounded-md px-3 text-sm ${resultView === id ? "bg-card text-foreground shadow-sm hover:bg-card" : "text-muted-foreground hover:bg-transparent hover:text-foreground"}`}><Icon className="size-4" aria-hidden="true" />{label}</Button>
-                  ))}
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div className="min-w-0 text-sm text-muted-foreground">
+                  {showPages && redaction.unplaced > 0 && <span role="status" className="inline-flex items-center gap-2 rounded-md border border-amber-600/40 bg-amber-500/10 px-2 py-1 text-xs font-medium text-amber-700 dark:text-amber-300"><AlertTriangle className="size-3.5" aria-hidden="true" />{u.unplaced.replace("{n}", String(redaction.unplaced))}</span>}
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {hasPages && (
+                    <div className="inline-flex rounded-lg border bg-muted/40 p-1" role="group" aria-label={u.docView}>
+                      {([["pages", ImageIcon, u.viewDocument], ["text", FileText, u.viewText]] as const).map(([id, Icon, label]) => (
+                        <Button key={id} variant="ghost" aria-pressed={docView === id} onClick={() => setDocView(id)} className={`h-9 gap-2 rounded-md px-3 text-sm ${docView === id ? "bg-card text-foreground shadow-sm hover:bg-card" : "text-muted-foreground hover:bg-transparent hover:text-foreground"}`}><Icon className="size-4" aria-hidden="true" />{label}</Button>
+                      ))}
+                    </div>
+                  )}
+                  <div className="inline-flex rounded-lg border bg-muted/40 p-1" role="group" aria-label={u.comparison}>
+                    {([["side", Columns2, u.sideBySide], ["slide", ArrowLeftRight, u.slideView]] as const).map(([id, Icon, label]) => (
+                      <Button key={id} variant="ghost" aria-pressed={resultView === id} onClick={() => { setResultView(id); if (id === "slide") setSliderSeen(true); }} className={`h-9 gap-2 rounded-md px-3 text-sm ${resultView === id ? "bg-card text-foreground shadow-sm hover:bg-card" : "text-muted-foreground hover:bg-transparent hover:text-foreground"}`}><Icon className="size-4" aria-hidden="true" />{label}</Button>
+                    ))}
+                  </div>
                 </div>
               </div>
               <div className={resultView === "slide" ? "" : "hidden"}>
-                {sliderSeen && <RiverComparison text={text} entities={entities} output={output} focusId={focusId} />}
+                {sliderSeen && (showPages
+                  ? <PageComparison pages={pages} urls={pageUrls} boxes={redaction.boxes} focusId={focusId} />
+                  : <RiverComparison text={text} entities={entities} output={output} focusId={focusId} />)}
               </div>
               <div className={resultView === "side" ? "grid min-w-0 gap-4 md:grid-cols-2" : "hidden"}>
                 {[[t.original, text, true], [t.anonymized, output, false]].map(([h, c, orig]) => (
                   <div key={String(h)} className="min-w-0 rounded-lg border bg-card p-4 sm:p-5">
                     <h2 className="mb-3 text-sm font-semibold text-muted-foreground">{h}</h2>
-                    <pre tabIndex={0} aria-label={String(h)} className="max-h-[60dvh] overflow-auto whitespace-pre-wrap break-words font-mono text-sm leading-6 [overflow-wrap:anywhere]">
-                      {orig ? <FocusedText text={text} entities={entities} focusId={focusId} /> : String(c).split("*").map((part, i, arr) => (
-                        <span key={i}>{part}{i < arr.length - 1 && <span className="lethe-wash text-primary" style={{ animationDelay: `${Math.min(i * 40, 1600)}ms` }}>*</span>}</span>
-                      ))}
-                    </pre>
+                    {showPages
+                      ? <div tabIndex={0} aria-label={String(h)} className="max-h-[70dvh] overflow-auto rounded-md bg-muted/40" onScroll={(e) => {
+                        // Keep the two page columns at the same place while one of them scrolls.
+                        const me = e.currentTarget, other = me.parentElement?.parentElement?.querySelector<HTMLElement>(`[data-page-scroll]:not([data-page-scroll="${orig ? "o" : "a"}"])`);
+                        if (other && Math.abs(other.scrollTop - me.scrollTop) > 1) other.scrollTop = me.scrollTop;
+                      }} data-page-scroll={orig ? "o" : "a"}>
+                        <PageStack pages={pages} urls={pageUrls} boxes={redaction.boxes} mode={orig ? "original" : "redacted"} focusId={focusId} pageLabel={(n) => u.pageN.replace("{n}", String(n))} />
+                      </div>
+                      : <pre tabIndex={0} aria-label={String(h)} className="max-h-[60dvh] overflow-auto whitespace-pre-wrap break-words font-mono text-sm leading-6 [overflow-wrap:anywhere]">
+                        {orig ? <FocusedText text={text} entities={entities} focusId={focusId} /> : String(c).split("*").map((part, i, arr) => (
+                          <span key={i}>{part}{i < arr.length - 1 && <span className="lethe-wash text-primary" style={{ animationDelay: `${Math.min(i * 40, 1600)}ms` }}>*</span>}</span>
+                        ))}
+                      </pre>}
                   </div>
                 ))}
               </div>
@@ -288,6 +356,7 @@ function Index() {
                 <Button variant="ghost" onClick={() => setStep(1)} className="inline-flex items-center gap-2 rounded-xl border px-4 py-2 hover:bg-muted"><ArrowLeft className="h-4 w-4" /> {t.review}</Button>
                 <Button variant="ghost" onClick={async () => { try { await navigator.clipboard.writeText(output); toast.success(t.copied); } catch { toast.error(u.copyFailed); } }} className="inline-flex items-center gap-2 rounded-xl border px-4 py-2 hover:bg-muted"><Copy className="h-4 w-4" /> {t.copy}</Button>
                 <Button variant="ghost" onClick={() => download("submission.txt", output)} className="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2 font-medium text-primary-foreground hover:opacity-90"><Download className="h-4 w-4" /> {t.downloadTxt}</Button>
+                {hasPages && <Button variant="ghost" disabled={exporting} onClick={exportRedacted} className="inline-flex items-center gap-2 rounded-xl border px-4 py-2 hover:bg-muted">{exporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileImage className="h-4 w-4" />} {source?.kind === "image" ? u.downloadImage : u.downloadPdf}</Button>}
                 <Button variant="ghost" onClick={() => download("lethe-relatorio.md", report(), "text/markdown")} className="inline-flex items-center gap-2 rounded-xl border px-4 py-2 hover:bg-muted"><FileDown className="h-4 w-4" /> {t.downloadReport}</Button>
               </div>
 

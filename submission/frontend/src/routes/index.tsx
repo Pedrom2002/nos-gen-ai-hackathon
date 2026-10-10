@@ -104,7 +104,7 @@ function Index() {
         const t = e.text?.trim();
         if (!t || !r.text.includes(t) || seen.has(t)) return;
         seen.add(t);
-        ents.push({ id: `ai-${i}`, text: t, category: normalizeCategory(e.category), reason: e.reason ?? "", gdpr_basis: e.gdpr_basis ?? "Art. 4.º(1) RGPD", enabled: true, role: e.role, refs: e.refs });
+        ents.push({ id: `ai-${i}`, text: t, category: normalizeCategory(e.category), reason: e.reason ?? "", gdpr_basis: e.gdpr_basis ?? "Art. 4.º(1) RGPD", enabled: true, role: e.role, refs: e.refs, at: e.at });
       });
       dispatch({ type: "reset", entities: ents });
       setResultView("side");

@@ -12,6 +12,12 @@ uvicorn api.main:app --port 8000 --no-access-log
 
 Interactive docs: http://localhost:8000/docs. CORS allows the Vite dev server (`http://localhost:5173`); in the frontend, proxy `/api` to `http://localhost:8000`.
 
+Other frontends (for example the Lovable preview) are added in `submission/.env`, comma separated, with no trailing slash. `"*"` is ignored on purpose. Restart uvicorn after changing it.
+
+```bash
+ALLOWED_ORIGINS=https://<id>.lovable.app
+```
+
 ## Privacy
 
 - Documents live only in memory: no disk, no database. `DELETE /api/documents/{id}` removes one.

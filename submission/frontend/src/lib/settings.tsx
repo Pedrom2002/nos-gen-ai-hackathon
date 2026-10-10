@@ -11,7 +11,7 @@ export interface Settings {
 }
 
 export const DEFAULTS: Settings = {
-  theme: "light", lang: "pt",
+  theme: "dark", lang: "pt",
 };
 
 const KEY = "anonimizador.settings";

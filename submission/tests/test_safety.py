@@ -32,6 +32,12 @@ def test_iban_split_across_lines_is_masked_on_both():
     assert [w.text for w in added] == ["9870", "0201", "8."]
 
 
+def test_styled_and_struck_through_identifiers_are_found():
+    assert masked("Tel 𝟵𝟭𝟮 𝟯𝟰𝟱 𝟲𝟳𝟴") == "Tel * * *"
+    struck = "+̶3̶5̶1̶ ̶9̶1̶9̶ ̶4̶4̶2̶ ̶6̶3̶0̶"
+    assert "*" in masked(f"Antigo {struck}")
+
+
 def test_keeps_dates_amounts_and_references():
     for line in ["Data: 15 de abril de 2025", "Referência: ADM-2025-04-15-089",
                  "Fatura 225035027", "Renda 950,00 € em 2026"]:

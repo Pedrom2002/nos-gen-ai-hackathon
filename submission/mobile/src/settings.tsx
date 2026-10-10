@@ -7,6 +7,8 @@ import { DICTS, type Dict, type Lang } from "@web/lib/i18n";
 import { EXTRA } from "@web/lib/i18n-extra";
 import { UI, type UIStrings } from "@web/lib/i18n-ui";
 
+import { MOBILE, type MobileStrings } from "@/strings";
+
 export type Theme = "light" | "dark" | "system";
 export interface Settings {
   theme: Theme;
@@ -42,6 +44,8 @@ interface SettingsValue {
   t: Dict;
   u: UIStrings;
   x: Extra;
+  /** Texts only the mobile app needs. */
+  m: MobileStrings;
   ready: boolean;
 }
 
@@ -70,6 +74,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     t: DICTS[s.lang],
     u: UI[s.lang],
     x: EXTRA[s.lang],
+    m: MOBILE[s.lang],
   }), [s, ready]);
 
   return <SettingsContext.Provider value={value}>{children}</SettingsContext.Provider>;

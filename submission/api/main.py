@@ -8,6 +8,7 @@ through the API. Document text never goes to logs or error messages.
 """
 
 import logging
+import os
 import uuid
 from collections import Counter
 from dataclasses import dataclass, field
@@ -17,6 +18,7 @@ from types import SimpleNamespace
 from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import PlainTextResponse, Response
+from dotenv import load_dotenv
 from pydantic import BaseModel
 
 from anonimizador import llm
@@ -36,10 +38,26 @@ MODEL_DOWN = "O modelo não respondeu. Tente de novo dentro de um minuto."
 # Request logs would contain document names; keep them off.
 logging.getLogger("uvicorn.access").disabled = True
 
+DEV_ORIGINS = ["http://localhost:5173", "http://127.0.0.1:5173"]
+
+
+def cors_origins(value: str | None) -> list[str]:
+    """Allowed origins: the Vite dev server plus ALLOWED_ORIGINS.
+
+    ALLOWED_ORIGINS is a comma-separated list, e.g. the Lovable preview
+    "https://<id>.lovable.app". "*" is refused so a deployed API is never
+    open to every site.
+    """
+    extra = [o.strip().rstrip("/") for o in (value or "").split(",")]
+    extra = [o for o in extra if o and o != "*"]
+    return DEV_ORIGINS + [o for o in extra if o not in DEV_ORIGINS]
+
+
+load_dotenv(SUBMISSION_DIR / ".env")
 app = FastAPI(title="Enxada de Pedra - anonimizador", version="1.0")
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
+    allow_origins=cors_origins(os.environ.get("ALLOWED_ORIGINS")),
     allow_methods=["*"],
     allow_headers=["*"],
 )

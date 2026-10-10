@@ -27,12 +27,27 @@ def test_prompt_asks_for_the_role_of_each_entity():
     assert all(role in prompt for role in ROLES)
 
 
-def test_variant_b_also_masks_ages_and_employers():
+def test_both_variants_mask_the_workplace_but_keep_the_profession():
+    for variant in ("A", "B"):
+        prompt = build_prompt(LINES, variant)
+        mask, keep = prompt.split("MANTER (")[0], prompt.split("MANTER (")[1]
+        assert "local de trabalho" in mask
+        assert "profissão" in keep.split("\n\n")[0]
+        assert "local de trabalho" not in keep.split("\n\n")[0]
+
+
+def test_variant_b_also_masks_ages():
     a, b = build_prompt(LINES, "A"), build_prompt(LINES, "B")
-    assert "idade e local de trabalho" in a
-    assert "idade das pessoas e o nome do empregador" not in a
-    assert "idade das pessoas e o nome do empregador" in b
-    assert "idade e local de trabalho" not in b
+    assert "profissão, idade." in a
+    assert "idade das pessoas" not in a
+    assert "idade das pessoas" in b
+    assert "profissão, idade." not in b
+
+
+def test_income_is_masked_not_kept():
+    prompt = build_prompt(LINES)
+    assert "salário ou rendimento" in prompt.split("MANTER (")[0]
+    assert "rendimento" not in prompt.split("MANTER (")[1].split("\n\n")[0]
 
 
 def test_unknown_variant_is_rejected():

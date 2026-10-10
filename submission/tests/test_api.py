@@ -53,7 +53,7 @@ def test_official_document_is_anonymised_without_leaks(client):
     doc = official(client)
     assert len(doc["lines"]) == 60
     assert doc["output"] == GOLD
-    assert doc["summary"]["masked_words"] == 46
+    assert doc["summary"]["masked_words"] == 52
     assert doc["leaks"]["leaks"] == []
     assert name_item(doc)["reason"] == "Nome da paciente"
 
@@ -64,7 +64,7 @@ def test_keeping_an_item_shows_it_again_and_can_be_undone(client):
     url = f"/api/documents/{doc['id']}/decisions"
     kept = client.put(url, json={"keep": [item["id"]]}).json()
     assert kept["output"][4] == f"Nome: {NAME}"
-    assert kept["summary"]["masked_words"] == 42
+    assert kept["summary"]["masked_words"] == 48
     assert name_item(kept)["kept"] is True
     undone = client.put(url, json={"keep": []}).json()
     assert undone["output"] == GOLD
@@ -84,7 +84,7 @@ def test_downloads_follow_the_review(client):
     assert submission.text == "\n".join(GOLD) + "\n"
     assert "submission.txt" in submission.headers["content-disposition"]
     report = client.get(f"{base}/report").text
-    assert "Maria" not in report and "46 palavras" in report
+    assert "Maria" not in report and "52 palavras" in report
     assert client.get(f"{base}/other").status_code == 404
 
 

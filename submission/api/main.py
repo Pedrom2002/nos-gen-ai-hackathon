@@ -18,6 +18,7 @@ from urllib.parse import quote
 
 from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import PlainTextResponse, Response
 from dotenv import load_dotenv
 from pydantic import BaseModel
@@ -28,8 +29,9 @@ from anonimizador.pseudonymize import ask as gateway_ask
 from anonimizador.report import build_report, to_markdown
 from anonimizador.redact import RedactionError, redact
 from anonimizador.review import apply_decisions
-from anonimizador.sources import (SUPPORTED, NeedsOcr, Source,
-                                  UnsupportedFormat, load_source)
+from anonimizador.sources import (MAX_OCR_PAGES, SUPPORTED, NeedsOcr,
+                                  Source, TooManyPages, UnsupportedFormat,
+                                  load_source)
 from anonimizador.verify import check_leaks
 
 SUBMISSION_DIR = Path(__file__).resolve().parents[1]
@@ -134,6 +136,10 @@ def _read(data: bytes, suffix: str) -> Source:
         return load_source(data, suffix)
     except UnsupportedFormat:
         raise HTTPException(415, UNSUPPORTED) from None
+    except TooManyPages:
+        raise HTTPException(
+            413, f"O PDF digitalizado tem mais de {MAX_OCR_PAGES} páginas: "
+                 f"divida-o em partes.") from None
     except NeedsOcr:
         raise HTTPException(
             422, "Este ficheiro precisa de OCR, mas o Tesseract com "
@@ -146,8 +152,7 @@ def _read(data: bytes, suffix: str) -> Source:
 
 
 def _create(name: str, source: Source) -> dict:
-    lines = source.lines
-    if not lines:
+    if not source.lines:
         raise HTTPException(
             422, "O documento não tem texto legível. Se for uma fotografia, "
                  "tente uma imagem mais nítida."
@@ -156,6 +161,9 @@ def _create(name: str, source: Source) -> dict:
         result = anonymize_source(source, generate_fn=generate_fn)
     except Exception:
         raise HTTPException(502, MODEL_DOWN) from None
+    # Read after anonymize_source: OCR text has been fixed by then, and
+    # the report, the leak check and the review must all use that text.
+    lines = source.lines
     items = build_report(lines, result)["items"]
     doc_id = uuid.uuid4().hex[:12]
     STORE[doc_id] = Session(name, source, lines, result, items, set(),
@@ -176,7 +184,10 @@ async def upload(file: UploadFile = File(...)) -> dict:
     data = await file.read(MAX_BYTES + 1)
     if len(data) > MAX_BYTES:
         raise HTTPException(413, "Ficheiro maior do que 10 MB.")
-    return _create(file.filename, _read(data, suffix))
+    # OCR and the model take seconds: run them off the event loop so other
+    # requests are still served meanwhile.
+    source = await run_in_threadpool(_read, data, suffix)
+    return await run_in_threadpool(_create, file.filename, source)
 
 
 @app.post("/api/documents/official")

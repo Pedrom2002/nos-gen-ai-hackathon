@@ -15,7 +15,7 @@ Lethe masks the words that identify a person in a Portuguese document. It uses o
 | Leak check on the official document | 0 leaks in 24 masked values |
 | Words masked in the official document | 46, in 26 items |
 | Extra test documents | 17 (PDF, TXT in UTF-8 and UTF-16, CSV), 920 words masked, 0 errors |
-| Python tests | 159, coverage gate 90% |
+| Python tests | 163, coverage gate 90% |
 | Frontend tests | 20 |
 
 The local metric (`anonimizador/metric.py`) reproduces the two figures of the official evaluation logs:

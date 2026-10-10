@@ -10,8 +10,9 @@ errors. The answer is trusted word by word, never as a whole:
   model cannot swap in a different name or number;
 - anything else keeps the OCR reading.
 
-The final check of a redacted image still reads the image itself with OCR,
-so a wrong correction can never hide a leak.
+The final check of a redacted image reads the image itself with OCR again
+and looks for every masked value both as fixed here and as OCR first read
+it, so a wrong correction does not hide a leak that OCR can still see.
 """
 
 import json

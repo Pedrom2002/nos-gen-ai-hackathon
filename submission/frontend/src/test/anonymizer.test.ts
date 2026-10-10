@@ -13,3 +13,23 @@ describe("anonymize", () => {
     expect(anonymize("A Maria\n\nB Maria", [e("Maria", false)])).toBe("A Maria\nB Maria");
   });
 });
+
+describe("anonymize: whole words and backend positions", () => {
+  it("does not mask inside longer words or numbers", () => {
+    expect(anonymize("Ana e Anabela", [e("Ana")])).toBe("* e Anabela");
+    expect(anonymize("CVV 123) N.º 1234/25", [e("123")])).toBe("CVV *) N.º 1234/25");
+    expect(anonymize("Nome: Maria Santos, 47", [e("Maria Santos")])).toBe("Nome: * *, 47");
+  });
+
+  it("masks backend items only where the backend found them", () => {
+    const text = "Mãe: Ana\nAna é o nome da sala";
+    const ana: Entity = { ...e("Ana"), at: [{ line: 1, first: 1, last: 1 }] };
+    expect(anonymize(text, [ana])).toBe("Mãe: *\nAna é o nome da sala");
+    expect(anonymize(text, [{ ...ana, enabled: false }])).toBe(text);
+  });
+
+  it("falls back to text search when the positions do not fit the text", () => {
+    const moved: Entity = { ...e("Rui"), at: [{ line: 9, first: 0, last: 0 }] };
+    expect(anonymize("Doente: Rui", [moved])).toBe("Doente: *");
+  });
+});

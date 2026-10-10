@@ -23,7 +23,11 @@ export interface Entity {
   manual?: boolean;
   role?: string | undefined;      // who the datum belongs to, from the backend
   refs?: string[] | undefined;    // backend item ids this entity covers
+  at?: WordRange[] | undefined;   // exact positions from the backend
 }
+
+/** Words first..last (0-based, split on whitespace) of a 1-based line. */
+export interface WordRange { line: number; first: number; last: number }
 
 export const catOf = (id: string) => CATEGORIES.find((c) => c.id === id) ?? CATEGORIES[9];
 
@@ -43,26 +47,56 @@ export function normalizeCategory(raw: string): CategoryId {
 
 export interface Span { start: number; end: number; entity: Entity }
 
-/** Find all occurrences of each entity in text; longer entities win over overlapping shorter ones. */
+const WORD_CHAR = /[\p{L}\p{N}]/u;
+
+/** Character range of a backend word range in text, or null if it does not fit. */
+function rangeOf(text: string, at: WordRange): [number, number] | null {
+  let offset = 0;
+  const lines = text.split("\n");
+  for (let n = 0; n < at.line - 1; n++) offset += (lines[n]?.length ?? 0) + 1;
+  const line = lines[at.line - 1];
+  if (line === undefined) return null;
+  const words = [...line.matchAll(/\S+/g)];
+  const a = words[at.first], b = words[at.last];
+  if (!a || !b) return null;
+  return [offset + a.index, offset + b.index + b[0].length];
+}
+
+/** True if text[start, end) is not glued to letters or digits ("Ana" is not in "Anabela"). */
+function wholeWords(text: string, start: number, end: number): boolean {
+  const before = text[start - 1], after = text[end];
+  const first = text[start] ?? "", last = text[end - 1] ?? "";
+  if (before && WORD_CHAR.test(first) && WORD_CHAR.test(before)) return false;
+  if (after && WORD_CHAR.test(last) && WORD_CHAR.test(after)) return false;
+  return true;
+}
+
+/**
+ * Spans to mask. Entities from the backend use its exact positions, so a
+ * value is masked where the backend found it and nowhere else. Entities
+ * without positions (manual additions, demo mode) are found by text, on
+ * whole words only; longer ones win over overlapping shorter ones.
+ */
 export function findSpans(text: string, entities: Entity[]): Span[] {
   const spans: Span[] = [];
-  const sorted = [...entities].sort((a, b) => b.text.length - a.text.length);
   const taken = new Uint8Array(text.length);
-  for (const e of sorted) {
+  const claim = (start: number, end: number, entity: Entity) => {
+    for (let k = start; k < end; k++) if (taken[k]) return;
+    for (let k = start; k < end; k++) taken[k] = 1;
+    spans.push({ start, end, entity });
+  };
+  const byText: Entity[] = [];
+  for (const e of entities) {
+    const ranges = (e.at ?? []).map((at) => rangeOf(text, at));
+    if (ranges.length && ranges.every((r) => r !== null)) {
+      for (const r of ranges) if (r) claim(r[0], r[1], e);
+    } else byText.push(e);
+  }
+  for (const e of byText.sort((a, b) => b.text.length - a.text.length)) {
     const needle = e.text.trim();
     if (!needle) continue;
-    let from = 0;
-    while (true) {
-      const i = text.indexOf(needle, from);
-      if (i < 0) break;
-      const end = i + needle.length;
-      let free = true;
-      for (let k = i; k < end; k++) if (taken[k]) { free = false; break; }
-      if (free) {
-        for (let k = i; k < end; k++) taken[k] = 1;
-        spans.push({ start: i, end, entity: e });
-      }
-      from = i + 1;
+    for (let i = text.indexOf(needle); i >= 0; i = text.indexOf(needle, i + 1)) {
+      if (wholeWords(text, i, i + needle.length)) claim(i, i + needle.length, e);
     }
   }
   return spans.sort((a, b) => a.start - b.start);

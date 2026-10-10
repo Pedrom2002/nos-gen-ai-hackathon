@@ -28,7 +28,7 @@ from anonimizador import deskew, ocr
 from anonimizador.extract import clean_lines, decode_text
 
 TEXT = {".txt", ".csv"}
-IMAGE = {".png", ".jpg", ".jpeg"}
+IMAGE = {".png", ".jpg", ".jpeg", ".webp"}
 SUPPORTED = TEXT | IMAGE | {".pdf", ".docx"}
 SCAN_DPI = 300
 # OCR words below this confidence that look like identifiers are masked as

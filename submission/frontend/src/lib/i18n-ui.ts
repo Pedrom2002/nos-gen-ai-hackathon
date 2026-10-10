@@ -1,6 +1,7 @@
 import type { Lang } from "./i18n";
 
 const pt = {
+  "demoMode": "Modo demo: sem ligação ao servidor, os resultados são simulados",
   "dropTitle": "Larga aqui o teu documento",
   "fileTypes": ".pdf ou .txt",
   "chooseFile": "Escolher ficheiro",
@@ -64,6 +65,7 @@ const pt = {
 };
 export type UIStrings = typeof pt;
 const en: UIStrings = {
+  "demoMode": "Demo mode: no server connected, results are simulated",
   "dropTitle": "Drop your document here",
   "fileTypes": ".pdf or .txt",
   "chooseFile": "Choose file",
@@ -126,6 +128,7 @@ const en: UIStrings = {
   }
 };
 const fr: UIStrings = {
+  "demoMode": "Mode démo : aucun serveur connecté, les résultats sont simulés",
   "dropTitle": "Déposez votre document ici",
   "fileTypes": ".pdf ou .txt",
   "chooseFile": "Choisir un fichier",
@@ -188,6 +191,7 @@ const fr: UIStrings = {
   }
 };
 const it: UIStrings = {
+  "demoMode": "Modalità demo: nessun server collegato, i risultati sono simulati",
   "dropTitle": "Trascina qui il documento",
   "fileTypes": ".pdf o .txt",
   "chooseFile": "Scegli file",
@@ -250,6 +254,7 @@ const it: UIStrings = {
   }
 };
 const de: UIStrings = {
+  "demoMode": "Demomodus: kein Server verbunden, die Ergebnisse sind simuliert",
   "dropTitle": "Dokument hier ablegen",
   "fileTypes": ".pdf oder .txt",
   "chooseFile": "Datei auswählen",
@@ -312,6 +317,7 @@ const de: UIStrings = {
   }
 };
 const ar: UIStrings = {
+  "demoMode": "وضع العرض: لا يوجد خادم متصل، النتائج محاكاة",
   "dropTitle": "أفلت مستندك هنا",
   "fileTypes": ".pdf أو .txt",
   "chooseFile": "اختيار ملف",
@@ -374,6 +380,7 @@ const ar: UIStrings = {
   }
 };
 const ja: UIStrings = {
+  "demoMode": "デモモード：サーバー未接続のため、結果はシミュレーションです",
   "dropTitle": "ここに文書をドロップ",
   "fileTypes": ".pdf または .txt",
   "chooseFile": "ファイルを選択",
@@ -436,6 +443,7 @@ const ja: UIStrings = {
   }
 };
 const zh: UIStrings = {
+  "demoMode": "演示模式：未连接服务器，结果为模拟数据",
   "dropTitle": "将文档拖放到这里",
   "fileTypes": ".pdf 或 .txt",
   "chooseFile": "选择文件",

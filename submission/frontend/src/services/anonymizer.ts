@@ -1,5 +1,5 @@
 // Único ponto de acesso ao backend (submission/api). Ver README → "Ligar ao backend".
-import { SAMPLE } from "@/lib/anonymizer";
+import { SAMPLE, type WordRange } from "@/lib/anonymizer";
 
 // Wire types of the API, from submission/api/README.md.
 export interface ApiItem {
@@ -25,7 +25,7 @@ export interface DocumentState {
   leaks: { checked: number; leaks: { line: number; text: string }[] };
 }
 
-export interface Detected { text: string; category: string; reason: string; gdpr_basis?: string; role?: string; refs?: string[] }
+export interface Detected { text: string; category: string; reason: string; gdpr_basis?: string; role?: string; refs?: string[]; at?: WordRange[] }
 export interface AnalysisResult {
   docId?: string;        // backend document, absent in demo mode
   text: string;          // the document as the backend read it
@@ -79,9 +79,10 @@ export function fromState(state: DocumentState): AnalysisResult {
   const byText = new Map<string, Detected>();
   for (const item of state.items) {
     const text = spanText(state.lines[item.line - 1] ?? "", item.first, item.last) || item.text;
+    const at = { line: item.line, first: item.first, last: item.last };
     const seen = byText.get(text);
-    if (seen) { seen.refs?.push(item.id); continue; }
-    const entity: Detected = { text, category: item.category, reason: item.reason, refs: [item.id] };
+    if (seen) { seen.refs?.push(item.id); seen.at?.push(at); continue; }
+    const entity: Detected = { text, category: item.category, reason: item.reason, refs: [item.id], at: [at] };
     if (item.role) entity.role = item.role;
     byText.set(text, entity);
   }

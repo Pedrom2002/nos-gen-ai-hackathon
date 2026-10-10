@@ -11,6 +11,7 @@ import json
 import re
 
 VARIANTS = ("A", "B")
+ROLES = ("titular", "familiar", "contacto", "profissional", "outro")
 
 _ROLE = """\
 És um encarregado de proteção de dados (DPO) especializado no RGPD e em \
@@ -70,23 +71,27 @@ L1: Ficha de Cliente - Clínica Sol
 L2: Nome: Rui Costa Lima
 L3: Contacto: 916 222 333, rui.lima@mail.pt
 L4: O cliente, 52 anos, é budista e diabético.
+L5: Médico: Dr. Paulo Reis
 Saída:
 {"masked_lines": [
   "Ficha de Cliente - Clínica Sol",
   "Nome: * * *",
   "Contacto: * * * *",
-  "O cliente, * anos, é * e diabético."],
+  "O cliente, * anos, é * e diabético.",
+  "Médico: Dr. * *"],
  "entities": [
   {"text": "Rui Costa Lima", "category": "Pessoa", "article": "4.º",
-   "reason": "Nome do titular"},
+   "role": "titular", "reason": "Nome do titular"},
   {"text": "916 222 333,", "category": "Contacto", "article": "4.º",
-   "reason": "Telefone pessoal"},
+   "role": "titular", "reason": "Telefone pessoal"},
   {"text": "rui.lima@mail.pt", "category": "Contacto", "article": "4.º",
-   "reason": "Email pessoal"},
+   "role": "titular", "reason": "Email pessoal"},
   {"text": "52", "category": "Pessoa", "article": "4.º",
-   "reason": "Idade do titular"},
+   "role": "titular", "reason": "Idade do titular"},
   {"text": "budista", "category": "Saúde e art. 9.º", "article": "9.º",
-   "reason": "Convicção religiosa"}]}"""
+   "role": "titular", "reason": "Convicção religiosa"},
+  {"text": "Paulo Reis", "category": "Pessoa", "article": "4.º",
+   "role": "profissional", "reason": "Nome do médico"}]}"""
 
 _CHECKLIST = """\
 ANTES DE RESPONDER, verifica:
@@ -101,8 +106,9 @@ FORMATO DA RESPOSTA: apenas um objeto JSON, sem texto à volta, com:
 mesma ordem e sem o prefixo "Ln:".
 - "entities": lista com cada dado mascarado: "text" (texto original), \
 "category" (Identificação, Pessoa, Contacto, Saúde e art. 9.º, \
-Financeiro, Biométrico), "article" ("4.º" ou "9.º") e "reason" (frase \
-curta)."""
+Financeiro, Biométrico), "article" ("4.º" ou "9.º"), "role" (a quem \
+pertence o dado: titular, familiar, contacto, profissional para quem \
+trata, assina ou emite o documento, ou outro) e "reason" (frase curta)."""
 
 
 def build_prompt(lines: list[str], variant: str = "A") -> str:

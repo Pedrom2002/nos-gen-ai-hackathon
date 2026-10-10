@@ -1,7 +1,13 @@
 """Generate submission.txt and prompt.txt from the challenge PDF.
 
 Usage (from the submission folder):
-    python run.py [--model MODEL] [--variant A|B] [--keep-punct]
+    python run.py [--pdf FILE] [--model MODEL] [--variant A|B]
+                  [--keep-punct] [--redact]
+
+FILE can be a PDF (text or scanned), an image (PNG, JPG), a DOCX, a TXT or
+a CSV; the default is the challenge PDF. --redact also writes the same file
+with the masked words removed (<name>_censurado.<ext>), checked so that
+they cannot be recovered.
 
 Pipeline: extract the PDF lines, build the prompt, ask Gemini for the
 masked document, align its answer with the original word by word, and
@@ -13,11 +19,12 @@ import json
 from datetime import datetime
 from pathlib import Path
 
-from anonimizador.extract import extract_lines
 from anonimizador.llm import DEFAULT_MODEL, generate
-from anonimizador.pipeline import anonymize
+from anonimizador.pipeline import anonymize_source
 from anonimizador.prompt import VARIANTS
+from anonimizador.redact import RedactionError, redact
 from anonimizador.report import build_report, to_markdown
+from anonimizador.sources import load_source
 from anonimizador.verify import check_leaks
 
 SUBMISSION_DIR = Path(__file__).resolve().parent
@@ -28,13 +35,16 @@ RUNS_DIR = SUBMISSION_DIR / "data" / "runs"
 def run(pdf: Path = DEFAULT_PDF, model: str = DEFAULT_MODEL,
         variant: str = "A", keep_punct: bool = False,
         out_dir: Path = SUBMISSION_DIR, runs_dir: Path = RUNS_DIR,
-        generate_fn=generate) -> dict:
+        generate_fn=generate, redact_file: bool = False) -> dict:
     """Run the whole pipeline and write the output files.
 
     Returns a summary of the run, which is also saved in ``runs_dir``.
     """
-    lines = extract_lines(pdf)
-    result = anonymize(lines, model, variant, keep_punct, generate_fn)
+    pdf = Path(pdf)
+    source = load_source(pdf.read_bytes(), pdf.suffix)
+    lines = source.lines
+    result = anonymize_source(source, model, variant, keep_punct,
+                              generate_fn)
     prompt = result.prompt
 
     out_dir = Path(out_dir)
@@ -68,7 +78,15 @@ def run(pdf: Path = DEFAULT_PDF, model: str = DEFAULT_MODEL,
         "entities": result.entities,
         "report": report["summary"],
         "leak_check": leaks,
+        "uncertain_words": len(source.uncertain),
     }
+    if redact_file:
+        try:
+            redacted = redact(source, result.masked, pdf.name, keep_punct)
+            (out_dir / redacted.filename).write_bytes(redacted.data)
+            summary["redacted"] = redacted.filename
+        except RedactionError as error:
+            summary["redacted_error"] = str(error)
     runs_dir = Path(runs_dir)
     runs_dir.mkdir(parents=True, exist_ok=True)
     # Microseconds keep two runs in the same second from overwriting.
@@ -88,16 +106,23 @@ def main(argv: list[str] | None = None) -> None:
                         help='keep attached punctuation ("Flores," -> "*,")')
     parser.add_argument("--out-dir", type=Path, default=SUBMISSION_DIR)
     parser.add_argument("--runs-dir", type=Path, default=RUNS_DIR)
+    parser.add_argument("--redact", action="store_true",
+                        help="also write the file with the words removed")
     args = parser.parse_args(argv)
 
     summary = run(args.pdf, args.model, args.variant, args.keep_punct,
-                  args.out_dir, args.runs_dir, generate_fn=generate)
+                  args.out_dir, args.runs_dir, generate_fn=generate,
+                  redact_file=args.redact)
     print(f"{summary['lines']} lines, {len(summary['masked_words'])} words "
           f"masked, {len(summary['entities'])} entities explained "
           f"({summary['model']}, variant {summary['variant']})")
     leaks = summary["leak_check"]
     print(f"Leak check: {len(leaks['leaks'])} leaks in "
           f"{leaks['checked']} values checked")
+    if "redacted" in summary:
+        print(f"Redacted file: {summary['redacted']} (verified)")
+    elif "redacted_error" in summary:
+        print(f"No redacted file: {summary['redacted_error']}")
 
 
 if __name__ == "__main__":

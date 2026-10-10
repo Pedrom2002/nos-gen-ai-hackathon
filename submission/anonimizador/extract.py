@@ -36,6 +36,15 @@ def decode_text(data: bytes) -> str:
         return data.decode("cp1252", errors="replace")
 
 
+def read_bytes(data: bytes, suffix: str) -> list[str]:
+    """Return the clean lines of an uploaded file kept in memory."""
+    if suffix.lower() == ".pdf":
+        with pymupdf.open(stream=data, filetype="pdf") as doc:
+            text = "\n".join(page.get_text() for page in doc)
+        return clean_lines(text)
+    return clean_lines(decode_text(data))
+
+
 def read_document(path: str | Path) -> list[str]:
     """Return the clean lines of a PDF or a plain text file (.txt, .csv)."""
     path = Path(path)

@@ -109,8 +109,12 @@ def test_upload_text_file_in_utf16(client):
 
 def test_upload_errors(client, monkeypatch):
     bad = client.post("/api/documents",
-                      files={"file": ("foto.jpg", b"x", "image/jpeg")})
+                      files={"file": ("foto.gif", b"x", "image/gif")})
     assert bad.status_code == 415
+    broken = client.post("/api/documents",
+                         files={"file": ("foto.jpg", b"x", "image/jpeg")})
+    assert broken.status_code == 422
+    assert "x" not in broken.json()["detail"].split()
     empty = client.post("/api/documents",
                         files={"file": ("vazio.txt", b"  \n", "text/plain")})
     assert empty.status_code == 422
@@ -156,3 +160,56 @@ def test_dev_server_passes_the_cors_preflight(client):
         "Origin": "https://evil.example",
         "Access-Control-Request-Method": "GET"})
     assert "access-control-allow-origin" not in blocked.headers
+
+
+DOCX_TYPE = ("application/vnd.openxmlformats-officedocument."
+             "wordprocessingml.document")
+
+
+def test_docx_comes_back_redacted_and_follows_the_review(client, monkeypatch):
+    from tests.test_redact import make_docx, names_only
+
+    monkeypatch.setattr(main, "generate_fn", names_only)
+    doc = client.post("/api/documents", files={
+        "file": ("ficha.docx", make_docx(), DOCX_TYPE)}).json()
+    assert doc["kind"] == "docx" and doc["redactable"]
+    assert "Nome: * *" in doc["output"]
+
+    url = f"/api/documents/{doc['id']}/download/redacted"
+    first = client.get(url)
+    assert first.status_code == 200
+    assert first.headers["content-type"] == DOCX_TYPE
+    assert "ficha_censurado.docx" in first.headers["content-disposition"]
+    assert b"Maria" not in first.content
+
+    name = next(i for i in doc["items"] if i["text"] == "Maria Santos"
+                and i["line"] == doc["lines"].index("Nome: Maria Santos") + 1)
+    client.put(f"/api/documents/{doc['id']}/decisions",
+               json={"keep": [name["id"]]})
+    kept = client.get(url)
+    assert kept.status_code == 200
+    from anonimizador.sources import load_source
+    assert "Nome: Maria Santos" in load_source(kept.content, ".docx").lines
+
+
+def test_text_formats_have_no_redacted_file(client):
+    doc = client.post("/api/documents", files={
+        "file": ("notas.txt", "Nome: Rui".encode(), "text/plain")}).json()
+    assert doc["kind"] == "text" and not doc["redactable"]
+    response = client.get(f"/api/documents/{doc['id']}/download/redacted")
+    assert response.status_code == 404
+
+
+def test_failed_verification_sends_no_file(client, monkeypatch):
+    from tests.test_redact import make_docx
+    from anonimizador.redact import RedactionError
+
+    def refuse(*args, **kwargs):
+        raise RedactionError("Verificação falhou: teste.")
+
+    monkeypatch.setattr(main, "redact", refuse)
+    doc = client.post("/api/documents", files={
+        "file": ("ficha.docx", make_docx(), DOCX_TYPE)}).json()
+    response = client.get(f"/api/documents/{doc['id']}/download/redacted")
+    assert response.status_code == 422
+    assert response.json()["detail"] == "Verificação falhou: teste."

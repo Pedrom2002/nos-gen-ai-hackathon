@@ -1,4 +1,4 @@
-import { LetheLogo } from "@/components/LetheLogo";
+import { LetheWordmark } from "@/components/LetheLogo";
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useReducer, useState } from "react";
 import { toast } from "sonner";
@@ -190,8 +190,7 @@ function Index() {
           <div className="mx-auto max-w-6xl px-4 sm:px-6">
             <nav className="grid h-16 grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
               <div className="flex min-w-0 items-center gap-3">
-                <LetheLogo className="h-7 w-7 shrink-0" />
-                <span className="shrink-0 text-lg font-semibold">Lethe</span>
+                <LetheWordmark className="h-9 shrink-0" />
               </div>
               <SettingsSheet />
             </nav>

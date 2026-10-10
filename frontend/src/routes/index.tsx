@@ -63,6 +63,7 @@ function Index() {
   const [sliderSeen, setSliderSeen] = useState(false);
   const [focusId, setFocusId] = useState("");
   useEffect(() => { if (step !== 2) setFocusId(""); }, [step]);
+  useEffect(() => { window.scrollTo({ top: 0, behavior: "smooth" }); }, [step]);
   useEffect(() => {
     if (!focusId) return;
     const mark = [...document.querySelectorAll<HTMLElement>("[data-focus-mark]")].find((m) => m.offsetParent !== null);
@@ -212,8 +213,8 @@ function Index() {
             <ol aria-label={STEPS.join(" · ")} className="flex w-full max-w-2xl min-w-0 items-center">
               {STEPS.map((s, i) => (
                 <li key={s} aria-current={i === step ? "step" : undefined} className="flex min-w-0 flex-1 items-center gap-3 last:flex-none">
-                  <span className={`grid size-9 shrink-0 place-items-center rounded-full border-2 text-sm font-semibold transition-colors ${i < step ? "border-primary bg-primary text-primary-foreground" : i === step ? "border-primary bg-primary/10 text-primary ring-4 ring-primary/15" : "border-border bg-card text-muted-foreground"}`}>
-                    {i < step ? <Check className="size-4" /> : i + 1}
+                  <span className={`grid size-9 shrink-0 place-items-center rounded-full border-2 text-sm font-semibold transition-colors ${i < step ? "border-primary bg-primary text-primary-foreground" : i === step ? "border-primary bg-primary/10 text-primary ring-4 ring-primary/15 step-current" : "border-border bg-card text-muted-foreground"}`}>
+                    {i < step ? <Check className="step-check size-4" /> : i + 1}
                   </span>
                   <span className={`${i === step ? "inline font-semibold text-foreground" : "hidden text-muted-foreground md:inline"} min-w-0 truncate text-sm`}>{s}</span>
                   {i < STEPS.length - 1 && <span aria-hidden="true" className="relative h-0.5 min-w-4 flex-1 overflow-hidden rounded-full bg-border"><span className={`absolute inset-y-0 left-0 bg-primary transition-[width] duration-500 ${i < step ? "w-full" : "w-0"}`} /></span>}

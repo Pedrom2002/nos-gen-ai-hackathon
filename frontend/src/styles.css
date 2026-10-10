@@ -266,3 +266,7 @@
 .document-sheet-mini .document-line { height: .25rem; }
 .focus-mark { border-radius: .25rem; padding: 0 .15rem; color: inherit; background: color-mix(in oklab, var(--primary) 35%, transparent); box-shadow: 0 0 0 2px color-mix(in oklab, var(--primary) 55%, transparent); animation: focus-pulse 1.2s ease-out 1; }
 @keyframes focus-pulse { from { box-shadow: 0 0 0 8px color-mix(in oklab, var(--primary) 0%, transparent); } }
+.step-current { animation: step-pop .5s cubic-bezier(.3,1.5,.5,1) both, step-ring 1s ease-out .1s 1; }
+.step-check { animation: step-pop .45s cubic-bezier(.3,1.5,.5,1) both; }
+@keyframes step-pop { from { transform: scale(.5); opacity: .4; } to { transform: none; opacity: 1; } }
+@keyframes step-ring { from { box-shadow: 0 0 0 0 color-mix(in oklab, var(--primary) 55%, transparent); } to { box-shadow: 0 0 0 12px color-mix(in oklab, var(--primary) 0%, transparent); } }

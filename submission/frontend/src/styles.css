@@ -270,3 +270,4 @@
 .step-check { animation: step-pop .45s cubic-bezier(.3,1.5,.5,1) both; }
 @keyframes step-pop { from { transform: scale(.5); opacity: .4; } to { transform: none; opacity: 1; } }
 @keyframes step-ring { from { box-shadow: 0 0 0 0 color-mix(in oklab, var(--primary) 55%, transparent); } to { box-shadow: 0 0 0 12px color-mix(in oklab, var(--primary) 0%, transparent); } }
+html[data-intro="playing"] #lethe-header-logo { visibility: hidden; }

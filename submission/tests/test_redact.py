@@ -292,16 +292,41 @@ def reads_back(lines):
     return read_zone
 
 
-@needs_ocr
+needs_font = pytest.mark.skipif(FONT is None, reason="no TrueType font")
+ROWS = ["Relatório de Admissão", "Nome: Maria Santos", "NIF: 123456789",
+        "Email: maria@exemplo.pt"]
+
+
+def known_lines():
+    """The words of document_image() with the exact boxes they were drawn
+    in, so the test does not depend on what Tesseract reads."""
+    font = ImageFont.truetype(str(FONT), 40)
+    lines = []
+    for row, text in enumerate(ROWS):
+        words = text.split(" ")
+        line = []
+        for i, word in enumerate(words):
+            prefix = " ".join(words[:i]) + (" " if i else "")
+            x = 50 + font.getlength(prefix)
+            left, top, right, bottom = font.getbbox(word)
+            box = ocr.Box(round(x + left), 40 + row * 90 + top,
+                          round(x + right), 40 + row * 90 + bottom)
+            line.append(ocr.OcrWord(word, box, 95.0))
+        lines.append(line)
+    return lines
+
+
+@needs_font
 def test_ink_sticking_out_of_words_already_read_widens_them(monkeypatch):
     image = document_image()
-    lines = ocr.read_image(image)
+    lines = known_lines()
     # Boxes too narrow for their words, as on a tilted line: the ink that
     # sticks out looks like an unread line, but the words are already there.
     narrow = [[ocr.OcrWord(w.text, ocr.Box(
         w.box.left, w.box.top,
         w.box.left + int((w.box.right - w.box.left) * 0.75),
         w.box.bottom), w.confidence) for w in line] for line in lines]
+    assert ocr.unread_lines(image, lines) == 0
     assert ocr.unread_lines(image, narrow) >= 1
     monkeypatch.setattr(ocr, "_read_zone", reads_back(lines))
     merged, still_unread = ocr.recover_unread(image, narrow)

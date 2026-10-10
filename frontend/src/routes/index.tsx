@@ -3,12 +3,13 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useReducer, useState } from "react";
 import { toast } from "sonner";
 import {
-  ArrowLeft, ArrowRight, Copy, Download,
+  ArrowLeft, ArrowLeftRight, ArrowRight, Columns2, Copy, Download,
   FileDown, Check, AlertTriangle, RotateCw, SearchX,
 } from "lucide-react";
 import { DocumentInput } from "@/components/DocumentInput";
 import { RiverLoading } from "@/components/RiverLoading";
 import { RiverComparison } from "@/components/RiverComparison";
+import { FocusedText } from "@/components/FocusedText";
 import { UI } from "@/lib/i18n-ui";
 import { emptyHistory, reviewHistory } from "@/lib/review-history";
 import { analyzeDocument, deleteDocument, syncDecisions } from "@/services/anonymizer";
@@ -60,6 +61,13 @@ function Index() {
   const [reading, setReading] = useState(false);
   const [resultView, setResultView] = useState<"side" | "slide">("side");
   const [sliderSeen, setSliderSeen] = useState(false);
+  const [focusId, setFocusId] = useState("");
+  useEffect(() => { if (step !== 2) setFocusId(""); }, [step]);
+  useEffect(() => {
+    if (!focusId) return;
+    const mark = [...document.querySelectorAll<HTMLElement>("[data-focus-mark]")].find((m) => m.offsetParent !== null);
+    mark?.scrollIntoView({ block: "center", behavior: "smooth" });
+  }, [focusId, resultView]);
   const [summary, setSummary] = useState("");
   const [loading, setLoading] = useState(false);
   const { t, s: cfg } = useSettings();
@@ -200,19 +208,18 @@ function Index() {
 
         <main className={`mx-auto flex w-full min-w-0 max-w-6xl flex-1 flex-col px-4 pt-6 sm:px-6 sm:pt-8 ${step === 1 ? "pb-40 lg:pb-16" : "pb-16"}`}>
           <h1 className="sr-only">{STEPS[step]}</h1>
-          <div className="mb-6 flex min-w-0 flex-col items-center gap-3">
-            <ol aria-label={STEPS.join(" · ")} className="flex w-full max-w-2xl min-w-0 items-center justify-center gap-1 sm:flex md:gap-2">
+          <div className="mb-8 flex min-w-0 justify-center">
+            <ol aria-label={STEPS.join(" · ")} className="flex w-full max-w-2xl min-w-0 items-center">
               {STEPS.map((s, i) => (
-                <li key={s} aria-current={i === step ? "step" : undefined} className="flex min-w-0 flex-1 items-center gap-2 last:flex-none">
-                  <span className={`grid size-7 shrink-0 place-items-center rounded-full text-xs font-semibold sm:size-8 sm:text-sm ${i <= step ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}>
+                <li key={s} aria-current={i === step ? "step" : undefined} className="flex min-w-0 flex-1 items-center gap-3 last:flex-none">
+                  <span className={`grid size-9 shrink-0 place-items-center rounded-full border-2 text-sm font-semibold transition-colors ${i < step ? "border-primary bg-primary text-primary-foreground" : i === step ? "border-primary bg-primary/10 text-primary ring-4 ring-primary/15" : "border-border bg-card text-muted-foreground"}`}>
                     {i < step ? <Check className="size-4" /> : i + 1}
                   </span>
-                  <span className={`${i === step ? "inline font-semibold" : "hidden md:inline text-muted-foreground"} min-w-0 truncate text-sm`}>{s}</span>
-                  {i < STEPS.length - 1 && <span className="mx-1 h-px min-w-2 flex-1 bg-border md:mx-2 md:min-w-3" />}
+                  <span className={`${i === step ? "inline font-semibold text-foreground" : "hidden text-muted-foreground md:inline"} min-w-0 truncate text-sm`}>{s}</span>
+                  {i < STEPS.length - 1 && <span aria-hidden="true" className="relative h-0.5 min-w-4 flex-1 overflow-hidden rounded-full bg-border"><span className={`absolute inset-y-0 left-0 bg-primary transition-[width] duration-500 ${i < step ? "w-full" : "w-0"}`} /></span>}
                 </li>
               ))}
             </ol>
-            <div aria-hidden="true" className="h-px w-full max-w-4xl bg-border" />
           </div>
 
           {step === 0 && loading && <RiverLoading text={text} />}
@@ -250,20 +257,22 @@ function Index() {
 
           {step === 2 && (
             <section className="animate-fade-up space-y-8">
-              <div className="flex flex-wrap items-center justify-end gap-2" role="group" aria-label={u.comparison}>
-                <Button variant={resultView === "side" ? "secondary" : "ghost"} aria-pressed={resultView === "side"} onClick={() => setResultView("side")}>{u.sideBySide}</Button>
-                <span className="text-border" aria-hidden="true">|</span>
-                <Button variant={resultView === "slide" ? "secondary" : "ghost"} aria-pressed={resultView === "slide"} onClick={() => { setResultView("slide"); setSliderSeen(true); }}>{u.slideView}</Button>
+              <div className="flex justify-end">
+                <div className="inline-flex rounded-lg border bg-muted/40 p-1" role="group" aria-label={u.comparison}>
+                  {([["side", Columns2, u.sideBySide], ["slide", ArrowLeftRight, u.slideView]] as const).map(([id, Icon, label]) => (
+                    <Button key={id} variant="ghost" aria-pressed={resultView === id} onClick={() => { setResultView(id); if (id === "slide") setSliderSeen(true); }} className={`h-9 gap-2 rounded-md px-3 text-sm ${resultView === id ? "bg-card text-foreground shadow-sm hover:bg-card" : "text-muted-foreground hover:bg-transparent hover:text-foreground"}`}><Icon className="size-4" aria-hidden="true" />{label}</Button>
+                  ))}
+                </div>
               </div>
               <div className={resultView === "slide" ? "" : "hidden"}>
-                {sliderSeen && <RiverComparison text={text} entities={entities} output={output} />}
+                {sliderSeen && <RiverComparison text={text} entities={entities} output={output} focusId={focusId} />}
               </div>
               <div className={resultView === "side" ? "grid min-w-0 gap-4 md:grid-cols-2" : "hidden"}>
                 {[[t.original, text, true], [t.anonymized, output, false]].map(([h, c, orig]) => (
                   <div key={String(h)} className="min-w-0 rounded-lg border bg-card p-4 sm:p-5">
                     <h2 className="mb-3 text-sm font-semibold text-muted-foreground">{h}</h2>
                     <pre tabIndex={0} aria-label={String(h)} className="max-h-[60dvh] overflow-auto whitespace-pre-wrap break-words font-mono text-sm leading-6 [overflow-wrap:anywhere]">
-                      {orig ? c : String(c).split("*").map((part, i, arr) => (
+                      {orig ? <FocusedText text={text} entities={entities} focusId={focusId} /> : String(c).split("*").map((part, i, arr) => (
                         <span key={i}>{part}{i < arr.length - 1 && <span className="lethe-wash text-primary" style={{ animationDelay: `${Math.min(i * 40, 1600)}ms` }}>*</span>}</span>
                       ))}
                     </pre>
@@ -326,8 +335,8 @@ function Index() {
                       {active.map((e) => {
                         const cat = catOf(e.category);
                         return (
-                          <tr key={e.id} className="align-top transition-colors hover:bg-muted/30">
-                            <td className="px-4 py-3"><span className="inline-block rounded-md border-l-2 bg-muted px-2.5 py-1 font-mono text-[13px] font-medium text-foreground [overflow-wrap:anywhere]" style={{ borderLeftColor: cat.color }}>{e.text}</span></td>
+                          <tr key={e.id} onClick={() => setFocusId((id) => id === e.id ? "" : e.id)} className={`cursor-pointer align-top transition-colors hover:bg-muted/30 ${focusId === e.id ? "bg-primary/10" : ""}`}>
+                            <td className="px-4 py-3"><button type="button" aria-pressed={focusId === e.id} onClick={(ev) => { ev.stopPropagation(); setFocusId((id) => id === e.id ? "" : e.id); }} className="inline-block min-h-0 rounded-md border-l-2 bg-muted px-2.5 py-1 text-left font-mono text-[13px] font-medium text-foreground transition-colors hover:bg-primary/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring [overflow-wrap:anywhere]" style={{ borderLeftColor: cat.color }}>{e.text}</button></td>
                             <td className="px-4 py-3"><span className="inline-flex items-center gap-2 whitespace-nowrap"><span aria-hidden="true" className="size-2 rounded-sm" style={{ background: cat.color }} />{x.cats[cat.id]}</span></td>
                             <td className="px-4 py-3 text-muted-foreground [overflow-wrap:anywhere]">{reason(e)}</td>
                           </tr>

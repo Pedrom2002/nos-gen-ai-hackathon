@@ -13,7 +13,10 @@ export default defineConfig({
     // nitro/vite builds from this
     server: { entry: "server" },
   },
-  plugins: [mcpPlugin()],
+  // The MCP plugin only regenerates src/routes/mcp.ts and the OAuth metadata
+  // route, which are committed. On Windows it rejects backslash paths and
+  // stops dev and build, so it is skipped there; the routes still work.
+  plugins: process.platform === "win32" ? [] : [mcpPlugin()],
   vite: {
     // With VITE_API_URL=/ the page calls /api on its own origin and the dev
     // server forwards it to the backend (submission/api), so no CORS is needed.

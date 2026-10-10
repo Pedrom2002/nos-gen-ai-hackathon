@@ -1,0 +1,5 @@
+# Keep LF line endings in every checkout (the evaluation runs on Linux).
+* text=auto eol=lf
+*.pdf binary
+# Provided by the organisers: keep it byte for byte as delivered.
+README.md -text

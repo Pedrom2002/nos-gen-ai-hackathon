@@ -103,10 +103,15 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
   errorComponent: ErrorComponent,
 });
 
+// Applies the saved theme before the first paint, so the page and the opening
+// animation never flash the light theme (dark is the default).
+const THEME_SCRIPT = `try{var t="dark";try{var r=localStorage.getItem("anonimizador.settings");if(r){var v=JSON.parse(r).theme;if(v==="light"||v==="dark"||v==="system")t=v}}catch(e){}var d=t==="dark"||(t==="system"&&matchMedia("(prefers-color-scheme: dark)").matches);var h=document.documentElement;h.classList.toggle("dark",d);h.style.setProperty("--primary",d?"oklch(0.72 0.15 255)":"oklch(0.58 0.17 255)");h.style.setProperty("--ring",d?"oklch(0.72 0.15 255)":"oklch(0.58 0.17 255)");h.dataset.intro="playing"}catch(e){}`;
+
 function RootShell({ children }: { children: ReactNode }) {
   return (
-    <html lang="pt" translate="no">
+    <html lang="pt" translate="no" className="dark" suppressHydrationWarning>
       <head>
+        <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
         <HeadContent />
       </head>
       <body>

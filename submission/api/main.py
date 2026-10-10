@@ -14,6 +14,7 @@ from collections import Counter
 from dataclasses import dataclass, field
 from pathlib import Path
 from types import SimpleNamespace
+from urllib.parse import quote
 
 from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
@@ -22,17 +23,20 @@ from dotenv import load_dotenv
 from pydantic import BaseModel
 
 from anonimizador import llm
-from anonimizador.extract import extract_lines, read_bytes
-from anonimizador.pipeline import anonymize
+from anonimizador.pipeline import anonymize_source
 from anonimizador.pseudonymize import ask as gateway_ask
 from anonimizador.report import build_report, to_markdown
+from anonimizador.redact import RedactionError, redact
 from anonimizador.review import apply_decisions
+from anonimizador.sources import (SUPPORTED, NeedsOcr, Source,
+                                  UnsupportedFormat, load_source)
 from anonimizador.verify import check_leaks
 
 SUBMISSION_DIR = Path(__file__).resolve().parents[1]
 OFFICIAL_PDF = SUBMISSION_DIR.parent / "raw_data" / "document_to_anonymize.pdf"
-SUPPORTED = {".pdf", ".txt", ".csv"}
-MAX_BYTES = 5 * 1024 * 1024
+MAX_BYTES = 10 * 1024 * 1024
+UNSUPPORTED = ("Formato não suportado: use PDF, DOCX, imagem (PNG, JPG), "
+               "TXT ou CSV.")
 MODEL_DOWN = "O modelo não respondeu. Tente de novo dentro de um minuto."
 
 # Request logs would contain document names; keep them off.
@@ -71,6 +75,7 @@ def generate_fn(*args, **kwargs):
 @dataclass
 class Session:
     name: str
+    source: Source
     lines: list[str]
     result: object
     items: list[dict]
@@ -117,22 +122,42 @@ def _state(doc_id: str, session: Session) -> dict:
                   for item in session.items],
         "summary": _summary(session.masked_items()),
         "leaks": check_leaks(session.lines, session.output, session.masked),
+        "kind": session.source.kind,
+        "redactable": session.source.redactable,
+        "uncertain": len(session.source.uncertain),
     }
 
 
-def _create(name: str, lines: list[str]) -> dict:
+def _read(data: bytes, suffix: str) -> Source:
+    try:
+        return load_source(data, suffix)
+    except UnsupportedFormat:
+        raise HTTPException(415, UNSUPPORTED) from None
+    except NeedsOcr:
+        raise HTTPException(
+            422, "Este ficheiro precisa de OCR, mas o Tesseract com "
+                 "português não está instalado no servidor.") from None
+    except Exception:
+        # Never echo the parser's message: it could quote the document.
+        raise HTTPException(
+            422, "Não foi possível ler o ficheiro. Confirme que não está "
+                 "danificado nem protegido por palavra-passe.") from None
+
+
+def _create(name: str, source: Source) -> dict:
+    lines = source.lines
     if not lines:
         raise HTTPException(
-            422, "O documento não tem texto. Se for uma digitalização, é "
-                 "preciso OCR primeiro."
+            422, "O documento não tem texto legível. Se for uma fotografia, "
+                 "tente uma imagem mais nítida."
         )
     try:
-        result = anonymize(lines, generate_fn=generate_fn)
+        result = anonymize_source(source, generate_fn=generate_fn)
     except Exception:
         raise HTTPException(502, MODEL_DOWN) from None
     items = build_report(lines, result)["items"]
     doc_id = uuid.uuid4().hex[:12]
-    STORE[doc_id] = Session(name, lines, result, items, set(),
+    STORE[doc_id] = Session(name, source, lines, result, items, set(),
                             list(result.lines), list(result.masked))
     return _state(doc_id, STORE[doc_id])
 
@@ -146,16 +171,17 @@ def health() -> dict:
 async def upload(file: UploadFile = File(...)) -> dict:
     suffix = Path(file.filename or "").suffix.lower()
     if suffix not in SUPPORTED:
-        raise HTTPException(415, "Formato não suportado: use PDF, TXT ou CSV.")
+        raise HTTPException(415, UNSUPPORTED)
     data = await file.read(MAX_BYTES + 1)
     if len(data) > MAX_BYTES:
-        raise HTTPException(413, "Ficheiro maior do que 5 MB.")
-    return _create(file.filename, read_bytes(data, suffix))
+        raise HTTPException(413, "Ficheiro maior do que 10 MB.")
+    return _create(file.filename, _read(data, suffix))
 
 
 @app.post("/api/documents/official")
 def official() -> dict:
-    return _create(OFFICIAL_PDF.name, extract_lines(OFFICIAL_PDF))
+    data = OFFICIAL_PDF.read_bytes()
+    return _create(OFFICIAL_PDF.name, _read(data, ".pdf"))
 
 
 @app.get("/api/documents/{doc_id}")
@@ -178,9 +204,29 @@ def set_decisions(doc_id: str, decisions: Decisions) -> dict:
     return _state(doc_id, session)
 
 
+def _redacted(session: Session) -> Response:
+    """The original file with the reviewer's current masks removed for good.
+
+    Built on request from memory and verified before it is sent; nothing is
+    written to disk.
+    """
+    if not session.source.redactable:
+        raise HTTPException(404, "Este formato só tem saída em texto: use "
+                                 "submission.")
+    try:
+        result = redact(session.source, session.masked, session.name)
+    except RedactionError as error:
+        raise HTTPException(422, str(error)) from None
+    return Response(result.data, media_type=result.media_type, headers={
+        "Content-Disposition":
+            f"attachment; filename*=UTF-8''{quote(result.filename)}"})
+
+
 @app.get("/api/documents/{doc_id}/download/{kind}")
-def download(doc_id: str, kind: str) -> PlainTextResponse:
+def download(doc_id: str, kind: str) -> Response:
     session = _session(doc_id)
+    if kind == "redacted":
+        return _redacted(session)
     if kind == "submission":
         body, name = "\n".join(session.output) + "\n", "submission.txt"
     elif kind == "report":
@@ -188,7 +234,7 @@ def download(doc_id: str, kind: str) -> PlainTextResponse:
         body = to_markdown({"summary": _summary(items), "items": items})
         name = "report.md"
     else:
-        raise HTTPException(404, "Use submission ou report.")
+        raise HTTPException(404, "Use submission, report ou redacted.")
     return PlainTextResponse(
         body, headers={"Content-Disposition": f'attachment; filename="{name}"'}
     )

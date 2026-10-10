@@ -32,6 +32,14 @@ npm run dev
 - React
 - Tailwind CSS
 
+## Formatos
+
+- **PDF com texto**: o texto e a posição de cada palavra vêm do pdf.js, no navegador.
+- **Imagens (PNG, JPG, WebP) e PDF digitalizados**: o texto é reconhecido no navegador com o tesseract.js (modelos `por` + `eng`, descarregados do CDN do pacote na primeira utilização e guardados em cache). Um PDF misto só passa pelo OCR nas páginas sem camada de texto. Como a API não faz OCR, estes ficheiros seguem para o backend como texto (`documento.txt`), nunca como ficheiro.
+- **Resultado**: quando o original tem páginas, o passo final mostra-as com caixas pretas sobre as palavras mascaradas, lado a lado ou com o deslizador; "Texto" volta à comparação textual. As caixas derivam dos mesmos troços que `anonymize()` mascara (`src/lib/redaction.ts`); `src/lib/align.ts` casa o texto devolvido pelo backend com as palavras da página.
+- **Exportar**: "Descarregar imagem/PDF anonimizado" gera um PNG ou um PDF rasterizado (páginas como imagem, sem camada de texto), para que nada fique legível debaixo das caixas.
+- Para servir os ficheiros do tesseract localmente, copia `worker.min.js`, o core wasm e os `.traineddata.gz` para `public/tesseract/` e passa `workerPath`/`corePath`/`langPath` em `src/lib/ocr.ts`.
+
 ## Ligar ao backend
 
 Todo o acesso ao backend está em `src/services/anonymizer.ts`. O backend é a API FastAPI em `../submission/api` (ver o `README.md` dela para as rotas e os tipos).

@@ -24,7 +24,7 @@ from docx import Document
 from docx.oxml.ns import qn
 from PIL import Image
 
-from anonimizador import ocr
+from anonimizador import deskew, ocr
 from anonimizador.extract import clean_lines, decode_text
 
 TEXT = {".txt", ".csv"}
@@ -33,9 +33,15 @@ SUPPORTED = TEXT | IMAGE | {".pdf", ".docx"}
 SCAN_DPI = 300
 # OCR words below this confidence that look like identifiers are masked as
 # a precaution: OCR misreads "@" or digits ("maria@x.pt" -> "mariaQx.pt"),
-# which the model and the patterns may then miss.
+# which the model and the patterns may then miss. Short numbers ("72kg",
+# "50mg", "BRCA1") are left alone: no identifier is that short.
 UNCERTAIN_CONFIDENCE = 80
-_IDENTIFIER_LIKE = re.compile(r"\d|@|\w\.\w{2,}")
+_DOMAIN = re.compile(r"[^\W\d_]\.[^\W\d_]{2,}")
+
+
+def looks_like_identifier(word: str) -> bool:
+    return (sum(c.isdigit() for c in word) >= 3 or "@" in word
+            or bool(_DOMAIN.search(word)))
 
 
 class UnsupportedFormat(ValueError):
@@ -55,9 +61,13 @@ class Source:
     # (line, word index) -> location, depending on the kind:
     # pdf: (page, pymupdf.Rect); image/scanned: (page, ocr.Box).
     locations: dict = field(default_factory=dict)
-    # Rendered pages (image/scanned), already rotated and RGB.
+    # Rendered pages (image/scanned), already rotated and RGB, and for each
+    # one the deskew.Warp its words were read through (None if flat).
     pages: list = field(default_factory=list)
+    warps: list = field(default_factory=list)
     uncertain: set = field(default_factory=set)
+    # Text lines OCR saw on the pages but could not read.
+    unread: int = 0
 
     @property
     def redactable(self) -> bool:
@@ -65,18 +75,24 @@ class Source:
 
 
 def _from_ocr(kind: str, suffix: str, data: bytes,
-              images: list[Image.Image]) -> Source:
+              images: list[Image.Image], straighten: bool = False) -> Source:
     if not ocr.available():
         raise NeedsOcr("O Tesseract com português não está instalado.")
     source = Source(kind, suffix, data, [], pages=images)
     for page_no, image in enumerate(images):
-        for words in ocr.read_image(image):
+        # A photographed page is read flattened; boxes stay in that space.
+        warp = deskew.page_warp(image) if straighten else None
+        source.warps.append(warp)
+        readable = warp.flatten(image) if warp else image
+        lines = ocr.read_image(readable)
+        source.unread += ocr.unread_lines(readable, lines)
+        for words in lines:
             line_no = len(source.lines)
             source.lines.append(" ".join(w.text for w in words))
             for index, word in enumerate(words):
                 source.locations[(line_no, index)] = (page_no, word.box)
                 if (word.confidence < UNCERTAIN_CONFIDENCE
-                        and _IDENTIFIER_LIKE.search(word.text)):
+                        and looks_like_identifier(word.text)):
                     source.uncertain.add((line_no, index))
     return source
 
@@ -217,4 +233,4 @@ def load_source(data: bytes, suffix: str) -> Source:
     if suffix == ".docx":
         return _docx(data)
     image = ocr.prepare(Image.open(io.BytesIO(data)))
-    return _from_ocr("image", suffix, data, [image])
+    return _from_ocr("image", suffix, data, [image], straighten=True)

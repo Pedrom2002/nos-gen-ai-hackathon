@@ -22,9 +22,10 @@ import io
 import re
 import zipfile
 
+import numpy as np
 import pymupdf
 from docx import Document
-from PIL import Image
+from PIL import Image, ImageDraw
 
 from anonimizador import ocr
 from anonimizador.align import MaskedWord, _render
@@ -43,23 +44,31 @@ def _fail(reason: str) -> RedactionError:
     return RedactionError(f"Verificação falhou: {reason}.")
 
 
-def _check_pixels(image: Image.Image, boxes: list) -> None:
+def _check_pixels(image: Image.Image, shapes: list) -> None:
+    """Every pixel inside every painted polygon must be pure black."""
+    if not shapes:
+        return
+    mask = Image.new("L", image.size, 0)
+    draw = ImageDraw.Draw(mask)
+    for shape in shapes:
+        draw.polygon(shape, fill=255)
+    pixels = np.asarray(image.convert("RGB"))[np.asarray(mask) > 0]
+    if pixels.size and pixels.max() > 0:
+        raise _fail("uma zona censurada não está totalmente preta")
+
+
+def _check_ocr(image: Image.Image, values: list[str], warp=None) -> None:
+    """Read the file again, the same way it was read at first."""
     rgb = image.convert("RGB")
-    for box in boxes:
-        extrema = rgb.crop((box.left, box.top, box.right,
-                            box.bottom)).getextrema()
-        if any(band != (0, 0) for band in extrema):
-            raise _fail("uma zona censurada não está totalmente preta")
-
-
-def _check_ocr(image: Image.Image, values: list[str]) -> None:
-    lines = ocr.line_texts(ocr.read_image(image.convert("RGB")))
+    lines = ocr.line_texts(ocr.read_image(warp.flatten(rgb) if warp
+                                          else rgb))
     leaked = find_values(values, lines)
     if leaked:
         raise _fail(f"{len(leaked)} valor(es) ainda legível(eis) na imagem")
 
 
-def _verify_image(redacted: Redacted, values, pages) -> None:
+def _verify_image(source: Source, redacted: Redacted, values,
+                  pages) -> None:
     image = Image.open(io.BytesIO(redacted.data))
     image.load()
     if image.format != "PNG":
@@ -67,7 +76,7 @@ def _verify_image(redacted: Redacted, values, pages) -> None:
     if image.info or image.getexif():
         raise _fail("a imagem ainda tem metadados")
     _check_pixels(image, pages[0][1])
-    _check_ocr(image, values)
+    _check_ocr(image, values, source.warps[0])
 
 
 def _verify_scanned(redacted: Redacted, values, pages) -> None:
@@ -166,7 +175,7 @@ def verify(source: Source, redacted: Redacted, masked: list[MaskedWord],
     values = [v for v in masked_values(source.lines, masked)
               if v not in shown]
     if source.kind == "image":
-        _verify_image(redacted, values, pages)
+        _verify_image(source, redacted, values, pages)
     elif source.kind == "scanned":
         _verify_scanned(redacted, values, pages)
     elif source.kind == "pdf":

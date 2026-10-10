@@ -15,7 +15,7 @@ Lethe masks the words that identify a person in a Portuguese document. It uses o
 | Leak check on the official document | 0 leaks in 24 masked values |
 | Words masked in the official document | 46, in 26 items |
 | Extra test documents | 17 (PDF, TXT in UTF-8 and UTF-16, CSV), 920 words masked, 0 errors |
-| Python tests | 156, coverage gate 90% |
+| Python tests | 158, coverage gate 90% |
 | Frontend tests | 20 |
 
 The local metric (`anonimizador/metric.py`) reproduces the two figures of the official evaluation logs:
@@ -92,7 +92,9 @@ Besides the challenge PDF, Lethe reads scanned PDFs, photos and images (PNG, JPG
   - The redaction paints opaque black over the masked words. It never blurs or pixelates, since those can be reversed. The boxes are padded so accents and descenders are covered too.
   - The image is rebuilt from its pixels only and saved as PNG, so EXIF data (GPS, the embedded thumbnail), XMP and text chunks are gone.
   - A scanned PDF is rebuilt from the redacted page images only.
-- **OCR misreads:** OCR words read with low confidence that look like identifiers (a digit, `@` or a domain) are masked as a precaution. OCR can turn `maria@x.pt` into `mariaQx.pt`, which neither the model nor the patterns would recognise.
+- **Phone photos:** the page is found in the photo and flattened (perspective correction) and its lighting is evened out before OCR. The bars are then mapped back onto the original photo as polygons that follow the slant of the text. Two real phone photos of the official document gave the same 60 lines as `submission.txt`, with the masks in exactly the same places (Accuracy 100%); the only differences were letters misread by OCR.
+- **OCR misreads:** OCR words read with low confidence that look like identifiers (3 or more digits, `@` or a domain) are masked as a precaution. OCR can turn `maria@x.pt` into `mariaQx.pt`, which neither the model nor the patterns would recognise.
+- **Text OCR could not read:** ink left outside every word box that has the shape of a text line means text that was never checked. The redacted file is then refused, with a request for a sharper photo.
 - **Text PDFs:** PyMuPDF redactions delete the text, image pixels and drawings under each word. Hidden text, metadata, attachments, JavaScript, links and form data are scrubbed, and the file is saved in full, never incrementally.
 - **DOCX:** masked words are rewritten inside the runs, so formatting is kept. This covers the body, tables, headers, footers and footnotes. Tracked changes are resolved, and comments, images, embedded objects and author fields are removed.
 - **Fail closed:** every redacted file is read back by an independent check before it is returned:
@@ -210,6 +212,7 @@ Python:
 - [difflib](https://docs.python.org/3/library/difflib.html) (standard library): word alignment
 - [Tesseract OCR](https://github.com/tesseract-ocr/tesseract) through [pytesseract](https://github.com/madmaze/pytesseract): reading images and scans
 - [Pillow](https://python-pillow.org/): image redaction
+- [NumPy](https://numpy.org/) and [SciPy](https://scipy.org/): page detection, perspective and lighting correction
 - [python-docx](https://python-docx.readthedocs.io/): DOCX reading and redaction
 
 Frontend:

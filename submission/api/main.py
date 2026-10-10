@@ -125,6 +125,7 @@ def _state(doc_id: str, session: Session) -> dict:
         "kind": session.source.kind,
         "redactable": session.source.redactable,
         "uncertain": len(session.source.uncertain),
+        "unread": session.source.unread,
     }
 
 

@@ -62,9 +62,9 @@ def test_find_values_ignores_layout_and_plain_words():
 
 def test_unpainted_zone_fails_the_pixel_check():
     image = Image.new("RGB", (50, 50), "white")
-    box = ocr.Box(10, 10, 20, 20)
+    square = [(10, 10), (20, 10), (20, 20), (10, 20)]
     with pytest.raises(RedactionError):
-        _check_pixels(image, [box])
+        _check_pixels(image, [square])
 
 
 # --- images ------------------------------------------------------------------
@@ -246,3 +246,27 @@ def test_misread_email_is_still_removed_from_the_photo():
     out = Image.open(io.BytesIO(redacted.data)).convert("RGB")
     text = " ".join(ocr.line_texts(ocr.read_image(out)))
     assert "exemplo" not in text and "Maria" not in text
+
+
+@needs_ocr
+def test_a_line_ocr_missed_is_detected_and_blocks_the_file():
+    image = document_image()
+    lines = ocr.read_image(image)
+    assert ocr.unread_lines(image, lines) == 0
+    missing_nif = [line for line in lines
+                   if not any(w.text == "NIF:" for w in line)]
+    assert ocr.unread_lines(image, missing_nif) >= 1
+
+    buffer = io.BytesIO()
+    image.save(buffer, format="PNG")
+    source = load_source(buffer.getvalue(), ".png")
+    source.unread = 1
+    with pytest.raises(RedactionError, match="não foram lidas"):
+        redact(source, secret_words(source.lines), "foto.png")
+
+
+def test_short_numbers_are_not_uncertain_identifiers():
+    from anonimizador.sources import looks_like_identifier
+    assert not any(map(looks_like_identifier, ["72kg", "50mg", "BRCA1"]))
+    assert all(map(looks_like_identifier,
+                   ["123456/89", "mariaQgexemplo.pt", "x@y", "912"]))

@@ -1,0 +1,258 @@
+@import "tailwindcss" source(none);
+@source "../src";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --font-sans: "Arial", "Helvetica Neue", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: var(--radius);
+  --radius-2xl: var(--radius);
+  --color-scrim: var(--scrim);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-ring-offset-background: var(--background);
+  --color-navy: var(--navy);
+  --color-navy-foreground: var(--navy-foreground);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-cat-nome: var(--cat-nome);
+  --color-cat-data: var(--cat-data);
+  --color-cat-id: var(--cat-id);
+  --color-cat-contacto: var(--cat-contacto);
+  --color-cat-morada: var(--cat-morada);
+  --color-cat-saude: var(--cat-saude);
+  --color-cat-financeiro: var(--cat-financeiro);
+  --color-cat-biometrico: var(--cat-biometrico);
+  --color-cat-religiao: var(--cat-religiao);
+  --color-cat-outro: var(--cat-outro);
+}
+
+:root {
+  --scrim: oklch(0 0 0 / 30%);
+  --shadow-selection: 0 8px 32px oklch(0 0 0 / 15%);
+  --radius: 0.375rem;
+  --background: oklch(0.985 0 0);
+  --foreground: oklch(0.25 0 0);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.25 0 0);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.25 0 0);
+  --primary: oklch(0.58 0.17 255);
+  --primary-foreground: oklch(0.99 0 0);
+  --secondary: oklch(0.95 0 0);
+  --secondary-foreground: oklch(0.25 0 0);
+  --muted: oklch(0.955 0 0);
+  --muted-foreground: oklch(0.5 0 0);
+  --accent: oklch(0.93 0.04 255);
+  --accent-foreground: oklch(0.3 0.06 200);
+  --destructive: oklch(0.6 0.22 25);
+  --destructive-foreground: oklch(0.99 0 0);
+  --border: oklch(0.89 0 0);
+  --input: oklch(0.89 0 0);
+  --ring: oklch(0.58 0.17 255);
+  --navy: oklch(0.22 0.05 258);
+  --navy-foreground: oklch(0.97 0.01 230);
+  --success: oklch(0.65 0.15 155);
+  --warning: oklch(0.75 0.15 70);
+  --cat-nome: oklch(0.65 0.17 250);
+  --cat-data: oklch(0.72 0.15 75);
+  --cat-id: oklch(0.6 0.18 300);
+  --cat-contacto: oklch(0.65 0.14 185);
+  --cat-morada: oklch(0.65 0.15 145);
+  --cat-saude: oklch(0.62 0.21 20);
+  --cat-financeiro: oklch(0.7 0.16 50);
+  --cat-biometrico: oklch(0.6 0.15 330);
+  --cat-religiao: oklch(0.58 0.12 280);
+  --cat-outro: oklch(0.6 0.02 250);
+}
+
+.dark {
+  --background: oklch(0.18 0 0);
+  --foreground: oklch(0.95 0 0);
+  --card: oklch(0.21 0 0);
+  --card-foreground: oklch(0.95 0 0);
+  --popover: oklch(0.21 0 0);
+  --popover-foreground: oklch(0.95 0 0);
+  --primary: oklch(0.72 0.15 255);
+  --primary-foreground: oklch(0.18 0.04 258);
+  --secondary: oklch(0.27 0 0);
+  --secondary-foreground: oklch(0.95 0 0);
+  --muted: oklch(0.25 0 0);
+  --muted-foreground: oklch(0.7 0 0);
+  --accent: oklch(0.3 0.06 200);
+  --accent-foreground: oklch(0.92 0.04 255);
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 14%);
+  --ring: oklch(0.72 0.15 255);
+}
+
+@layer base {
+  * { border-color: var(--color-border); letter-spacing: 0; }
+  body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    font-family: var(--font-sans);
+  }
+}
+
+@utility entity-mark {
+  border-radius: 0.3rem;
+  padding: 0 0.15rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  background-color: color-mix(in oklch, var(--c) 22%, transparent);
+  box-shadow: inset 0 -2px 0 var(--c);
+  &:hover { background-color: color-mix(in oklch, var(--c) 38%, transparent); }
+}
+@utility entity-off {
+  background-color: transparent;
+  box-shadow: none;
+  text-decoration: line-through;
+  text-decoration-color: var(--c);
+  opacity: 0.6;
+}
+
+@keyframes fade-up { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+@utility animate-fade-up { animation: fade-up 0.18s ease both; }
+
+@keyframes progress { 0% { transform: translateX(-100%); } 100% { transform: translateX(300%); } }
+@utility animate-progress { animation: progress 1.2s ease-in-out infinite; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}
+
+@layer base {
+  html { -webkit-text-size-adjust: 100%; }
+  body { min-width: 280px; }
+  button, [role="button"], label { -webkit-tap-highlight-color: transparent; }
+  button { touch-action: manipulation; }
+  @media (pointer: coarse), (max-width: 1023px) {
+    button:not([role="switch"]) { min-height: 44px; height: auto; white-space: normal; }
+    input:not([type="checkbox"]):not([type="file"]), textarea, select { font-size: max(16px, 1rem); }
+    input[type="checkbox"] { width: 18px; height: 18px; flex-shrink: 0; }
+    [data-slot="slider"] { min-height: 44px; }
+  }
+}
+
+/* Lethe: washed-away masking */
+.lethe-wash { display: inline-block; animation: lethe-wash 0.9s ease-out both; }
+@keyframes lethe-wash {
+  0% { opacity: 0; filter: blur(4px); transform: translateX(-6px); }
+  100% { opacity: 1; filter: blur(0); transform: none; }
+}
+@media (prefers-reduced-motion: reduce) { .lethe-wash { animation: none; } }
+
+/* Intro animation */
+.lethe-intro { transition: opacity .7s ease, filter .7s ease; }
+.lethe-intro-out { opacity: 0; filter: blur(6px); pointer-events: none; }
+.lethe-intro-wave { stroke-dasharray: 1; stroke-dashoffset: .97; animation: lethe-draw 1.3s cubic-bezier(.6,.05,.3,1) forwards; }
+.lethe-intro-star { opacity: 0; transform-box: fill-box; transform-origin: center; animation: lethe-shatter .9s cubic-bezier(.2,.7,.2,1) forwards; }
+.lethe-intro-name { opacity: 0; animation: lethe-name .8s ease 1.6s forwards; }
+/* Reduced motion: the overlay never plays and its parts start hidden, so it must not
+   cover the page at all — including before React runs and can remove it. */
+@media (prefers-reduced-motion: reduce) { .lethe-intro { display: none; } }
+@keyframes lethe-draw { to { stroke-dashoffset: 0; } }
+@keyframes lethe-shatter {
+  0% { opacity: 0; transform: translate(var(--dx), var(--dy)) scale(.2) rotate(-90deg); filter: blur(2px); }
+  60% { opacity: 1; }
+  100% { opacity: var(--o); transform: none; filter: none; }
+}
+@keyframes lethe-name { from { opacity: 0; letter-spacing: .6em; } to { opacity: 1; letter-spacing: .3em; } }
+
+/* Document import and river interactions share the active accent. */
+:root {
+  --shadow-river: 0 0 20px color-mix(in oklab, var(--primary) 25%, transparent);
+  --shadow-dropzone: 0 0 0 5px color-mix(in oklab, var(--primary) 8%, transparent);
+}
+.document-dropzone { transition: border-color .2s, box-shadow .2s, transform .2s; }
+.document-dropzone-active { box-shadow: var(--shadow-dropzone); transform: scale(1.01); }
+.document-expand { display: grid; grid-template-rows: 0fr; opacity: 0; transition: grid-template-rows .3s ease, opacity .3s ease; }
+.document-expand-open { grid-template-rows: 1fr; opacity: 1; }
+.river-word, .river-masked-word { position: relative; }
+.river-word-washed { color: var(--primary); }
+.river-sweep { left: -25%; width: 25%; will-change: left; }
+.river-wave { transform-origin: center; }
+.river-wave-one { animation: river-sway 3s ease-in-out infinite alternate; }
+.river-wave-two { animation: river-sway 2s ease-in-out infinite alternate-reverse; }
+.river-wave-three { animation: river-sway 2.5s ease-in-out infinite alternate; }
+.river-ellipsis { display: inline-flex; width: 1.2em; }
+.river-ellipsis span { animation: river-dot 1.2s steps(1) infinite; }
+.river-ellipsis span:nth-child(2) { animation-delay: .2s; }
+.river-ellipsis span:nth-child(3) { animation-delay: .4s; }
+.river-document { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; font-family: var(--font-mono); font-size: .875rem; line-height: 1.75rem; }
+.river-divider-wave { filter: drop-shadow(0 0 5px color-mix(in oklab, var(--primary) 55%, transparent)); }
+.river-divider-glow { opacity: .13; filter: blur(7px); animation: river-divider-flow 3.2s linear infinite; }
+.river-divider-current { stroke-linecap: round; opacity: .16; animation: river-divider-flow 2.6s linear infinite; }
+.river-divider-current-back { opacity: .1; animation-direction: reverse; animation-duration: 3.4s; }
+.river-divider-current-front { opacity: .22; }
+.river-divider-edge { stroke-linecap: round; stroke-dasharray: 18 8; opacity: .92; animation: river-divider-drift 1.8s linear infinite; }
+.river-handle { box-shadow: var(--shadow-river); }
+@keyframes river-crossing { from { left: -40%; } to { left: 100%; } }
+@keyframes river-sway { from { transform: translateX(-3px); } to { transform: translateX(3px); } }
+@keyframes river-dots { 50% { opacity: .25; } }
+@keyframes river-divider-flow {
+  0% { transform: translateY(-30px) scaleX(.82); }
+  50% { transform: translateY(0) scaleX(1.16); }
+  100% { transform: translateY(30px) scaleX(.82); }
+}
+@keyframes river-divider-drift { to { stroke-dashoffset: -52; } }
+@media (prefers-reduced-motion: reduce) {
+  .river-sweep { left: 30%; }
+  .river-word-washed > span:first-child { visibility: visible; }
+  .river-word-washed > span:last-child { display: none; }
+  .river-divider-glow, .river-divider-current, .river-divider-edge { animation: none; }
+}
+
+/* The river overlays preserve every word's original measured width. */
+.river-loading-glow { filter: blur(12px); opacity: .22; }
+.river-band { animation: river-undulate 1.8s ease-in-out infinite alternate; }
+.river-band-two { animation-delay: -.8s; }
+.river-band-three { animation-delay: -1.3s; }
+.river-loading-word { position: relative; display: inline-block; }
+.river-loading-word > span:first-child { transition: opacity .16s; }
+.river-redaction { position: absolute; inset-inline: 0; top: .4em; height: .9em; border-radius: 3px; background: color-mix(in oklab, var(--primary) 80%, transparent); opacity: 0; overflow: hidden; transition: opacity .16s; }
+.river-redaction::after { content: ""; position: absolute; inset: 0; background: linear-gradient(100deg, transparent, color-mix(in oklab, var(--primary-foreground) 35%, transparent), transparent); animation: river-shimmer .8s linear infinite; }
+.river-loading-word[data-washed=true] > span:first-child { opacity: 0; }
+.river-loading-word[data-washed=true] .river-redaction { opacity: 1; }
+.river-particle { position: absolute; left: 0; animation: river-particle 1.2s ease-out infinite; }
+.river-particle:nth-child(2) { top: 35%; animation-delay: -.4s; }
+.river-particle:nth-child(3) { top: 70%; animation-delay: -.8s; }
+.river-status { animation: river-status 1.5s ease both; }
+.category-scroll { mask-image: linear-gradient(to right, transparent, var(--foreground) 12px, var(--foreground) calc(100% - 12px), transparent); scrollbar-width: thin; }
+.selection-actions { box-shadow: var(--shadow-selection); }
+.review-mobile-actions { padding-bottom: max(.75rem, env(safe-area-inset-bottom)); }
+@keyframes river-undulate { from { transform: translateY(-9px) scaleY(1.06); } to { transform: translateY(9px) scaleY(1.06); } }
+@keyframes river-dot { 0%, 75% { opacity: 0; } 25%, 65% { opacity: 1; } }
+@keyframes river-shimmer { from { transform: translateX(-100%); } to { transform: translateX(100%); } }
+@keyframes river-particle { from { opacity: .7; transform: translate(0, 0) rotate(0); } to { opacity: 0; transform: translate(-35px, -16px) rotate(80deg); } }
+@keyframes river-status { 0% { opacity: 0; transform: translateY(3px); } 15%, 85% { opacity: 1; transform: none; } 100% { opacity: 0; } }
+@media (min-width: 1024px) { .category-scroll { mask-image: none; } }
+@media (prefers-reduced-motion: reduce) {
+  .river-particle, .river-redaction { display: none; }
+  .river-loading-word > span:first-child { opacity: 1; }
+  .river-sweep { left: 38%; }
+  .river-ellipsis span, .river-status { opacity: 1; }
+}

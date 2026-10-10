@@ -1,0 +1,63 @@
+# Team CI/CD for the Enxada de Pedra fork.
+# Runs only in this fork (never in the organisers' repository) and is left
+# out of the final submission branch.
+name: Team CI
+
+on:
+  push:
+    branches: [team-enxada-de-pedra, "feat/**", "fix/**", "chore/**"]
+  pull_request:
+    branches: [team-enxada-de-pedra]
+
+jobs:
+  test:
+    if: github.repository == 'Pedrom2002/nos-gen-ai-hackathon'
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.10", "3.11"]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+          cache-dependency-path: submission/requirements.txt
+
+      - name: Install dependencies
+        run: pip install -r submission/requirements.txt
+
+      - name: Lint (same command as the official workflow)
+        run: flake8 .
+
+      - name: Tests with coverage
+        working-directory: submission
+        run: >
+          python -m pytest -q
+          --cov=anonimizador --cov=run --cov=ask
+          --cov-report=term --cov-fail-under=90
+
+      - name: Local metric on the committed submission
+        working-directory: submission
+        run: python -m anonimizador.metric submission.txt data/gold/gold.txt
+
+  package:
+    # CD: every green push to the team branch publishes the candidate
+    # deliverables, so the final submission is always one download away.
+    needs: test
+    if: >
+      github.repository == 'Pedrom2002/nos-gen-ai-hackathon'
+      && github.event_name == 'push'
+      && github.ref == 'refs/heads/team-enxada-de-pedra'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: submission-candidate-${{ github.sha }}
+          path: |
+            submission/submission.txt
+            submission/prompt.txt
+            submission/report.md

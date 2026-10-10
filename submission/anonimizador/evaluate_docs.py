@@ -99,10 +99,14 @@ def main(argv: list[str] | None = None) -> None:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("paths", nargs="+", type=Path)
     parser.add_argument("--model", default=DEFAULT_MODEL)
+    parser.add_argument("--out-dir", type=Path, default=OUT_DIR)
     args = parser.parse_args(argv)
-    results = [evaluate_document(p, args.model) for p in collect(args.paths)]
+    results = [
+        evaluate_document(p, args.model, args.out_dir, generate_fn=generate)
+        for p in collect(args.paths)
+    ]
     print(to_markdown(results))
-    print(f"\nOutputs in {OUT_DIR}")
+    print(f"\nOutputs in {args.out_dir}")
 
 
 if __name__ == "__main__":

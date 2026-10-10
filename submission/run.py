@@ -17,6 +17,8 @@ from anonimizador.extract import extract_lines
 from anonimizador.llm import DEFAULT_MODEL, generate
 from anonimizador.pipeline import anonymize
 from anonimizador.prompt import VARIANTS
+from anonimizador.report import build_report, to_markdown
+from anonimizador.verify import check_leaks
 
 SUBMISSION_DIR = Path(__file__).resolve().parent
 DEFAULT_PDF = SUBMISSION_DIR.parent / "raw_data" / "document_to_anonymize.pdf"
@@ -43,6 +45,12 @@ def run(pdf: Path = DEFAULT_PDF, model: str = DEFAULT_MODEL,
     (out_dir / "prompt.txt").write_text(
         prompt, encoding="utf-8", newline="\n"
     )
+    report = build_report(lines, result)
+    leaks = check_leaks(lines, result.lines, result.masked)
+    # The shared report hides the original values (see report.py).
+    (out_dir / "report.md").write_text(
+        to_markdown(report), encoding="utf-8", newline="\n"
+    )
 
     summary = {
         "timestamp": datetime.now().isoformat(timespec="seconds"),
@@ -57,6 +65,8 @@ def run(pdf: Path = DEFAULT_PDF, model: str = DEFAULT_MODEL,
             for w in result.masked
         ],
         "entities": result.entities,
+        "report": report["summary"],
+        "leak_check": leaks,
     }
     runs_dir = Path(runs_dir)
     runs_dir.mkdir(parents=True, exist_ok=True)
@@ -75,12 +85,18 @@ def main(argv: list[str] | None = None) -> None:
     parser.add_argument("--variant", choices=VARIANTS, default="A")
     parser.add_argument("--keep-punct", action="store_true",
                         help='keep attached punctuation ("Flores," -> "*,")')
+    parser.add_argument("--out-dir", type=Path, default=SUBMISSION_DIR)
+    parser.add_argument("--runs-dir", type=Path, default=RUNS_DIR)
     args = parser.parse_args(argv)
 
-    summary = run(args.pdf, args.model, args.variant, args.keep_punct)
+    summary = run(args.pdf, args.model, args.variant, args.keep_punct,
+                  args.out_dir, args.runs_dir, generate_fn=generate)
     print(f"{summary['lines']} lines, {len(summary['masked_words'])} words "
           f"masked, {len(summary['entities'])} entities explained "
           f"({summary['model']}, variant {summary['variant']})")
+    leaks = summary["leak_check"]
+    print(f"Leak check: {len(leaks['leaks'])} leaks in "
+          f"{leaks['checked']} values checked")
 
 
 if __name__ == "__main__":

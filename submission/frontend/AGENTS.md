@@ -20,4 +20,5 @@
 - Below the desktop review breakpoint, keep entity controls in a bottom sheet and page actions fixed above the safe area so long documents do not bury navigation.
 - Comparison masking is display-only, preserving original whitespace and token widths for alignment; copy and downloads always use the official anonymize output.
 - Keep document import, loading and comparison as focused frontend components; accept page-wide file drops without intercepting text selection drops.
+- OCR (tesseract.js) and page rendering (pdf.js) run only in the browser, behind lazy imports in src/lib/ocr.ts, src/lib/pdf.ts and src/lib/images.ts; geometry, alignment and redaction are pure modules (src/lib/geometry.ts, align.ts, redaction.ts) so they stay testable in jsdom. The visual redaction boxes derive from the same spans anonymize() masks, and OCR'd files go to the backend as text because the API has no OCR.
 - Browser storage is read and written only through src/lib/safe-storage.ts, and the opening overlay hides itself even when storage or media queries are refused, so a browser that blocks storage (Safari in an embedded frame, private mode) can never blank the page.

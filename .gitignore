@@ -179,3 +179,16 @@ __pypackages__/
 # Pipfile.lock
 # poetry.lock
 # pdm.lock
+# Project
+.env
+.env.*
+!.env.example
+.venv/
+venv/
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+node_modules/
+dist/
+submission/data/cache/
+submission/data/runs/

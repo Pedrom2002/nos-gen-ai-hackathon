@@ -1,0 +1,7 @@
+pymupdf
+google-genai
+fastapi
+uvicorn[standard]
+python-multipart
+python-dotenv
+flake8

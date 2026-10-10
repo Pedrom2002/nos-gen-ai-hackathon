@@ -12,6 +12,9 @@ from dataclasses import dataclass
 from difflib import SequenceMatcher
 
 MASK = "*"
+# Minimum difflib ratio for a reworded word to count as the original one
+# ("Nome" ~ "Name", "nasceu" ~ "nasce").
+SIMILARITY = 0.7
 _TOKEN_SPLIT = re.compile(r"(\s+)")
 _EDGE_PUNCT = re.compile(r"^([(\[\"'«]*)(.*?)([)\]\"'».,;:!?]*)$")
 
@@ -81,16 +84,41 @@ def _masked_positions(original: list[str], model: list[str],
             )
             span = max(j2 - j1, rest_of_line)
             masked.update(range(i1, min(i2, i1 + span)))
-        elif i2 - i1 == j2 - j1:
-            masked.update(
-                i for i, w in zip(range(i1, i2), block) if _is_mask(w)
-            )
         elif any(_is_mask(w) for w in block):
-            kept = {w.casefold() for w in block if not _is_mask(w)}
-            masked.update(
-                i for i in range(i1, i2) if original[i].casefold() not in kept
-            )
+            # Masks mixed with reworded words: keep the original words the
+            # model still wrote (even slightly changed) and mask the rest.
+            # Pairing by position would leak "Maria" in
+            # "Nome: Maria Santos" -> "Nome completo: *".
+            masked.update(i1 + k for k in _unmatched(original[i1:i2], block))
     return masked
+
+
+def _bare(token: str) -> str:
+    return _EDGE_PUNCT.match(token).group(2).casefold()
+
+
+def _similar(a: str, b: str) -> bool:
+    a, b = _bare(a), _bare(b)
+    return a == b or SequenceMatcher(None, a, b).ratio() >= SIMILARITY
+
+
+def _unmatched(original: list[str], block: list[str]) -> set[int]:
+    """Return the offsets of original words with no similar unmasked word.
+
+    Unmasked words of the block are matched in order, so each one keeps at
+    most one original word.
+    """
+    unmatched = set(range(len(original)))
+    start = 0
+    for word in block:
+        if _is_mask(word):
+            continue
+        for k in range(start, len(original)):
+            if _similar(original[k], word):
+                unmatched.discard(k)
+                start = k + 1
+                break
+    return unmatched
 
 
 def _render(line: str, masked_idx: set[int], keep_punct: bool) -> str:

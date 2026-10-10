@@ -15,16 +15,36 @@ from anonimizador.align import MaskedWord, mask_token
 MASK = "*"
 _TOKEN_SPLIT = re.compile(r"(\s+)")
 
+# A phone number needs a "+351" prefix, the usual "9xx xxx xxx" grouping or
+# a phone label nearby: a bare 9-digit number may be an invoice or a NIF.
+_PHONE_LABEL = r"(?i:tel\w*|tlm|m[óo]vel|contacto|phone)\b[^\n\d]{0,15}"
+_OCTET = r"(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)"
+
+# When a pattern has a group named "v", only that group is masked (the
+# label stays visible).
 PATTERNS = {
     "email": r"[\w.+-]+@[\w-]+(?:\.[\w-]+)+",
-    "mobile": r"(?<![\d+])(?:\+351[\s-]?)?9[1236]\d(?:[\s-]?\d{3}){2}(?!\d)",
-    "landline": r"(?<![\d+])(?:\+351[\s-]?2\d{8}|2\d{2}[\s-]\d{3}[\s-]\d{3})"
-                r"(?!\d)",
+    "phone_prefixed": r"(?<![\d+])\+351[\s-]?[29]\d{2}(?:[\s-]?\d{3}){2}"
+                      r"(?!\d)",
+    "phone_grouped": r"(?<![\d+])[29]\d{2}[\s-]\d{3}[\s-]\d{3}(?!\d)",
+    "phone_labelled": _PHONE_LABEL + r"(?P<v>[29]\d{8})(?!\d)",
     "cartao_cidadao": r"\b\d{8}(?:\s?\d\s?|-\d)[A-Z]{2}\d\b",
-    "ip": r"\b(?:\d{1,3}\.){3}\d{1,3}\b",
+    # Only after "IP": "1.250.000.000 euros" or "versão 2.10.3.1" stay.
+    "ip": r"\bIP\b[^\n\d]{0,25}(?P<v>(?:" + _OCTET + r"\.){3}" + _OCTET
+          + r")(?![\d.])",
     "gps": r"\b\d{1,3}\.\d{3,}\s?[NS],?\s+\d{1,3}\.\d{3,}\s?[EWO]\b",
 }
-_COMBINED = re.compile("|".join(f"(?:{p})" for p in PATTERNS.values()))
+_COMPILED = [re.compile(p) for p in PATTERNS.values()]
+
+
+def _pattern_spans(text: str) -> list[tuple[int, int]]:
+    spans = []
+    for pattern in _COMPILED:
+        for match in pattern.finditer(text):
+            group = "v" if "v" in pattern.groupindex else 0
+            spans.append(match.span(group))
+    return spans
+
 
 # IBANs are not a regex: the length depends on the country. Total length per
 # country code, from the SWIFT IBAN registry.
@@ -118,8 +138,7 @@ def _iban_spans(text: str) -> list[tuple[int, int]]:
 def find_identifier_words(lines: list[str]) -> set[tuple[int, int]]:
     """Return (line, word index) of every word inside a matched pattern."""
     text, spans = _word_spans(lines)
-    matches = [(m.start(), m.end()) for m in _COMBINED.finditer(text)]
-    matches += _iban_spans(text)
+    matches = _pattern_spans(text) + _iban_spans(text)
     found = set()
     for match_start, match_end in matches:
         for start, end, line_no, index in spans:

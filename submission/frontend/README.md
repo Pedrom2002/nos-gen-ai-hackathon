@@ -51,5 +51,5 @@ Fluxo:
 # terminal 1
 cd submission && uvicorn api.main:app --port 8000 --no-access-log
 # terminal 2
-cd frontend && cp .env.example .env && npm install && npm run dev   # http://localhost:8080
+cd submission/frontend && cp .env.example .env && npm install && npm run dev   # http://localhost:8080
 ```

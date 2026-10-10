@@ -1,14 +1,15 @@
-import { LetheLogo } from "@/components/LetheLogo";
+import { LetheWordmark } from "@/components/LetheLogo";
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useReducer, useState } from "react";
 import { toast } from "sonner";
 import {
-  ArrowLeft, ArrowRight, Copy, Download,
+  ArrowLeft, ArrowLeftRight, ArrowRight, Columns2, Copy, Download,
   FileDown, Check, AlertTriangle, RotateCw, SearchX,
 } from "lucide-react";
 import { DocumentInput } from "@/components/DocumentInput";
-import { RiverLoading } from "@/components/RiverLoading";
+import { ReviewSkeleton } from "@/components/ReviewSkeleton";
 import { RiverComparison } from "@/components/RiverComparison";
+import { FocusedText } from "@/components/FocusedText";
 import { UI } from "@/lib/i18n-ui";
 import { emptyHistory, reviewHistory } from "@/lib/review-history";
 import { analyzeDocument, deleteDocument, isMockMode, syncDecisions } from "@/services/anonymizer";
@@ -60,6 +61,14 @@ function Index() {
   const [reading, setReading] = useState(false);
   const [resultView, setResultView] = useState<"side" | "slide">("side");
   const [sliderSeen, setSliderSeen] = useState(false);
+  const [focusId, setFocusId] = useState("");
+  useEffect(() => { if (step !== 2) setFocusId(""); }, [step]);
+  useEffect(() => { window.scrollTo({ top: 0, behavior: "smooth" }); }, [step]);
+  useEffect(() => {
+    if (!focusId) return;
+    const mark = [...document.querySelectorAll<HTMLElement>("[data-focus-mark]")].find((m) => m.offsetParent !== null);
+    mark?.scrollIntoView({ block: "center", behavior: "smooth" });
+  }, [focusId, resultView]);
   const [summary, setSummary] = useState("");
   const [loading, setLoading] = useState(false);
   const { t, s: cfg } = useSettings();
@@ -92,6 +101,7 @@ function Index() {
     if (!text.trim()) { toast.error(x.emptyDoc); return; }
     setLoading(true);
     setError("");
+    setStep(1);
     try {
       const r = await analyzeDocument(text, source && source.text === text ? source.file : null);
       if (docId) void deleteDocument(docId).catch(() => {});
@@ -115,6 +125,7 @@ function Index() {
       console.error(e);
       const msg = e instanceof Error ? e.message : x.unknownErr;
       setError(msg);
+      setStep(0);
     } finally {
       setLoading(false);
     }
@@ -190,8 +201,7 @@ function Index() {
           <div className="mx-auto max-w-6xl px-4 sm:px-6">
             <nav className="grid h-16 grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
               <div className="flex min-w-0 items-center gap-3">
-                <LetheLogo className="h-7 w-7 shrink-0" />
-                <span className="shrink-0 text-lg font-semibold">Lethe</span>
+                <LetheWordmark id="lethe-header-logo" className="h-9 shrink-0" />
                 {/* Without VITE_API_URL the results are canned: say so, so a demo never passes for the real model. */}
                 {isMockMode && <span role="status" title={u.demoMode} className="min-w-0 truncate rounded-md border border-amber-600/40 bg-amber-500/10 px-2 py-0.5 text-xs font-medium text-amber-700 dark:text-amber-300">{u.demoMode}</span>}
               </div>
@@ -201,37 +211,36 @@ function Index() {
           </div>
         </header>
 
-        <main className={`mx-auto w-full min-w-0 max-w-6xl flex-1 px-4 pt-6 sm:px-6 sm:pt-8 ${step === 1 ? "pb-40 lg:pb-16" : "pb-16"}`}>
+        <main className={`mx-auto flex w-full min-w-0 max-w-6xl flex-1 flex-col px-4 pt-6 sm:px-6 sm:pt-8 ${step === 1 ? "pb-40 lg:pb-16" : "pb-16"}`}>
           <h1 className="sr-only">{STEPS[step]}</h1>
-          <div className="mb-6 flex min-w-0 flex-col items-center gap-3">
-            <ol aria-label={STEPS.join(" · ")} className="flex w-full max-w-2xl min-w-0 items-center justify-center gap-1 sm:flex md:gap-2">
+          <div className="mb-8 flex min-w-0 justify-center">
+            <ol aria-label={STEPS.join(" · ")} className="flex w-full max-w-2xl min-w-0 items-center">
               {STEPS.map((s, i) => (
-                <li key={s} aria-current={i === step ? "step" : undefined} className="flex min-w-0 flex-1 items-center gap-2 last:flex-none">
-                  <span className={`grid size-7 shrink-0 place-items-center rounded-full text-xs font-semibold sm:size-8 sm:text-sm ${i <= step ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}>
-                    {i < step ? <Check className="size-4" /> : i + 1}
+                <li key={s} aria-current={i === step ? "step" : undefined} className="flex min-w-0 flex-1 items-center gap-3 last:flex-none">
+                  <span className={`grid size-9 shrink-0 place-items-center rounded-full border-2 text-sm font-semibold transition-colors ${i < step ? "border-primary bg-primary text-primary-foreground" : i === step ? "border-primary bg-primary/10 text-primary ring-4 ring-primary/15 step-current" : "border-border bg-card text-muted-foreground"}`}>
+                    {i < step ? <Check className="step-check size-4" /> : i + 1}
                   </span>
-                  <span className={`${i === step ? "inline font-semibold" : "hidden md:inline text-muted-foreground"} min-w-0 truncate text-sm`}>{s}</span>
-                  {i < STEPS.length - 1 && <span className="mx-1 h-px min-w-2 flex-1 bg-border md:mx-2 md:min-w-3" />}
+                  <span className={`${i === step ? "inline font-semibold text-foreground" : "hidden text-muted-foreground md:inline"} min-w-0 truncate text-sm`}>{s}</span>
+                  {i < STEPS.length - 1 && <span aria-hidden="true" className="relative h-0.5 min-w-4 flex-1 overflow-hidden rounded-full bg-border"><span className={`absolute inset-y-0 left-0 bg-primary transition-[width] duration-500 ${i < step ? "w-full" : "w-0"}`} /></span>}
                 </li>
               ))}
             </ol>
-            <div aria-hidden="true" className="h-px w-full max-w-4xl bg-border" />
           </div>
 
-          {step === 0 && loading && <RiverLoading text={text} />}
-
-          {step === 0 && !loading && error && (
-            <section role="alert" className="mx-auto mb-6 max-w-3xl rounded-lg border border-destructive/30 bg-card p-5 animate-fade-up">
+          {step === 0 && error && (
+            <section role="alert" className="mx-auto mb-6 w-full max-w-3xl rounded-lg border border-destructive/30 bg-card p-5 animate-fade-up">
               <div className="flex items-start gap-3"><AlertTriangle className="mt-1 size-6 shrink-0 text-destructive" /><div className="min-w-0"><h2 className="font-semibold">{u.errorTitle}</h2><p className="mt-2 break-words text-sm text-muted-foreground">{error}</p></div></div>
               <div className="mt-5 flex flex-wrap gap-2"><Button onClick={run}><RotateCw className="size-4" />{u.retry}</Button><Button variant="outline" onClick={clear}>{u.home}</Button></div>
             </section>
           )}
 
-          {step === 0 && !loading && !error && (
+          {step === 0 && !error && (
             <DocumentInput text={text} name={fileName} dragging={dragging} reading={reading} onFile={handleFile} onText={(value) => { setText(value); setError(""); }} onClear={clear} onAnalyze={run} />
           )}
 
-          {step === 1 && (
+          {step === 1 && loading && <ReviewSkeleton />}
+
+          {step === 1 && !loading && (
             <section>
               {entities.length === 0 && (
                 <div className="mb-4 flex items-center gap-3 rounded-2xl border border-dashed bg-card p-5">
@@ -253,20 +262,22 @@ function Index() {
 
           {step === 2 && (
             <section className="animate-fade-up space-y-8">
-              <div className="flex flex-wrap items-center justify-end gap-2" role="group" aria-label={u.comparison}>
-                <Button variant={resultView === "side" ? "secondary" : "ghost"} aria-pressed={resultView === "side"} onClick={() => setResultView("side")}>{u.sideBySide}</Button>
-                <span className="text-border" aria-hidden="true">|</span>
-                <Button variant={resultView === "slide" ? "secondary" : "ghost"} aria-pressed={resultView === "slide"} onClick={() => { setResultView("slide"); setSliderSeen(true); }}>{u.slideView}</Button>
+              <div className="flex justify-end">
+                <div className="inline-flex rounded-lg border bg-muted/40 p-1" role="group" aria-label={u.comparison}>
+                  {([["side", Columns2, u.sideBySide], ["slide", ArrowLeftRight, u.slideView]] as const).map(([id, Icon, label]) => (
+                    <Button key={id} variant="ghost" aria-pressed={resultView === id} onClick={() => { setResultView(id); if (id === "slide") setSliderSeen(true); }} className={`h-9 gap-2 rounded-md px-3 text-sm ${resultView === id ? "bg-card text-foreground shadow-sm hover:bg-card" : "text-muted-foreground hover:bg-transparent hover:text-foreground"}`}><Icon className="size-4" aria-hidden="true" />{label}</Button>
+                  ))}
+                </div>
               </div>
               <div className={resultView === "slide" ? "" : "hidden"}>
-                {sliderSeen && <RiverComparison text={text} entities={entities} output={output} />}
+                {sliderSeen && <RiverComparison text={text} entities={entities} output={output} focusId={focusId} />}
               </div>
               <div className={resultView === "side" ? "grid min-w-0 gap-4 md:grid-cols-2" : "hidden"}>
                 {[[t.original, text, true], [t.anonymized, output, false]].map(([h, c, orig]) => (
                   <div key={String(h)} className="min-w-0 rounded-lg border bg-card p-4 sm:p-5">
                     <h2 className="mb-3 text-sm font-semibold text-muted-foreground">{h}</h2>
                     <pre tabIndex={0} aria-label={String(h)} className="max-h-[60dvh] overflow-auto whitespace-pre-wrap break-words font-mono text-sm leading-6 [overflow-wrap:anywhere]">
-                      {orig ? c : String(c).split("*").map((part, i, arr) => (
+                      {orig ? <FocusedText text={text} entities={entities} focusId={focusId} /> : String(c).split("*").map((part, i, arr) => (
                         <span key={i}>{part}{i < arr.length - 1 && <span className="lethe-wash text-primary" style={{ animationDelay: `${Math.min(i * 40, 1600)}ms` }}>*</span>}</span>
                       ))}
                     </pre>
@@ -283,25 +294,31 @@ function Index() {
               <div className="border-t pt-8">
                 <h2 className="text-base font-semibold tracking-tight">{t.reportTitle}</h2>
 
-                <dl className="mt-5 grid grid-cols-3 gap-x-4 sm:gap-x-0">
+                <dl className="mt-5 grid grid-cols-3 divide-x overflow-hidden rounded-lg border bg-card">
                   {[
-                    { label: t.entities, value: String(st.count), tone: "" },
-                    { label: t.pctWords, value: `${st.pct}%`, tone: "" },
-                    { label: t.risk, value: x.risk[st.risk] ?? st.risk, tone: st.risk === "Alto" ? "text-destructive" : st.risk === "Médio" ? "text-warning" : "text-success" },
+                    { label: t.entities, value: String(st.count), tone: "", bar: "var(--primary)", fill: Math.min(100, st.count * 5) },
+                    { label: t.pctWords, value: `${st.pct}%`, tone: "", bar: "var(--primary)", fill: Math.min(100, st.pct) },
+                    { label: t.risk, value: x.risk[st.risk] ?? st.risk, tone: st.risk === "Alto" ? "text-destructive" : st.risk === "Médio" ? "text-warning" : "text-success", bar: st.risk === "Alto" ? "var(--destructive)" : st.risk === "Médio" ? "var(--warning)" : "var(--success)", fill: st.risk === "Alto" ? 100 : st.risk === "Médio" ? 60 : 25 },
                   ].map((s) => (
-                    <div key={s.label} className="min-w-0 sm:border-l sm:border-border sm:pl-5 sm:first:border-l-0 sm:first:pl-0">
+                    <div key={s.label} className="relative min-w-0 px-3 pb-4 pt-3.5 sm:px-5">
                       <dt className="text-[10px] font-medium uppercase leading-snug tracking-[0.12em] text-muted-foreground sm:text-[11px] sm:tracking-[0.14em]">{s.label}</dt>
-                      <dd className={`mt-1 text-lg font-semibold tabular-nums sm:text-xl ${s.tone}`}>{s.value}</dd>
+                      <dd className={`mt-1.5 text-2xl font-semibold tabular-nums sm:text-3xl ${s.tone}`}>{s.value}</dd>
+                      <span aria-hidden="true" className="absolute inset-x-0 bottom-0 h-0.5 bg-border"><span className="block h-full" style={{ width: `${s.fill}%`, background: s.bar }} /></span>
                     </div>
                   ))}
                 </dl>
 
-                <div className="mt-7">
+                <div className="mt-6 rounded-lg border bg-card p-4 sm:p-5">
                   <h3 className="text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">{u.byCategory}</h3>
-                  <ul className="mt-2 max-w-sm">
+                  <div aria-hidden="true" className="mt-3 flex h-2 gap-0.5 overflow-hidden rounded-sm">
+                    {CATEGORIES.filter((c) => st.perCat[c.id]).map((c) => (
+                      <span key={c.id} style={{ flexGrow: st.perCat[c.id], background: c.color }} />
+                    ))}
+                  </div>
+                  <ul className="mt-4 grid gap-x-8 gap-y-1 sm:grid-cols-2">
                     {CATEGORIES.filter((c) => st.perCat[c.id]).map((c) => (
                       <li key={c.id} className="flex items-center gap-2 py-1 text-sm">
-                        <span aria-hidden="true" className="size-1.5 shrink-0 rounded-full" style={{ background: c.color }} />
+                        <span aria-hidden="true" className="size-2 shrink-0 rounded-sm" style={{ background: c.color }} />
                         <span className="min-w-0 truncate">{x.cats[c.id]}</span>
                         <span aria-hidden="true" className="min-w-3 flex-1 border-b border-dotted border-border" />
                         <span className="shrink-0 font-semibold tabular-nums">{st.perCat[c.id]}</span>
@@ -310,39 +327,34 @@ function Index() {
                   </ul>
                 </div>
 
-                <div tabIndex={0} role="region" aria-label={t.reportTitle} className="mt-7 overflow-x-auto">
+                <div tabIndex={0} role="region" aria-label={t.reportTitle} className="mt-6 overflow-x-auto rounded-lg border bg-card">
                   <table className="w-full border-collapse text-sm">
                     <thead>
-                      <tr className="border-y border-border text-left text-[11px] uppercase tracking-[0.14em] text-muted-foreground">
-                        <th className="py-2 pr-3 font-medium sm:pr-5">{x.thEntity}</th>
-                        <th className="py-2 pr-3 font-medium sm:pr-5">{x.thCategory}</th>
-                        <th className="py-2 font-medium">{x.thReason}</th>
+                      <tr className="border-b bg-muted/40 text-left text-[11px] uppercase tracking-[0.14em] text-muted-foreground">
+                        <th className="px-4 py-2.5 font-medium">{x.thEntity}</th>
+                        <th className="px-4 py-2.5 font-medium">{x.thCategory}</th>
+                        <th className="px-4 py-2.5 font-medium">{x.thReason}</th>
                       </tr>
                     </thead>
-                    <tbody>
-                      {active.map((e) => (
-                        <tr key={e.id} className="border-b border-border/70 align-top">
-                          <td className="py-2.5 pr-3 font-mono text-[13px] [overflow-wrap:anywhere] sm:pr-5">{partialMask(e.text)}</td>
-                          <td className="py-2.5 pr-3 sm:pr-5">{x.cats[catOf(e.category).id]}</td>
-                          <td className="py-2.5 text-muted-foreground [overflow-wrap:anywhere]">{reason(e)}</td>
-                        </tr>
-                      ))}
+                    <tbody className="divide-y">
+                      {active.map((e) => {
+                        const cat = catOf(e.category);
+                        return (
+                          <tr key={e.id} onClick={() => setFocusId((id) => id === e.id ? "" : e.id)} className={`cursor-pointer align-top transition-colors hover:bg-muted/30 ${focusId === e.id ? "bg-primary/10" : ""}`}>
+                            <td className="px-4 py-3"><button type="button" aria-pressed={focusId === e.id} onClick={(ev) => { ev.stopPropagation(); setFocusId((id) => id === e.id ? "" : e.id); }} className="inline-block min-h-0 rounded-md border-l-2 bg-muted px-2.5 py-1 text-left font-mono text-[13px] font-medium text-foreground transition-colors hover:bg-primary/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring [overflow-wrap:anywhere]" style={{ borderLeftColor: cat.color }}>{e.text}</button></td>
+                            <td className="px-4 py-3"><span className="inline-flex items-center gap-2 whitespace-nowrap"><span aria-hidden="true" className="size-2 rounded-sm" style={{ background: cat.color }} />{x.cats[cat.id]}</span></td>
+                            <td className="px-4 py-3 text-muted-foreground [overflow-wrap:anywhere]">{reason(e)}</td>
+                          </tr>
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>
-
-                {summary && (
-                  <div className="mt-7 border-l border-border pl-4">
-                    <h3 className="text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">{x.modelExpl}</h3>
-                    <p className="mt-2 max-w-2xl whitespace-pre-wrap text-sm leading-6 text-muted-foreground">{summary}</p>
-                  </div>
-                )}
               </div>
             </section>
           )}
         </main>
 
-        <footer className="pb-6 text-center text-sm text-muted-foreground"><div className="mx-auto max-w-6xl px-4 sm:px-6"><div className="border-t pt-6"><p>Lethe</p></div></div></footer>
         {dragging && <div aria-hidden="true" className="pointer-events-none fixed inset-3 z-40 grid place-items-center rounded-lg border-2 border-dashed border-primary bg-background/90 text-primary"><p className="px-5 text-center text-xl font-semibold">{u.dropTitle}</p></div>}
       </div>
     </div>

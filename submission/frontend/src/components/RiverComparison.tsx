@@ -4,10 +4,11 @@ import { Button } from "@/components/ui/button";
 import { useSettings } from "@/lib/settings";
 import { UI } from "@/lib/i18n-ui";
 import { findSpans, type Entity } from "@/lib/anonymizer";
+import { FocusedText } from "@/components/FocusedText";
 
 // Display only: preserve each source token's width and blank lines. Official
 // output still comes exclusively from anonymize() in the page.
-export function RiverComparison({ text, entities, output }: { text: string; entities: Entity[]; output: string }) {
+export function RiverComparison({ text, entities, output, focusId = "" }: { text: string; entities: Entity[]; output: string; focusId?: string }) {
   const { t, s } = useSettings();
   const u = UI[s.lang];
   const [position, setPosition] = useState(0);
@@ -15,6 +16,8 @@ export function RiverComparison({ text, entities, output }: { text: string; enti
   const frame = useRef<number>(0);
   const dragging = useRef(false);
   const cancelReveal = () => cancelAnimationFrame(frame.current);
+  // Focusing an entity from the report reveals the original text underneath.
+  useEffect(() => { if (focusId) { cancelReveal(); setPosition(0); } }, [focusId]);
   useEffect(() => {
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) { setPosition(50); return; }
     let started: number | undefined;
@@ -68,7 +71,7 @@ export function RiverComparison({ text, entities, output }: { text: string; enti
     findSpans(text, entities.filter((e) => e.enabled)).forEach((span, i) => {
       parts.push(text.slice(cursor, span.start));
       text.slice(span.start, span.end).split(/(\s+)/).forEach((token, j) => {
-        parts.push(!token.trim() ? token : <span key={`${i}-${j}`} className="river-masked-word"><span className="invisible">{token}</span><span className="absolute left-0 top-0 text-primary">*</span></span>);
+        parts.push(!token.trim() ? token : <span key={`${i}-${j}`} className="river-masked-word"><span className="invisible">{token}</span><span className="absolute left-0 -top-[0.25em] leading-none text-primary">*</span></span>);
       });
       cursor = span.end;
     });
@@ -86,7 +89,7 @@ export function RiverComparison({ text, entities, output }: { text: string; enti
       <div ref={box} dir="ltr" className="relative overflow-hidden rounded-lg border bg-card" role="region" aria-label={u.comparison}>
         <div tabIndex={0} className="max-h-[60dvh] overflow-auto focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring" aria-label={u.comparison}>
           <div ref={content} className="relative">
-            <pre aria-hidden="true" className="river-document p-4 sm:p-5">{text}</pre>
+            <pre aria-hidden="true" className="river-document p-4 sm:p-5"><FocusedText text={text} entities={entities} focusId={focusId} /></pre>
             <div ref={maskLayer} aria-hidden="true" className="pointer-events-none absolute inset-0 bg-card"><pre className="river-document p-4 sm:p-5">{masked}</pre></div>
             <svg aria-hidden="true" className="pointer-events-none absolute inset-0 h-full w-full overflow-visible text-primary">
               <path ref={foamBack} fill="none" stroke="currentColor" strokeOpacity="0.18" strokeWidth="14" strokeLinecap="round" />

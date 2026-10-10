@@ -47,3 +47,10 @@ def test_run_writes_submission_prompt_and_log(tmp_path):
     assert [w["text"] for w in summary["masked_words"]] == [
         "Maria", "Conceição", "Oliveira", "Santos",
     ]
+
+
+def test_consecutive_runs_keep_separate_logs(tmp_path):
+    for _ in range(2):
+        run.run(out_dir=tmp_path, runs_dir=tmp_path / "runs",
+                generate_fn=fake_generate)
+    assert len(list((tmp_path / "runs").glob("*.json"))) == 2

@@ -2,15 +2,17 @@
 
 It only adds masks, never removes one, and only for patterns that always
 identify a person or an account: emails, Portuguese phone numbers, IBANs
-from any country, Cartão de Cidadão numbers, IP addresses and GPS
-coordinates. Patterns run over the whole document, so an IBAN split across
-two lines is still found.
+from any country, Cartão de Cidadão numbers, IP addresses, GPS coordinates
+and labelled person IDs (student, employee and SNS numbers, plus more labels
+in school documents). Patterns run over the whole document, so an IBAN split
+across two lines is still found.
 """
 
 import re
 import unicodedata
 
 from anonimizador.align import MaskedWord, mask_token
+from anonimizador.context import detect_contexts
 
 MASK = "*"
 _TOKEN_SPLIT = re.compile(r"(\s+)")
@@ -34,12 +36,76 @@ PATTERNS = {
           + r")(?![\d.])",
     "gps": r"\b\d{1,3}\.\d{3,}\s?[NS],?\s+\d{1,3}\.\d{3,}\s?[EWO]\b",
 }
-_COMPILED = [re.compile(p) for p in PATTERNS.values()]
+
+# Person IDs introduced by a label ("Aluno N.º 12345", "N.º de estudante:
+# a2021145"). The text is matched without accents, so "nº" reads "no" and
+# "Número" reads "Numero". Labels ignore case; the value does not, so
+# "Matrícula efetuada" is not a value. Only the value is masked.
+_N = r"(?:n\s?\.?\s?[o°]\.?|nr\.?|num\.|numero)"
+_AFTER_LABEL = r"[\s:.#=-]*"
+# A value starts with a digit (after up to five letters: "a2021145",
+# "up201904512") or is an upper-case code with a digit or hyphen
+# ("CE-55120"); a plain word or acronym ("SNS") is never a value.
+_ID_VALUE = (
+    r"(?P<v>(?:[A-Za-z]{0,5}\d[\w./-]*|[A-Z][A-Z0-9./]*[\d-][A-Z0-9./-]*)"
+    r"(?:[ \t]+\d{3,}[\w./-]*){0,3})"
+)
 
 
-def _pattern_spans(text: str) -> list[tuple[int, int]]:
+def _labelled_id(person: str) -> list[str]:
+    """Patterns for a person ID label: "<person> n.º" / "<person>:" and
+    "n.º (de) <person> (SNS / do SNS / do diretor de turma)", each followed
+    by the value."""
+    # An acronym right after the word belongs to the label ("utente SNS").
+    word = rf"\b{person}(?![A-Za-z])(?:\s+(?-i:[A-Z]{{2,5}})\b)?"
+    owner = r"\s+d[eoa]s?\s+[a-z]{2,12}"
+    return [
+        rf"(?i:{word}\s*(?:{_N}|:){_AFTER_LABEL})" + _ID_VALUE,
+        rf"(?i:\b{_N}\s*(?:d[eoa]s?\s+)?{word}"
+        rf"(?:{owner}){{0,2}}{_AFTER_LABEL})" + _ID_VALUE,
+    ]
+
+
+# Labels that point to a person in any document.
+ID_PERSONS = (
+    r"alun[oa]", r"estudante", r"mecanografico", r"mec\.", r"utente",
+)
+_ID_PATTERNS = [p for person in ID_PERSONS for p in _labelled_id(person)]
+_ID_PATTERNS += [
+    r"(?i:\bstudent\s+(?:id|number|n[or]\.?)" + _AFTER_LABEL + ")"
+    + _ID_VALUE,
+    r"(?i:\bid\s+d[eoa]\s+(?:alun[oa]|estudante)" + _AFTER_LABEL + ")"
+    + _ID_VALUE,
+]
+# Labels that point to a person only in a given context: elsewhere a
+# "matrícula" is a car or company registration and a "processo" a case.
+CONTEXT_ID_PERSONS = {
+    "escolar": (
+        r"matricula", r"processo", r"inscricao", r"candidat[oa]",
+        r"cartao", r"leitor", r"socio", r"identificacao", r"codigo",
+    ),
+}
+_CONTEXT_ID_PATTERNS = {
+    context: [p for person in persons for p in _labelled_id(person)]
+    # A bare field at the start of a line: "N.º: 12345", "ID: A-2291".
+    + [r"(?im:^\s*(?:" + _N + r"|id|codigo)\s*[:#]\s*)" + _ID_VALUE]
+    for context, persons in CONTEXT_ID_PERSONS.items()
+}
+
+_COMPILED = [re.compile(p) for p in [*PATTERNS.values(), *_ID_PATTERNS]]
+_CONTEXT_COMPILED = {
+    context: [re.compile(p) for p in patterns]
+    for context, patterns in _CONTEXT_ID_PATTERNS.items()
+}
+
+
+def _pattern_spans(text: str, contexts: set[str] = frozenset()
+                   ) -> list[tuple[int, int]]:
     spans = []
-    for pattern in _COMPILED:
+    patterns = list(_COMPILED)
+    for context in contexts:
+        patterns += _CONTEXT_COMPILED.get(context, [])
+    for pattern in patterns:
         for match in pattern.finditer(text):
             group = "v" if "v" in pattern.groupindex else 0
             spans.append(match.span(group))
@@ -136,9 +202,14 @@ def _iban_spans(text: str) -> list[tuple[int, int]]:
 
 
 def find_identifier_words(lines: list[str]) -> set[tuple[int, int]]:
-    """Return (line, word index) of every word inside a matched pattern."""
+    """Return (line, word index) of every word inside a matched pattern.
+
+    The document's context (e.g. a school record) is read from all the
+    lines and enables the ID labels that only make sense in it.
+    """
     text, spans = _word_spans(lines)
-    matches = _pattern_spans(text) + _iban_spans(text)
+    contexts = detect_contexts(lines)
+    matches = _pattern_spans(text, contexts) + _iban_spans(text)
     found = set()
     for match_start, match_end in matches:
         for start, end, line_no, index in spans:

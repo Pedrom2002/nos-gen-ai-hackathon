@@ -106,6 +106,72 @@ def test_ip_after_label_is_masked_but_label_is_kept():
     )
 
 
+SCHOOL_HEADER = "Agrupamento de Escolas de Benfica - Ano letivo 2025/2026"
+
+
+def masked_in_school(line):
+    """Mask ``line`` inside a school document (the header sets the
+    context)."""
+    lines = [SCHOOL_HEADER, line]
+    return apply_safety_net(lines, lines)[0][1]
+
+
+@pytest.mark.parametrize("line, expected", [
+    ("Aluno N.º 12345, Turma 9.ºB", "Aluno N.º * Turma 9.ºB"),
+    ("Aluno nº12346", "Aluno *"),
+    ("N.º de aluno: a2021145", "N.º de aluno: *"),
+    ("Número de estudante 2021 0457 (inscrito)",
+     "Número de estudante * * (inscrito)"),
+    ("Student ID: up201904512", "Student ID: *"),
+    ("Matrícula: 2021045", "Matrícula: *"),
+    ("Processo n.º P-2291/25", "Processo n.º *"),
+    ("Cartão de estudante n.º CE-55120", "Cartão de estudante n.º *"),
+    ("N.º: 7781", "N.º: *"),
+    ("ID: AB-2291", "ID: *"),
+])
+def test_school_ids_are_masked_after_their_label(line, expected):
+    assert masked_in_school(line) == expected
+
+
+@pytest.mark.parametrize("line", [
+    "Matrícula 2025/2026 confirmada",
+    "Matrícula efetuada em setembro",
+    "O aluno tem 15 anos e 2 irmãos.",
+    "Nota final: 17 valores; Turma 9.ºB; sala n.º 12",
+])
+def test_school_years_ages_grades_and_rooms_are_kept(line):
+    assert masked_in_school(line) == line
+
+
+def test_context_labels_are_kept_outside_school_documents():
+    for line in ["Matrícula: 12-AB-34", "Processo n.º 1234/25.0T8LSB",
+                 "N.º: 7781"]:
+        assert masked(line) == line
+
+
+def test_employee_student_and_sns_numbers_are_masked_anywhere():
+    assert masked("N.º mecanográfico: 0871") == "N.º mecanográfico: *"
+    assert masked("Nº Mec.: 0871") == "Nº Mec.: *"
+    assert masked("Aluno N.º 12345") == "Aluno N.º *"
+    assert masked("N.º de utente do SNS: 287 449 130") == (
+        "N.º de utente do SNS: * * *"
+    )
+
+
+def test_school_test_document_ids():
+    lines = (SUBMISSION / "data" / "test_docs"
+             / "08_ficha_aluno.txt").read_text(encoding="utf-8").splitlines()
+    out = dict(zip(lines, apply_safety_net(lines, lines)[0]))
+    assert out["Aluno N.º 20714, Turma 9.º B"] == "Aluno N.º * Turma 9.º B"
+    assert out["N.º de processo: P-2291/19"] == "N.º de processo: *"
+    assert out["Matrícula: 2019-0457"] == "Matrícula: *"
+    assert out["N.º mecanográfico do diretor de turma: 0193"] == (
+        "N.º mecanográfico do diretor de turma: *"
+    )
+    sala = "Observações: o aluno participa no clube de robótica (sala n.º 12)."
+    assert out[sala] == sala
+
+
 def test_keeps_dates_amounts_and_references():
     for line in ["Data: 15 de abril de 2025", "Referência: ADM-2025-04-15-089",
                  "Fatura 225035027", "Renda 950,00 € em 2026"]:
@@ -122,3 +188,9 @@ def test_official_document_matches_only_words_masked_in_the_reference():
     gold = read_lines(SUBMISSION / "data" / "gold" / "gold.txt")
     for line_no, index in find_identifier_words(original):
         assert gold[line_no].split()[index] == "*"
+
+
+def test_acronym_after_the_label_is_not_taken_as_the_id():
+    assert masked("N.º utente SNS .... 319 048 266") == (
+        "N.º utente SNS .... * * *"
+    )

@@ -31,7 +31,7 @@ export function charWeight(ch: string): number {
   if (base === " " || base === " ") return 0.28;
   if (/[.,:;!|'`]/.test(base)) return 0.28;
   if (/[ijl]/.test(base)) return 0.22;
-  if (/[ftrI()\[\]{}\-\/\\]/.test(base)) return 0.33;
+  if (/[ftrI()[\]{}\-/\\]/.test(base)) return 0.33;
   if (/[mwMW@%]/.test(base)) return 0.85;
   if (/[\p{Lu}]/u.test(base)) return base === "J" ? 0.5 : 0.68;
   if (/[\p{N}]/u.test(base)) return 0.56;

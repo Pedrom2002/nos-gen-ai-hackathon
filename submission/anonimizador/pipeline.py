@@ -5,7 +5,7 @@ prompt -> Gemini (JSON) -> word-by-word alignment -> regex safety net.
 
 from dataclasses import dataclass
 
-from anonimizador.align import MaskedWord, align
+from anonimizador.align import MaskedWord, align, count_dropped
 from anonimizador.llm import DEFAULT_MODEL, InvalidResponseError, generate
 from anonimizador.prompt import build_prompt, parse_response
 from anonimizador.safety import apply_safety_net
@@ -13,9 +13,10 @@ from anonimizador.safety import apply_safety_net
 # Temperatures tried in order when the model returns invalid JSON: the first
 # is deterministic, the next ones change the answer enough to recover.
 RETRY_TEMPERATURES = (0.0, 0.3, 0.6)
-# Share of the document's words the answer must contain. Alignment keeps the
-# words the model drops, unmasked, so an answer like {} would leak the whole
-# document. Words, not lines, because merged lines are handled by align.
+# Share of the document's words the answer must account for. Alignment keeps
+# the words the model drops, unmasked, so an answer like {} would leak the
+# whole document. Dropped words are counted by alignment, so collapsed masks
+# ("*" for a whole name or CSV cell) do not count against the answer.
 MIN_WORD_COVERAGE = 0.8
 
 
@@ -40,10 +41,10 @@ def answer_validator(lines: list[str]):
 
     def validate(text: str) -> None:
         masked_lines, _ = parse_response(text)
-        got = _word_count(masked_lines)
-        if got < MIN_WORD_COVERAGE * expected:
+        dropped = count_dropped(lines, masked_lines)
+        if expected - dropped < MIN_WORD_COVERAGE * expected:
             raise ValueError(
-                f"masked_lines has {got} of {expected} words"
+                f"masked_lines leaves out {dropped} of {expected} words"
             )
 
     return validate

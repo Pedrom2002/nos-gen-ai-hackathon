@@ -55,8 +55,17 @@ def test_merged_lines_are_accepted(tmp_path):
     assert models.temperatures == [0.0]
 
 
+def test_collapsed_masks_are_accepted(tmp_path):
+    # One "*" for a whole name or CSV cell: fewer words, nothing dropped.
+    collapsed = ["Nome: *", "Médico: Dr. *", "Diagnóstico: diabetes tipo 2"]
+    result, models = run(tmp_path, answer(collapsed))
+    assert result.lines == MASKED
+    assert models.temperatures == [0.0]
+
+
 def test_no_output_when_every_answer_is_empty(tmp_path):
-    with pytest.raises(llm.InvalidResponseError, match="0 of 11 words"):
+    with pytest.raises(llm.InvalidResponseError,
+                       match="leaves out 11 of 11 words"):
         run(tmp_path, "{}", "{}", "{}")
     assert not list(tmp_path.glob("*.json"))
 

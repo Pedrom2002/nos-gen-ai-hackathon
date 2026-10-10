@@ -200,6 +200,29 @@ def test_text_formats_have_no_redacted_file(client):
     assert response.status_code == 404
 
 
+def test_unread_ocr_lines_block_the_redacted_file_in_the_backend(
+        client, monkeypatch):
+    from anonimizador.sources import load_source
+    from tests.test_redact import make_docx, names_only
+
+    def read_with_unread_lines(data, suffix):
+        source = load_source(data, suffix)
+        source.unread = 2
+        return source
+
+    monkeypatch.setattr(main, "generate_fn", names_only)
+    monkeypatch.setattr(main, "_read", read_with_unread_lines)
+    doc = client.post("/api/documents", files={
+        "file": ("ficha.docx", make_docx(), DOCX_TYPE)}).json()
+    assert doc["unread"] == 2
+    assert not doc["redactable"]
+    base = f"/api/documents/{doc['id']}/download"
+    response = client.get(f"{base}/redacted")
+    assert response.status_code == 422
+    assert "não foram lidas" in response.json()["detail"]
+    assert client.get(f"{base}/submission").status_code == 200
+
+
 def test_failed_verification_sends_no_file(client, monkeypatch):
     from tests.test_redact import make_docx
     from anonimizador.redact import RedactionError

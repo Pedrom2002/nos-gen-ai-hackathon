@@ -126,7 +126,9 @@ def _state(doc_id: str, session: Session) -> dict:
         "summary": _summary(session.masked_items()),
         "leaks": check_leaks(session.lines, session.output, session.masked),
         "kind": session.source.kind,
-        "redactable": session.source.redactable,
+        # The backend decides: a file with lines the OCR never read cannot
+        # be verified, so it is not offered (download/redacted answers 422).
+        "redactable": session.source.redactable and not session.source.unread,
         "uncertain": len(session.source.uncertain),
         "unread": session.source.unread,
     }

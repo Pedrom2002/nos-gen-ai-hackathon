@@ -2,7 +2,7 @@ import type { Lang } from "./i18n";
 
 const pt = {
   "downloadRedacted": "Descarregar ficheiro censurado",
-  "unreadLines": "{n} linha(s) não foram lidas pelo OCR e não foram verificadas: confirme o ficheiro censurado antes de o partilhar, ou tire uma fotografia mais nítida e de frente.",
+  "unreadLines": "{n} linha(s) não foram lidas pelo OCR, por isso não há ficheiro censurado. Tire uma fotografia mais nítida e de frente.",
   "redactedPreview": "Pré-visualização do ficheiro censurado",
   "ocrFallback": "O servidor não tem OCR: foi enviado o texto lido neste navegador.",
   "demoMode": "Modo demo: sem ligação ao servidor, os resultados são simulados",
@@ -83,7 +83,7 @@ const pt = {
 export type UIStrings = typeof pt;
 const en: UIStrings = {
   "downloadRedacted": "Download redacted file",
-  "unreadLines": "{n} line(s) could not be read by OCR and were not checked: review the redacted file before sharing it, or take a sharper photo, straight on.",
+  "unreadLines": "{n} line(s) could not be read by OCR, so there is no redacted file. Take a sharper photo, straight on.",
   "redactedPreview": "Preview of the redacted file",
   "ocrFallback": "The server has no OCR: the text read in this browser was sent instead.",
   "demoMode": "Demo mode: no server connected, results are simulated",
@@ -163,7 +163,7 @@ const en: UIStrings = {
 };
 const fr: UIStrings = {
   "downloadRedacted": "Télécharger le fichier caviardé",
-  "unreadLines": "{n} ligne(s) n’ont pas pu être lues par l’OCR et n’ont pas été vérifiées : relisez le fichier caviardé avant de le partager, ou prenez une photo plus nette, de face.",
+  "unreadLines": "{n} ligne(s) n’ont pas pu être lues par l’OCR : pas de fichier caviardé. Prenez une photo plus nette, de face.",
   "redactedPreview": "Aperçu du fichier caviardé",
   "ocrFallback": "Le serveur n’a pas d’OCR : le texte lu dans ce navigateur a été envoyé.",
   "demoMode": "Mode démo : aucun serveur connecté, les résultats sont simulés",
@@ -243,7 +243,7 @@ const fr: UIStrings = {
 };
 const it: UIStrings = {
   "downloadRedacted": "Scarica il file oscurato",
-  "unreadLines": "{n} riga/righe non lette dall’OCR e non verificate: controlla il file oscurato prima di condividerlo, o scatta una foto più nitida e frontale.",
+  "unreadLines": "{n} riga/righe non lette dall’OCR: nessun file oscurato. Scatta una foto più nitida e frontale.",
   "redactedPreview": "Anteprima del file oscurato",
   "ocrFallback": "Il server non ha l’OCR: è stato inviato il testo letto in questo browser.",
   "demoMode": "Modalità demo: nessun server collegato, i risultati sono simulati",
@@ -323,7 +323,7 @@ const it: UIStrings = {
 };
 const de: UIStrings = {
   "downloadRedacted": "Geschwärzte Datei herunterladen",
-  "unreadLines": "{n} Zeile(n) konnte die OCR nicht lesen, sie wurden nicht geprüft: Kontrollieren Sie die geschwärzte Datei vor der Weitergabe, oder machen Sie ein schärferes Foto von vorne.",
+  "unreadLines": "{n} Zeile(n) konnte die OCR nicht lesen, daher gibt es keine geschwärzte Datei. Machen Sie ein schärferes Foto von vorne.",
   "redactedPreview": "Vorschau der geschwärzten Datei",
   "ocrFallback": "Der Server hat keine OCR: Der in diesem Browser gelesene Text wurde gesendet.",
   "demoMode": "Demomodus: kein Server verbunden, die Ergebnisse sind simuliert",
@@ -403,7 +403,7 @@ const de: UIStrings = {
 };
 const ar: UIStrings = {
   "downloadRedacted": "تنزيل الملف المحجوب",
-  "unreadLines": "تعذّر على OCR قراءة {n} سطر ولم يتم التحقق منها: راجع الملف المحجوب قبل مشاركته، أو التقط صورة أوضح ومن الأمام.",
+  "unreadLines": "تعذّر على OCR قراءة {n} سطر، لذلك لا يوجد ملف محجوب. التقط صورة أوضح ومن الأمام.",
   "redactedPreview": "معاينة الملف المحجوب",
   "ocrFallback": "لا يتوفر OCR على الخادم: أُرسل النص المقروء في هذا المتصفح.",
   "demoMode": "وضع العرض: لا يوجد خادم متصل، النتائج محاكاة",
@@ -483,7 +483,7 @@ const ar: UIStrings = {
 };
 const ja: UIStrings = {
   "downloadRedacted": "黒塗りファイルをダウンロード",
-  "unreadLines": "OCR で {n} 行を読み取れず、確認されていません。共有前に黒塗りファイルを確認するか、正面から鮮明に撮影してください。",
+  "unreadLines": "OCR で {n} 行を読み取れなかったため、黒塗りファイルはありません。正面から鮮明に撮影してください。",
   "redactedPreview": "黒塗りファイルのプレビュー",
   "ocrFallback": "サーバーに OCR がないため、このブラウザーで読み取ったテキストを送信しました。",
   "demoMode": "デモモード：サーバー未接続のため、結果はシミュレーションです",
@@ -563,7 +563,7 @@ const ja: UIStrings = {
 };
 const zh: UIStrings = {
   "downloadRedacted": "下载已遮盖的文件",
-  "unreadLines": "OCR 有 {n} 行无法识别，未经检查：分享前请检查遮盖后的文件，或从正面拍摄更清晰的照片。",
+  "unreadLines": "OCR 有 {n} 行无法识别，因此没有遮盖后的文件。请从正面拍摄更清晰的照片。",
   "redactedPreview": "已遮盖文件的预览",
   "ocrFallback": "服务器没有 OCR：已发送在此浏览器中识别的文本。",
   "demoMode": "演示模式：未连接服务器，结果为模拟数据",

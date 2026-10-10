@@ -102,7 +102,8 @@ def _from_ocr(source: Source, straighten: bool = False) -> Source:
         source.warps.append(warp)
         readable = warp.flatten(image) if warp else image
         lines = ocr.read_image(readable)
-        source.unread += ocr.unread_lines(readable, lines)
+        lines, still_unread = ocr.recover_unread(readable, lines)
+        source.unread += len(still_unread)
         for words in lines:
             line_no = len(source.lines)
             source.lines.append(" ".join(w.text for w in words))

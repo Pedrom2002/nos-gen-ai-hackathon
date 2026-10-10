@@ -90,3 +90,12 @@ describe("redacted files", () => {
     expect(fromState(state).redactable).toBe(false);
   });
 });
+
+describe("shared API model", () => {
+  it("keeps the shared model free of web-only APIs", async () => {
+    const { readFileSync } = await import("node:fs");
+    const source = readFileSync("src/lib/api-model.ts", "utf8");
+    for (const banned of ["import.meta", "window.", "document.", "localStorage", 'from "@/'])
+      expect(source).not.toContain(banned);
+  });
+});

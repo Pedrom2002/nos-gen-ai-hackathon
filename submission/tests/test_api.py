@@ -111,10 +111,10 @@ def test_upload_errors(client, monkeypatch):
     bad = client.post("/api/documents",
                       files={"file": ("foto.gif", b"x", "image/gif")})
     assert bad.status_code == 415
-    broken = client.post("/api/documents",
-                         files={"file": ("foto.jpg", b"x", "image/jpeg")})
+    broken = client.post("/api/documents", files={
+        "file": ("foto.jpg", b"SEGREDO-123456789", "image/jpeg")})
     assert broken.status_code == 422
-    assert "x" not in broken.json()["detail"].split()
+    assert "SEGREDO" not in broken.json()["detail"]
     empty = client.post("/api/documents",
                         files={"file": ("vazio.txt", b"  \n", "text/plain")})
     assert empty.status_code == 422
@@ -213,3 +213,29 @@ def test_failed_verification_sends_no_file(client, monkeypatch):
     response = client.get(f"/api/documents/{doc['id']}/download/redacted")
     assert response.status_code == 422
     assert response.json()["detail"] == "Verificação falhou: teste."
+
+
+def test_fixed_ocr_text_is_kept_through_the_review(client, monkeypatch):
+    from anonimizador.sources import Source
+
+    def model(prompt, model=None, json_output=False, **kwargs):
+        if "lido por OCR" in prompt:
+            return json.dumps({"lines": ["Informações Financeiras:",
+                                         "Nome: Rui Costa"]})
+        lines = re.findall(r"^L\d+: (.*)$", prompt, re.M)
+        return json.dumps({"masked_lines": [
+            line.replace("Rui Costa", "* *") for line in lines],
+            "entities": []})
+
+    photo = Source("image", ".png", b"", ["Informações Financelras:",
+                                          "Nome: Rui Costa"])
+    monkeypatch.setattr(main, "generate_fn", model)
+    monkeypatch.setattr(main, "_read", lambda data, suffix: photo)
+    doc = client.post("/api/documents", files={
+        "file": ("foto.png", b"png", "image/png")}).json()
+    assert doc["lines"][0] == "Informações Financeiras:"
+    assert doc["output"] == ["Informações Financeiras:", "Nome: * *"]
+    name = doc["items"][0]["id"]
+    after = client.put(f"/api/documents/{doc['id']}/decisions",
+                       json={"keep": [name]}).json()
+    assert after["output"] == ["Informações Financeiras:", "Nome: Rui Costa"]

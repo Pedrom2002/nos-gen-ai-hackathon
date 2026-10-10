@@ -42,9 +42,10 @@ def run(pdf: Path = DEFAULT_PDF, model: str = DEFAULT_MODEL,
     """
     pdf = Path(pdf)
     source = load_source(pdf.read_bytes(), pdf.suffix)
-    lines = source.lines
     result = anonymize_source(source, model, variant, keep_punct,
                               generate_fn)
+    # After anonymize_source: OCR text has been fixed by then.
+    lines = source.lines
     prompt = result.prompt
 
     out_dir = Path(out_dir)

@@ -1,6 +1,6 @@
 // Shapes shared by the import, the result page and the exports. Pure types.
 
-export type SourceKind = "pdf" | "image" | "text";
+export type SourceKind = "pdf" | "image" | "text" | "docx";
 
 /** One whitespace-separated word on a page, in page units with a top-left origin. */
 export interface GeoWord { text: string; line: number; x: number; y: number; w: number; h: number }

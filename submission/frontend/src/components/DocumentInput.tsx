@@ -28,7 +28,9 @@ export function DocumentInput({ text, name, dragging, busy, preview, kind, ocr, 
   const reading = !!busy;
   const pct = busy?.stage === "ocr" ? Math.round(busy.pct * 100) : null;
   const buttonLabel = pct !== null ? u.ocrProgress.replace("{pct}", String(pct)) : reading ? u.readingFile : u.chooseFile;
-  const loaded = !!text.trim() || !!preview;
+  // A DOCX is read by the backend, so it can be analysed before any text shows.
+  const ready = !!text.trim() || kind === "docx";
+  const loaded = ready || !!preview;
   const bigPreview = kind === "image" && preview;
   return (
     <section className="animate-fade-up mx-auto my-auto w-full max-w-4xl">
@@ -89,7 +91,7 @@ export function DocumentInput({ text, name, dragging, busy, preview, kind, ocr, 
                 </div>
               </div>
               <div className="flex justify-end">
-                <Button size="lg" onClick={onAnalyze} disabled={!text.trim() || reading}><ShieldCheck className="size-4" />{t.anonymize}</Button>
+                <Button size="lg" onClick={onAnalyze} disabled={!ready || reading}><ShieldCheck className="size-4" />{t.anonymize}</Button>
               </div>
             </div>
           </div>

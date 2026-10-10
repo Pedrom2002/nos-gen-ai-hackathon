@@ -135,3 +135,24 @@ def test_delete_removes_the_document(client):
     assert client.delete(f"/api/documents/{doc['id']}").status_code == 204
     assert client.get(f"/api/documents/{doc['id']}").status_code == 404
     assert main.STORE == {}
+
+
+def test_cors_origins_come_from_the_environment():
+    lovable = "https://abc.lovable.app"
+    assert main.cors_origins(None) == main.DEV_ORIGINS
+    assert main.cors_origins(f" {lovable}/ , ,http://localhost:5173") == (
+        main.DEV_ORIGINS + [lovable])
+    # A wildcard would open the API to every site.
+    assert main.cors_origins("*") == main.DEV_ORIGINS
+
+
+def test_dev_server_passes_the_cors_preflight(client):
+    response = client.options("/api/health", headers={
+        "Origin": "http://localhost:5173",
+        "Access-Control-Request-Method": "GET"})
+    assert response.headers["access-control-allow-origin"] == (
+        "http://localhost:5173")
+    blocked = client.options("/api/health", headers={
+        "Origin": "https://evil.example",
+        "Access-Control-Request-Method": "GET"})
+    assert "access-control-allow-origin" not in blocked.headers

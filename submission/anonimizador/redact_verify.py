@@ -21,6 +21,7 @@ import html
 import io
 import re
 import zipfile
+from urllib.parse import unquote
 
 import numpy as np
 import pymupdf
@@ -75,7 +76,7 @@ def _verify_image(source: Source, redacted: Redacted, values,
         raise _fail("a imagem não é PNG")
     if image.info or image.getexif():
         raise _fail("a imagem ainda tem metadados")
-    _check_pixels(image, pages[0][1])
+    _check_pixels(image, pages[0])
     _check_ocr(image, values, source.warps[0])
 
 
@@ -92,7 +93,7 @@ def _verify_scanned(redacted: Redacted, values, pages) -> None:
             pix = pymupdf.Pixmap(doc, images[0][0])
             image = Image.frombytes("RGB", (pix.width, pix.height),
                                     pix.samples)
-            _check_pixels(image, pages[page.number][1])
+            _check_pixels(image, pages[page.number])
             _check_ocr(image, values)
 
 
@@ -140,6 +141,7 @@ def _xml_text(xml: str) -> list[str]:
 def _verify_docx(source: Source, redacted: Redacted, values, masked,
                  keep_punct) -> None:
     archive = zipfile.ZipFile(io.BytesIO(redacted.data))
+    tokens = _raw_tokens(values)
     for name in archive.namelist():
         if re.match(r"word/(media|embeddings)/|word/(comments|people)",
                     name) or re.match(r"docProps/(custom|thumbnail)", name):
@@ -149,6 +151,12 @@ def _verify_docx(source: Source, redacted: Redacted, values, masked,
             text = archive.read(name).decode("utf-8", "replace")
             if find_values(values, _xml_text(text)):
                 raise _fail("há valores mascarados dentro do DOCX")
+            # Attribute values too: a hyperlink target ("mailto:...") lives
+            # in a .rels attribute, not in the text.
+            attributes = unquote(html.unescape(
+                " ".join(re.findall(r'="([^"]*)"', text)))).encode()
+            if any(token in attributes for token in tokens):
+                raise _fail("há um identificador num atributo do DOCX")
     per_line: dict[int, set[int]] = {}
     for word in masked:
         per_line.setdefault(word.line, set()).add(word.index)
@@ -168,12 +176,19 @@ def verify(source: Source, redacted: Redacted, masked: list[MaskedWord],
     per_line: dict[int, set[int]] = {}
     for word in masked:
         per_line.setdefault(word.line, set()).add(word.index)
-    text_output = [_render(line, per_line.get(n, set()), keep_punct)
-                   for n, line in enumerate(source.lines)]
-    shown = set(find_values(masked_values(source.lines, masked),
-                            text_output))
-    values = [v for v in masked_values(source.lines, masked)
-              if v not in shown]
+    # Values are taken from the text as fixed (ocr_fix) and, for OCR, as it
+    # was first read: the check reads the file with OCR again, which may
+    # misread a value the same way it did the first time.
+    readings = [source.lines]
+    if source.ocr_lines and source.ocr_lines != source.lines:
+        readings.append(source.ocr_lines)
+    values = []
+    for lines in readings:
+        text_output = [_render(line, per_line.get(n, set()), keep_punct)
+                       for n, line in enumerate(lines)]
+        candidates = masked_values(lines, masked)
+        shown = set(find_values(candidates, text_output))
+        values += [v for v in candidates if v not in shown]
     if source.kind == "image":
         _verify_image(source, redacted, values, pages)
     elif source.kind == "scanned":

@@ -170,6 +170,18 @@ def _same_word(box: "Box", lines: list[list["OcrWord"]]):
     return None
 
 
+def _read_zone(image: Image.Image, zone: "Box") -> list["OcrWord"]:
+    """Read a strip of the image as a single line of text; the boxes come
+    back in the coordinates of the whole image."""
+    crop = image.crop((zone.left, zone.top, zone.right, zone.bottom))
+    return [
+        OcrWord(w.text, Box(w.box.left + zone.left, w.box.top + zone.top,
+                            w.box.right + zone.left,
+                            w.box.bottom + zone.top), w.confidence)
+        for line in read_image(crop, psm=7) for w in line
+    ]
+
+
 def recover_unread(image: Image.Image, lines: list[list["OcrWord"]]):
     """Read again, one line at a time, the zones page OCR skipped.
 
@@ -186,12 +198,8 @@ def recover_unread(image: Image.Image, lines: list[list["OcrWord"]]):
         # The whole strip of the line, not just the blob: ink left over from
         # a word already read is only a fragment of that word.
         zone = Box(0, blob.top, image.width, blob.bottom).padded(image.size)
-        crop = image.crop((zone.left, zone.top, zone.right, zone.bottom))
         words = [
-            OcrWord(w.text, Box(w.box.left + zone.left, w.box.top + zone.top,
-                                w.box.right + zone.left,
-                                w.box.bottom + zone.top), w.confidence)
-            for line in read_image(crop, psm=7) for w in line
+            w for w in _read_zone(image, zone)
             if w.confidence >= RECOVER_CONFIDENCE
             and any(c.isalnum() for c in w.text)
         ]

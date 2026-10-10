@@ -353,3 +353,17 @@ def test_long_scans_are_refused_before_ocr(monkeypatch):
         doc.new_page()
     with pytest.raises(sources.TooManyPages):
         load_source(doc.tobytes(), ".pdf")
+
+
+@needs_ocr
+def test_webp_photo_is_read_and_redacted():
+    buffer = io.BytesIO()
+    document_image().save(buffer, format="WEBP", quality=90)
+    source = load_source(buffer.getvalue(), ".webp")
+    assert source.kind == "image"
+    assert any("Maria Santos" in line for line in source.lines)
+    result = redact(source, secret_words(source.lines), "foto.webp")
+    assert result.filename == "foto_censurado.png"
+    lines = ocr.line_texts(ocr.read_image(
+        Image.open(io.BytesIO(result.data)).convert("RGB")))
+    assert not any("Maria" in line for line in lines)

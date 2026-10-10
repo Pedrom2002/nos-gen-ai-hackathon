@@ -23,9 +23,9 @@ export function SettingsSheet() {
   return (
     <Sheet>
       <SheetTrigger asChild>
-        <Button variant="ghost" aria-label={t.settings} className="inline-flex items-center gap-2 rounded-md text-sm text-muted-foreground hover:text-foreground">
-          <span className="grid h-7 w-7 place-items-center rounded-md text-xs font-semibold text-foreground">
-            <Gear className="h-4 w-4" />
+        <Button variant="ghost" aria-label={t.settings} className="group inline-flex items-center gap-2 rounded-md text-sm text-muted-foreground transition-colors hover:bg-primary/10 hover:text-primary focus-visible:bg-primary/10 focus-visible:text-primary data-[state=open]:bg-primary/10 data-[state=open]:text-primary">
+          <span className="grid h-7 w-7 place-items-center rounded-md text-xs font-semibold">
+            <Gear className="h-4 w-4 transition-transform duration-500 ease-out group-hover:rotate-90 group-data-[state=open]:rotate-90" />
           </span>
           {t.settings}
         </Button>

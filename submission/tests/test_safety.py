@@ -1,5 +1,7 @@
 from pathlib import Path
 
+import pytest
+
 from anonimizador.extract import extract_lines
 from anonimizador.metric import read_lines
 from anonimizador.safety import apply_safety_net, find_identifier_words
@@ -36,6 +38,55 @@ def test_styled_and_struck_through_identifiers_are_found():
     assert masked("Tel 𝟵𝟭𝟮 𝟯𝟰𝟱 𝟲𝟳𝟴") == "Tel * * *"
     struck = "+̶3̶5̶1̶ ̶9̶1̶9̶ ̶4̶4̶2̶ ̶6̶3̶0̶"
     assert "*" in masked(f"Antigo {struck}")
+
+
+def test_iban_with_space_after_country_code_is_masked():
+    assert masked("IBAN: PT 50 0018 0003 4521 9870 0201 8") == (
+        "IBAN: * * * * * * * *"
+    )
+
+
+@pytest.mark.parametrize("iban", [
+    "DE89 3704 0044 0532 0130 00",
+    "GB29 NWBK 6016 1331 9268 19",
+    "FR14 2004 1010 0505 0001 3M02 606",
+    "ES91 2100 0418 4502 0005 1332",
+    "BE68 5390 0754 7034",
+    "NO93 8601 1117 947",
+    "NL91ABNA0417164300",
+    "BR18 0036 0305 0000 1000 9795 493C 1",
+])
+def test_iban_from_any_country_is_masked(iban):
+    words = len(iban.split())
+    assert masked(f"Conta {iban} ativa") == "Conta " + "* " * words + "ativa"
+
+
+def test_code_outside_the_iban_registry_is_not_an_iban():
+    line = "Conta ZZ12 3456 7890 1234 5678 ativa"
+    assert masked(line) == line
+
+
+def test_known_country_with_wrong_checksum_is_still_masked():
+    assert masked("IBAN ES00 1234 5678 9012 3456 7890") == (
+        "IBAN * * * * * *"
+    )
+
+
+def test_iban_from_another_country_split_across_lines():
+    original = ["IBAN DE89 3704 0044", "0532 0130 00. Obrigado"]
+    lines, _ = apply_safety_net(original, original)
+    assert lines == ["IBAN * * *", "* * * Obrigado"]
+
+
+def test_iban_stops_at_the_country_length():
+    line = "PT50 0018 0003 4521 9870 0201 8 2025 ABCD"
+    assert masked(line) == "* * * * * * * 2025 ABCD"
+
+
+def test_codes_that_look_like_ibans_are_kept():
+    for line in ["FACE-ID-78901", "CRM: 12345-PT", "ID-BIO-12345",
+                 "NIF PT 123456789", "Cartão PT 50 euros por mês"]:
+        assert masked(line) == line
 
 
 def test_keeps_dates_amounts_and_references():

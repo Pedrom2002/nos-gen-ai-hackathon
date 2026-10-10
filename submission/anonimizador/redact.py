@@ -125,9 +125,11 @@ def png_bytes(image: Image.Image) -> bytes:
 
 
 def _image(source: Source, masked: list[MaskedWord]):
+    """Return the PNG and, per page, the polygons that were painted."""
     boxes = word_boxes(source, masked).get(0, [])
-    image, painted = paint(source.pages[0], boxes, source.warps[0])
-    return png_bytes(image), {0: (image, painted)}
+    photo = next(source.page_images())
+    image, painted = paint(photo, boxes, source.warps[0])
+    return png_bytes(image), {0: painted}
 
 
 def _scanned(source: Source, masked: list[MaskedWord]):
@@ -135,10 +137,11 @@ def _scanned(source: Source, masked: list[MaskedWord]):
     doc = pymupdf.open()
     pages = {}
     scale = 72 / SCAN_DPI
-    for page_no, page_image in enumerate(source.pages):
+    # One page in memory at a time: each is about 26 MB of pixels.
+    for page_no, page_image in enumerate(source.page_images()):
         image, painted = paint(page_image, boxes.get(page_no, []),
                                source.warps[page_no])
-        pages[page_no] = (image, painted)
+        pages[page_no] = painted
         page = doc.new_page(width=image.width * scale,
                             height=image.height * scale)
         page.insert_image(page.rect, stream=png_bytes(image))
@@ -180,7 +183,8 @@ def _pdf(source: Source, masked: list[MaskedWord]) -> bytes:
 
 # --- DOCX ---
 
-_DROP_REL = ("/image", "/oleObject", "/package", "/comments", "/people",
+_DROP_REL = ("/hyperlink", "/image", "/oleObject", "/package", "/comments",
+             "/people",
              "/customXml", "/commentsExtended", "/commentsIds",
              "/commentsExtensible", "/hdphoto", "/media", "/video", "/audio")
 _DROP_TAGS = ("w:drawing", "w:pict", "w:object", "w:commentRangeStart",
@@ -269,6 +273,13 @@ def _docx(source: Source, masked: list[MaskedWord],
     paragraphs = docx_paragraphs(document)
     if len(paragraphs) != len(source.lines):
         raise RedactionError("O DOCX mudou desde a leitura.")
+    if any(paragraph.getparent().tag == qn("w:txbxContent")
+           for paragraph, _ in paragraphs):
+        # Text boxes live inside drawings, which are removed with images:
+        # say so plainly instead of failing the final check.
+        raise RedactionError(
+            "O DOCX tem caixas de texto ou formas, que o ficheiro censurado "
+            "ainda não suporta; use o texto anonimizado (submission.txt).")
     for line, indices in _positions(masked).items():
         mask_paragraph(paragraphs[line][0], set(indices), keep_punct)
     _strip_docx(document)

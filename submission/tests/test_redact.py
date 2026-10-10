@@ -291,3 +291,65 @@ def test_ocr_fixes_are_taken_word_by_word_only_when_safe():
         raise RuntimeError("model down")
 
     assert fix_lines(["OVV 123"], generate_fn=broken) == ["OVV 123"]
+
+
+R = ('xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/'
+     'relationships"')
+
+
+def test_docx_email_links_and_field_codes_are_removed():
+    from docx.opc.constants import RELATIONSHIP_TYPE as RT
+
+    document = Document()
+    paragraph = document.add_paragraph("Contacto: ")
+    r_id = document.part.relate_to("mailto:maria@exemplo.pt", RT.HYPERLINK,
+                                   is_external=True)
+    paragraph._p.append(parse_xml(
+        f'<w:hyperlink {W} {R} r:id="{r_id}"><w:r>'
+        f'<w:t>maria@exemplo.pt</w:t></w:r></w:hyperlink>'))
+    field = document.add_paragraph("Site: ")
+    field._p.append(parse_xml(
+        f'<w:r {W}><w:fldChar w:fldCharType="begin"/></w:r>'))
+    field._p.append(parse_xml(
+        f'<w:r {W}><w:instrText xml:space="preserve"> HYPERLINK '
+        f'"mailto:maria@exemplo.pt" </w:instrText></w:r>'))
+    field._p.append(parse_xml(
+        f'<w:r {W}><w:fldChar w:fldCharType="separate"/></w:r>'))
+    field._p.append(parse_xml(
+        f'<w:r {W}><w:t>escrever</w:t></w:r>'))
+    field._p.append(parse_xml(
+        f'<w:r {W}><w:fldChar w:fldCharType="end"/></w:r>'))
+    buffer = io.BytesIO()
+    document.save(buffer)
+
+    source = load_source(buffer.getvalue(), ".docx")
+    assert source.lines == ["Contacto: maria@exemplo.pt", "Site: escrever"]
+    result = redact(source, secret_words(source.lines), "contacto.docx")
+    xml = all_xml_text(result.data)
+    assert "maria@exemplo.pt" not in xml and "maria%40exemplo" not in xml
+    assert "Contacto: *" in load_source(result.data, ".docx").lines
+
+
+def test_docx_text_boxes_are_refused_with_a_clear_reason():
+    document = Document()
+    box = document.add_paragraph("Caixa: ")
+    box._p.append(parse_xml(
+        f'<w:r {W}><w:pict><w:txbxContent><w:p><w:r><w:t>Maria Santos'
+        f'</w:t></w:r></w:p></w:txbxContent></w:pict></w:r>'))
+    buffer = io.BytesIO()
+    document.save(buffer)
+    source = load_source(buffer.getvalue(), ".docx")
+    assert "Maria Santos" in source.lines
+    with pytest.raises(RedactionError, match="caixas de texto"):
+        redact(source, secret_words(source.lines), "caixa.docx")
+
+
+def test_long_scans_are_refused_before_ocr(monkeypatch):
+    from anonimizador import sources
+
+    monkeypatch.setattr(sources, "MAX_OCR_PAGES", 2)
+    doc = pymupdf.open()
+    for _ in range(3):
+        doc.new_page()
+    with pytest.raises(sources.TooManyPages):
+        load_source(doc.tobytes(), ".pdf")

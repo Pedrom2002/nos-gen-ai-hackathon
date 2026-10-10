@@ -52,6 +52,14 @@ class NeedsOcr(RuntimeError):
     """The file needs OCR but Tesseract with Portuguese is not installed."""
 
 
+class TooManyPages(ValueError):
+    """A scanned PDF longer than MAX_OCR_PAGES."""
+
+
+# Each scanned page is OCR'd at 300 dpi (about 26 MB of pixels): cap them.
+MAX_OCR_PAGES = 20
+
+
 @dataclass
 class Source:
     kind: str
@@ -61,25 +69,34 @@ class Source:
     # (line, word index) -> location, depending on the kind:
     # pdf: (page, pymupdf.Rect); image/scanned: (page, ocr.Box).
     locations: dict = field(default_factory=dict)
-    # Rendered pages (image/scanned), already rotated and RGB, and for each
-    # one the deskew.Warp its words were read through (None if flat).
-    pages: list = field(default_factory=list)
+    # For each OCR'd page, the deskew.Warp its words were read through
+    # (None if flat). Pixels are not kept: see page_images().
     warps: list = field(default_factory=list)
     uncertain: set = field(default_factory=set)
     # Text lines OCR saw on the pages but could not read.
     unread: int = 0
+    # The OCR reading before ocr_fix, word for word in step with ``lines``.
+    ocr_lines: list = field(default_factory=list)
 
     @property
     def redactable(self) -> bool:
         return self.kind != "text"
 
+    def page_images(self):
+        """Yield the pages as RGB images, decoded again from the original
+        bytes one at a time, so a session never holds rendered pages."""
+        if self.kind == "image":
+            yield ocr.prepare(Image.open(io.BytesIO(self.data)))
+        elif self.kind == "scanned":
+            with pymupdf.open(stream=self.data, filetype="pdf") as doc:
+                for page in doc:
+                    yield _render(page)
 
-def _from_ocr(kind: str, suffix: str, data: bytes,
-              images: list[Image.Image], straighten: bool = False) -> Source:
+
+def _from_ocr(source: Source, straighten: bool = False) -> Source:
     if not ocr.available():
         raise NeedsOcr("O Tesseract com português não está instalado.")
-    source = Source(kind, suffix, data, [], pages=images)
-    for page_no, image in enumerate(images):
+    for page_no, image in enumerate(source.page_images()):
         # A photographed page is read flattened; boxes stay in that space.
         warp = deskew.page_warp(image) if straighten else None
         source.warps.append(warp)
@@ -94,6 +111,7 @@ def _from_ocr(kind: str, suffix: str, data: bytes,
                 if (word.confidence < UNCERTAIN_CONFIDENCE
                         and looks_like_identifier(word.text)):
                     source.uncertain.add((line_no, index))
+    source.ocr_lines = list(source.lines)
     return source
 
 
@@ -106,8 +124,9 @@ def _pdf(data: bytes) -> Source:
     with pymupdf.open(stream=data, filetype="pdf") as doc:
         texts = [page.get_text() for page in doc]
         if any(not text.strip() for text in texts):
-            return _from_ocr("scanned", ".pdf", data,
-                             [_render(page) for page in doc])
+            if doc.page_count > MAX_OCR_PAGES:
+                raise TooManyPages(doc.page_count)
+            return _from_ocr(Source("scanned", ".pdf", data, []))
         lines = clean_lines("\n".join(texts))
         words = [(page.number, pymupdf.Rect(w[:4]), w[4])
                  for page in doc for w in page.get_text("words", sort=False)]
@@ -131,19 +150,37 @@ _BREAKS = {qn("w:tab"): "\t", qn("w:br"): " ", qn("w:cr"): " ",
            qn("w:noBreakHyphen"): "-"}
 
 
-def resolve_changes(root) -> None:
-    """Accept tracked changes: drop deletions, keep insertions as text."""
-    for tag in ("w:del", "w:moveFrom"):
+_MC_FALLBACK = ("{http://schemas.openxmlformats.org/markup-compatibility/"
+                "2006}Fallback")
+
+
+def _unwrap(element) -> None:
+    """Replace an element by its children."""
+    parent = element.getparent()
+    position = parent.index(element)
+    for child in list(element):
+        parent.insert(position, child)
+        position += 1
+    parent.remove(element)
+
+
+def normalise(root) -> None:
+    """Put a DOCX part in the plain form both reading and redaction use.
+
+    - tracked changes accepted: deletions dropped, insertions kept;
+    - hyperlinks and simple fields unwrapped into plain runs, and field
+      codes removed (a "mailto:" target would otherwise survive);
+    - for alternate content only the first choice kept, so a text box is
+      not read twice.
+    """
+    for tag in ("w:del", "w:moveFrom", "w:instrText"):
         for element in list(root.iter(qn(tag))):
             element.getparent().remove(element)
-    for tag in ("w:ins", "w:moveTo"):
+    for element in list(root.iter(_MC_FALLBACK)):
+        element.getparent().remove(element)
+    for tag in ("w:ins", "w:moveTo", "w:hyperlink", "w:fldSimple"):
         for element in list(root.iter(qn(tag))):
-            parent = element.getparent()
-            position = parent.index(element)
-            for child in list(element):
-                parent.insert(position, child)
-                position += 1
-            parent.remove(element)
+            _unwrap(element)
 
 
 def own_nodes(paragraph) -> list:
@@ -162,7 +199,9 @@ def own_nodes(paragraph) -> list:
 
 
 def node_text(node) -> str:
-    return node.text or "" if node.tag == qn("w:t") else _BREAKS[node.tag]
+    if node.tag == qn("w:t"):
+        return node.text or ""
+    return _BREAKS[node.tag]
 
 
 def docx_roots(document) -> list:
@@ -207,7 +246,7 @@ def docx_paragraphs(document) -> list:
     found = []
     for part in docx_roots(document):
         root = part_root(part)
-        resolve_changes(root)
+        normalise(root)
         for paragraph in root.iter(qn("w:p")):
             text = "".join(node_text(n) for n in own_nodes(paragraph))
             if text.strip():
@@ -232,5 +271,4 @@ def load_source(data: bytes, suffix: str) -> Source:
         return _pdf(data)
     if suffix == ".docx":
         return _docx(data)
-    image = ocr.prepare(Image.open(io.BytesIO(data)))
-    return _from_ocr("image", suffix, data, [image], straighten=True)
+    return _from_ocr(Source("image", suffix, data, []), straighten=True)

@@ -126,6 +126,11 @@
   box-shadow: inset 0 -2px 0 var(--c);
   &:hover { background-color: color-mix(in oklch, var(--c) 38%, transparent); }
 }
+/* Outside the categories in focus: still masked, just not coloured. */
+@utility entity-muted {
+  background-color: transparent;
+  box-shadow: inset 0 -1px 0 color-mix(in oklch, var(--c) 45%, transparent);
+}
 @utility entity-off {
   background-color: transparent;
   box-shadow: none;

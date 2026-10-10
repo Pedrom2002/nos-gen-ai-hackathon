@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { ArrowLeft, ArrowRight, Check, Keyboard, List, Redo2, Undo2 } from "lucide-react";
+import { ArrowLeft, ArrowRight, Check, Keyboard, List, Redo2, Undo2, X } from "lucide-react";
 import { useSettings } from "@/lib/settings";
 import { EXTRA } from "@/lib/i18n-extra";
 import { UI } from "@/lib/i18n-ui";
@@ -96,7 +96,7 @@ export function ReviewPanel({ backLabel, generateLabel, onBack, onGenerate, text
         onClick={() => onToggle(span.entity.id)} onKeyDown={(e) => {
           if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onToggle(span.entity.id); }
         }}
-        className={`entity-mark text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background ${enabled ? "" : "entity-off"} ${dim ? "opacity-30" : ""}`}
+        className={`entity-mark text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background ${enabled ? (dim ? "entity-muted" : "") : "entity-off"}`}
         style={{ ["--c" as string]: c.color }}>
         {text.slice(span.start, span.end)}
       </mark>,
@@ -146,9 +146,17 @@ export function ReviewPanel({ backLabel, generateLabel, onBack, onGenerate, text
       <div className="grid min-w-0 gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
         <div className="min-w-0 rounded-lg border bg-card p-4 sm:p-5 lg:min-h-[75dvh]">
           {grouped.length > 0 && <div className="category-scroll mb-5 flex flex-nowrap gap-2 overflow-x-auto border-b px-1 pb-4 lg:flex-wrap" role="group" aria-label={u.categoryFilter}>
-            {grouped.map(({ c, items }) => <Button key={c.id} variant="outline" aria-pressed={filters.includes(c.id)} onClick={() => setFilters((old) => old.includes(c.id) ? old.filter((id) => id !== c.id) : [...old, c.id])} className={`h-auto min-h-9 shrink-0 gap-2 whitespace-nowrap px-2.5 py-1 text-xs ${filters.includes(c.id) ? "border-primary bg-primary/10" : ""}`}>
-              <span className="size-2 shrink-0 rounded-full" style={{ background: c.color }} />{x.cats[c.id]}<span className="text-muted-foreground">{items.length}</span>
-            </Button>)}
+            {grouped.map(({ c, items }) => {
+              const on = filters.includes(c.id);
+              return <Button key={c.id} variant="outline" aria-pressed={on} onClick={() => setFilters((old) => on ? old.filter((id) => id !== c.id) : [...old, c.id])}
+                className={`h-auto min-h-9 shrink-0 gap-2 whitespace-nowrap px-2.5 py-1 text-xs ${on ? "border-[var(--c)] bg-[color-mix(in_oklch,var(--c)_18%,transparent)] hover:bg-[color-mix(in_oklch,var(--c)_28%,transparent)]" : filters.length ? "text-muted-foreground" : ""}`}
+                style={{ ["--c" as string]: c.color }}>
+                {on ? <Check className="size-3 shrink-0" style={{ color: c.color }} /> : <span className="size-2 shrink-0 rounded-full" style={{ background: c.color }} />}{x.cats[c.id]}<span className="text-muted-foreground">{items.length}</span>
+              </Button>;
+            })}
+            {filters.length > 0 && <Button variant="ghost" onClick={() => setFilters([])} className="h-auto min-h-9 shrink-0 gap-1.5 whitespace-nowrap px-2.5 py-1 text-xs text-muted-foreground">
+              <X className="size-3" />{u.showAllCategories}
+            </Button>}
           </div>}
           <div ref={boxRef} onMouseUp={captureSelection} onTouchEnd={captureSelection} className="select-text whitespace-pre-wrap break-words font-mono text-sm leading-7 [overflow-wrap:anywhere]">{parts}</div>
         </div>

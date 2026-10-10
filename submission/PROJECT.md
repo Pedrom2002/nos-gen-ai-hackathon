@@ -42,7 +42,7 @@ The policy was confirmed with the challenge mentors: **mask only what identifies
 
 ```mermaid
 flowchart LR
-    A[PDF / TXT / CSV] --> B[Extract lines]
+    A[PDF / DOCX / PNG / JPG / WebP / TXT / CSV] --> B[Extract lines<br/>OCR for images and scans]
     B --> C[Prompt + Gemini]
     C --> D[Align word by word]
     D --> E[Regex safety net]
@@ -94,7 +94,7 @@ Besides the challenge PDF, Lethe reads scanned PDFs, photos and images (PNG, JPG
   - A scanned PDF is rebuilt from the redacted page images only.
 - **Phone photos:** the page is found in the photo and flattened (perspective correction) and its lighting is evened out before OCR. The bars are then mapped back onto the original photo as polygons that follow the slant of the text. Before anonymising, the model fixes OCR misreads ("Financelras" becomes "Financeiras", "OVV" becomes "CVV"). The fixes are taken word by word, and only when a line keeps its word count and each word stays close to what OCR read, so every word keeps its place in the image and no name or number can be swapped. Two real phone photos of the official document (taken of a screen, in perspective) give text **identical to `submission.txt`**: 60/60 lines, 100% Similarity and Accuracy.
 - **OCR misreads:** OCR words read with low confidence that look like identifiers (3 or more digits, `@` or a domain) are masked as a precaution. OCR can turn `maria@x.pt` into `mariaQx.pt`, which neither the model nor the patterns would recognise.
-- **Text OCR could not read:** ink left outside every word box that has the shape of a text line means text that was never checked. The redacted file is then refused, with a request for a sharper photo.
+- **Text OCR could not read:** ink left outside every word box that has the shape of a text line means text that was never checked. The redacted file is still produced and verified for the words that were read, and the interface shows how many lines were skipped and asks for a sharper photo.
 - **Text PDFs:** PyMuPDF redactions delete the text, image pixels and drawings under each word. Hidden text, metadata, attachments, JavaScript, links and form data are scrubbed, and the file is saved in full, never incrementally.
 - **DOCX:** masked words are rewritten inside the runs, so formatting is kept. This covers the body, tables, headers, footers and footnotes. Tracked changes are resolved, and comments, images, embedded objects and author fields are removed.
 - **Fail closed:** every redacted file is read back by an independent check before it is returned:
@@ -109,9 +109,9 @@ Besides the challenge PDF, Lethe reads scanned PDFs, photos and images (PNG, JPG
 
 `frontend/` is the review screen, built with Lovable and connected to the API. It lets you:
 
-- **Load a document:** import a PDF or TXT, or paste text.
+- **Load a document:** import a PDF, DOCX, image (PNG, JPG, WebP), TXT or CSV, or paste text.
 - **Review the items:** see every item highlighted by category with its reason, keep any of them visible or mask extra words by selecting them, and undo or redo each change.
-- **Compare and download:** compare the original and the anonymised text, then download `submission.txt` and the report.
+- **Compare and download:** compare the original and the anonymised text (or, for PDFs and photos, the pages with black bars, side by side or under a slider), then download `submission.txt`, the report and, for PDF, DOCX and images, the redacted file.
 
 Backend items are masked at the exact positions the backend found. The frontend's output equals the backend output byte for byte, which was checked on the official document.
 

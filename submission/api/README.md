@@ -82,8 +82,8 @@ interface DocumentState {
   redactable: boolean; // true if download/redacted is available
   uncertain: number;   // OCR words read with low confidence (masked if
                        // they look like identifiers)
-  unread: number;      // text lines OCR saw but could not read; when > 0
-                       // download/redacted answers 422
+  unread: number;      // text lines OCR saw but could not read (never
+                       // checked); download/redacted still works, warn the user
 }
 
 interface GatewayAnswer {

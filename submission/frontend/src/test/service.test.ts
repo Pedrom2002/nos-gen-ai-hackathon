@@ -82,10 +82,10 @@ describe("redacted files", () => {
     expect(filenameFrom(null, "documento_censurado")).toBe("documento_censurado");
   });
 
-  it("offers the redacted file only when every line was read", () => {
+  it("offers the redacted file even when OCR missed lines, and reports how many", () => {
     expect(fromState({ ...state, kind: "image", redactable: true, unread: 0 }).redactable).toBe(true);
     const unread = fromState({ ...state, kind: "image", redactable: true, unread: 2 });
-    expect(unread.redactable).toBe(false);
+    expect(unread.redactable).toBe(true);
     expect(unread.unread).toBe(2);
     expect(fromState(state).redactable).toBe(false);
   });

@@ -35,9 +35,10 @@ npm run dev
 ## Formatos
 
 - **PDF com texto**: o texto e a posição de cada palavra vêm do pdf.js, no navegador.
-- **Imagens (PNG, JPG, WebP) e PDF digitalizados**: o texto é reconhecido no navegador com o tesseract.js (modelos `por` + `eng`, descarregados do CDN do pacote na primeira utilização e guardados em cache). Um PDF misto só passa pelo OCR nas páginas sem camada de texto. Como a API não faz OCR, estes ficheiros seguem para o backend como texto (`documento.txt`), nunca como ficheiro.
-- **Resultado**: por agora só o texto é anonimizado; as imagens em si não são censuradas, porque o backend ainda não trata imagens. O resultado e os downloads continuam a ser o texto mascarado.
-- **Parado à espera do backend**: a posição de cada palavra já é guardada ao importar (`SourceDoc.pages`), e existem módulos prontos, mas não ligados à página, para desenhar caixas pretas sobre as palavras mascaradas (`src/lib/align.ts`, `src/lib/redaction.ts`, `src/components/PageStack.tsx`, `src/components/PageComparison.tsx`, `src/hooks/usePageImages.ts`) e exportar um PNG ou PDF rasterizado (`src/lib/export.ts`). Quando o backend suportar imagens, basta voltar a ligá-los em `src/routes/index.tsx`.
+- **Imagens (PNG, JPG, WebP) e PDF digitalizados**: o texto é reconhecido no navegador com o tesseract.js (modelos `por` + `eng`, descarregados do CDN do pacote na primeira utilização e guardados em cache), para pré-visualizar e posicionar as palavras na página. Um PDF misto só passa pelo OCR nas páginas sem camada de texto. O ficheiro segue para o backend, que faz o seu próprio OCR (Tesseract, endireitado e com erros de leitura corrigidos); só se o servidor não tiver OCR é que o texto lido no navegador é enviado em seu lugar (`documento.txt`).
+- **DOCX, TXT e CSV**: o navegador não lê DOCX, por isso o ficheiro vai direto para o backend e o texto mostrado é o que ele leu. TXT e CSV são lidos como texto.
+- **Resultado**: quando o original tem páginas (fotografia ou PDF), o passo final mostra-as com caixas pretas sobre as palavras mascaradas, lado a lado (com o scroll sincronizado) ou com o deslizador; "Texto" volta à comparação textual. As caixas derivam dos mesmos troços que `anonymize()` mascara (`src/lib/redaction.ts`); `src/lib/align.ts` casa o texto devolvido pelo backend com as palavras lidas no navegador. Numa fotografia, a metade anonimizada é o próprio PNG censurado que o backend construiu e verificou (`download/redacted`); as caixas só servem para localizar a entidade em foco.
+- **Exportar**: "Descarregar ficheiro censurado" pede ao backend o ficheiro com as palavras removidas de vez (PNG para fotografias, PDF para PDF, DOCX para DOCX). `src/lib/export.ts` sabe gerar um PNG ou PDF rasterizado no navegador, mas não está ligado à página.
 - Para servir os ficheiros do tesseract localmente, copia `worker.min.js`, o core wasm e os `.traineddata.gz` para `public/tesseract/` e passa `workerPath`/`corePath`/`langPath` em `src/lib/ocr.ts`.
 
 ## Ligar ao backend
@@ -50,7 +51,7 @@ Todo o acesso ao backend está em `src/services/anonymizer.ts`. O backend é a A
 
 Fluxo:
 
-1. `POST /api/documents` (multipart `file`): o PDF/TXT original quando o texto não foi editado, senão o texto como `documento.txt`. Da resposta (`DocumentState`), `lines` passa a ser o texto mostrado (o documento como o backend o leu, sem linhas vazias) e cada `item` vira uma entidade com o troço exato da linha (`first..last`), guardando os ids do backend em `refs`.
+1. `POST /api/documents` (multipart `file`): o ficheiro original (PDF, DOCX, PNG, JPG, WebP, TXT ou CSV) quando o texto não foi editado, senão o texto como `documento.txt`. Da resposta (`DocumentState`), `lines` passa a ser o texto mostrado (o documento como o backend o leu, sem linhas vazias) e cada `item` vira uma entidade com o troço exato da linha (`first..last`), guardando os ids do backend em `refs`.
 2. O mascaramento (`*` por palavra, sem linhas vazias) continua a ser feito no frontend, para as alterações manuais se aplicarem antes do resultado.
 3. Ao gerar o resultado, `PUT /api/documents/{id}/decisions` envia os itens desativados na revisão (`keep`), e o resumo passa a incluir a verificação de fugas do backend.
 4. "Limpar" faz `DELETE /api/documents/{id}`: o backend só guarda documentos em memória.

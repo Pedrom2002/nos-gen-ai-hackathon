@@ -23,7 +23,8 @@ OFFICIAL = Path(__file__).resolve().parents[2] / "raw_data" / \
     "document_to_anonymize.pdf"
 SECRET = {"Maria", "Santos", "123456789", "maria@exemplo.pt"}
 FONTS = [Path(r"C:\Windows\Fonts\arial.ttf"),
-         Path("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf")]
+         Path("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"),
+         Path("/System/Library/Fonts/Supplemental/Arial.ttf")]
 FONT = next((f for f in FONTS if f.exists()), None)
 needs_ocr = pytest.mark.skipif(
     not ocr.available() or FONT is None,
@@ -249,7 +250,7 @@ def test_misread_email_is_still_removed_from_the_photo():
 
 
 @needs_ocr
-def test_a_line_ocr_missed_is_detected_and_blocks_the_file():
+def test_a_line_ocr_missed_is_detected_but_the_file_still_comes():
     image = document_image()
     lines = ocr.read_image(image)
     assert ocr.unread_lines(image, lines) == 0
@@ -261,8 +262,9 @@ def test_a_line_ocr_missed_is_detected_and_blocks_the_file():
     image.save(buffer, format="PNG")
     source = load_source(buffer.getvalue(), ".png")
     source.unread = 1
-    with pytest.raises(RedactionError, match="não foram lidas"):
-        redact(source, secret_words(source.lines), "foto.png")
+    result = redact(source, secret_words(source.lines), "foto.png")
+    assert result.filename == "foto_censurado.png"
+    assert b"123456789" not in result.data
 
 
 def test_short_numbers_are_not_uncertain_identifiers():

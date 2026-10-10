@@ -1,7 +1,9 @@
 import type { SourceKind } from "@/lib/document";
 
 // The one place that says which files Lethe opens. The input's accept list,
-// the badges on the dropzone and the drop validation all read from here.
+// the badges on the dropzone and the drop validation all read from here. It
+// mirrors SUPPORTED in the backend (anonimizador/sources.py): PDF, DOCX,
+// PNG, JPG, WebP, TXT and CSV.
 const IMAGE_TYPES: Record<string, string[]> = { "image/png": [".png"], "image/jpeg": [".jpg", ".jpeg"], "image/webp": [".webp"] };
 const IMAGE_EXTENSIONS = Object.values(IMAGE_TYPES).flat();
 const DOCX_TYPE = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";

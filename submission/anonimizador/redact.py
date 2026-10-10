@@ -297,12 +297,9 @@ def redact(source: Source, masked: list[MaskedWord], name: str,
 
     if not source.redactable:
         raise RedactionError("Este formato só tem saída em texto.")
-    if source.unread:
-        # Text the OCR could not read was never checked: a file with it
-        # visible could leak anything, so only the text output is given.
-        raise RedactionError(
-            f"{source.unread} linha(s) de texto não foram lidas pelo OCR; "
-            f"tire uma fotografia mais nítida e de frente.")
+    # Text the OCR could not read (source.unread) was never checked and
+    # stays visible: the file is still built and verified for the words
+    # that were read, and the caller warns the user about the rest.
     stem = PurePath(name).stem or "documento"
     pages: dict = {}
     if source.kind == "image":

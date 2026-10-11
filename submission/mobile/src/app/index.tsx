@@ -60,7 +60,7 @@ export default function ImportScreen() {
     try {
       const result = await api.analyze(source.file ? { file: source.file } : { text: source.text });
       session.setResult(result);
-      router.push("/result");
+      router.push("/review");
     } catch (e) {
       setError(e instanceof Error ? e.message : x.unknownErr);
     } finally {

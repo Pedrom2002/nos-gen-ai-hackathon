@@ -3,6 +3,12 @@
 import type { Lang } from "@web/lib/i18n";
 
 const pt = {
+  pickCategory: "Escolha a categoria",
+  masked: "mascarado",
+  kept: "visível",
+  longPressHint: "Toque num dado para o mascarar ou mostrar. Toque longo numa palavra para a mascarar.",
+  maskAll: "Mascarar todos",
+  showAll: "Mostrar todos",
   takePhoto: "Fotografar documento",
   pickImage: "Escolher imagem",
   share: "Partilhar",
@@ -21,6 +27,12 @@ const pt = {
 type Strings = typeof pt;
 
 const en: Strings = {
+  pickCategory: "Choose the category",
+  masked: "masked",
+  kept: "visible",
+  longPressHint: "Tap a value to mask or show it. Long-press a word to mask it.",
+  maskAll: "Mask all",
+  showAll: "Show all",
   takePhoto: "Take a photo of a document",
   pickImage: "Choose an image",
   share: "Share",
@@ -38,6 +50,12 @@ const en: Strings = {
 };
 
 const fr: Strings = {
+  pickCategory: "Choisissez la catégorie",
+  masked: "masqué",
+  kept: "visible",
+  longPressHint: "Touchez une donnée pour la masquer ou l’afficher. Appui long sur un mot pour le masquer.",
+  maskAll: "Tout masquer",
+  showAll: "Tout afficher",
   takePhoto: "Photographier un document",
   pickImage: "Choisir une image",
   share: "Partager",
@@ -55,6 +73,12 @@ const fr: Strings = {
 };
 
 const it: Strings = {
+  pickCategory: "Scegli la categoria",
+  masked: "oscurato",
+  kept: "visibile",
+  longPressHint: "Tocca un dato per oscurarlo o mostrarlo. Tieni premuta una parola per oscurarla.",
+  maskAll: "Oscura tutti",
+  showAll: "Mostra tutti",
   takePhoto: "Fotografa un documento",
   pickImage: "Scegli un’immagine",
   share: "Condividi",
@@ -72,6 +96,12 @@ const it: Strings = {
 };
 
 const de: Strings = {
+  pickCategory: "Kategorie wählen",
+  masked: "geschwärzt",
+  kept: "sichtbar",
+  longPressHint: "Tippen Sie auf einen Wert, um ihn zu schwärzen oder zu zeigen. Lange auf ein Wort drücken, um es zu schwärzen.",
+  maskAll: "Alle schwärzen",
+  showAll: "Alle zeigen",
   takePhoto: "Dokument fotografieren",
   pickImage: "Bild auswählen",
   share: "Teilen",
@@ -89,6 +119,12 @@ const de: Strings = {
 };
 
 const ar: Strings = {
+  pickCategory: "اختر الفئة",
+  masked: "محجوب",
+  kept: "ظاهر",
+  longPressHint: "المس قيمة لحجبها أو إظهارها. اضغط مطولاً على كلمة لحجبها.",
+  maskAll: "حجب الكل",
+  showAll: "إظهار الكل",
   takePhoto: "تصوير مستند",
   pickImage: "اختيار صورة",
   share: "مشاركة",
@@ -106,6 +142,12 @@ const ar: Strings = {
 };
 
 const ja: Strings = {
+  pickCategory: "カテゴリーを選択",
+  masked: "黒塗り",
+  kept: "表示",
+  longPressHint: "値をタップすると黒塗り・表示を切り替えます。単語を長押しすると黒塗りします。",
+  maskAll: "すべて黒塗り",
+  showAll: "すべて表示",
   takePhoto: "文書を撮影",
   pickImage: "画像を選択",
   share: "共有",
@@ -123,6 +165,12 @@ const ja: Strings = {
 };
 
 const zh: Strings = {
+  pickCategory: "选择类别",
+  masked: "已遮盖",
+  kept: "可见",
+  longPressHint: "点按某个数据以遮盖或显示。长按某个词以遮盖。",
+  maskAll: "全部遮盖",
+  showAll: "全部显示",
   takePhoto: "拍摄文档",
   pickImage: "选择图片",
   share: "分享",

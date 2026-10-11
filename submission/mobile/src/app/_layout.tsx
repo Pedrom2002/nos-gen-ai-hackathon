@@ -43,6 +43,7 @@ function Navigator() {
         }}
       >
         <Stack.Screen name="index" options={{ title: "Lethe" }} />
+        <Stack.Screen name="review" options={{ title: t.steps[1] }} />
         <Stack.Screen name="result" options={{ title: t.steps[2] }} />
         <Stack.Screen name="settings" options={{ title: t.settings, headerRight: () => null }} />
       </Stack>

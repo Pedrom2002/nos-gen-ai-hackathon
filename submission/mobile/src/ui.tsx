@@ -35,14 +35,17 @@ export function useColors(): Colors & { dark: boolean } {
   return { ...(dark ? DARK : LIGHT), dark };
 }
 
-/** A scrolling screen inside the safe area. */
-export function Screen({ children }: { children: ReactNode }) {
+/** A scrolling screen inside the safe area, with an optional bar fixed at the bottom. */
+export function Screen({ children, footer }: { children: ReactNode; footer?: ReactNode }) {
   const c = useColors();
   return (
     <SafeAreaView edges={["bottom", "left", "right"]} style={{ flex: 1, backgroundColor: c.background }}>
       <ScrollView contentContainerStyle={styles.screen} keyboardShouldPersistTaps="handled">
         {children}
       </ScrollView>
+      {footer ? (
+        <View style={{ borderTopWidth: 1, borderTopColor: c.border, backgroundColor: c.card, padding: 12, gap: 10 }}>{footer}</View>
+      ) : null}
     </SafeAreaView>
   );
 }

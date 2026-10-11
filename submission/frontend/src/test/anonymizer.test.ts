@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { anonymize, type Entity } from "@/lib/anonymizer";
+import { anonymize, anonymizeRuns, type Entity } from "@/lib/anonymizer";
 
 const e = (text: string, enabled = true): Entity => ({ id: text, text, category: "outro", reason: "", gdpr_basis: "", enabled });
 
@@ -40,5 +40,19 @@ describe("anonymize: whole words and backend positions", () => {
   it("falls back to text search when the positions do not fit the text", () => {
     const moved: Entity = { ...e("Rui"), at: [{ line: 9, first: 0, last: 0 }] };
     expect(anonymize("Doente: Rui", [moved])).toBe("Doente: *");
+  });
+});
+
+describe("anonymizeRuns", () => {
+  it("tags each mask with its entity and joins to anonymize()", () => {
+    const text = "Rua das Flores,  \n\nJoão Silva e Rua das Flores";
+    const ents = [e("Rua das Flores"), e("João Silva")];
+    const runs = anonymizeRuns(text, ents);
+    expect(runs.map((r) => r.text).join("")).toBe(anonymize(text, ents));
+    expect(runs).toEqual([
+      { text: "* * *", entityId: "Rua das Flores" }, { text: ",\n", entityId: undefined },
+      { text: "* *", entityId: "João Silva" }, { text: " e ", entityId: undefined },
+      { text: "* * *", entityId: "Rua das Flores" },
+    ]);
   });
 });

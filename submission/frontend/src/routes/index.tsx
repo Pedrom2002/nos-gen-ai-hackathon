@@ -11,7 +11,7 @@ import { ReviewSkeleton } from "@/components/ReviewSkeleton";
 import { RiverComparison } from "@/components/RiverComparison";
 import { PageComparison } from "@/components/PageComparison";
 import { PageStack } from "@/components/PageStack";
-import { FocusedText } from "@/components/FocusedText";
+import { FocusedMasked, FocusedText } from "@/components/FocusedText";
 import { usePageImages } from "@/hooks/usePageImages";
 import type { SourceDoc } from "@/lib/document";
 import { MAX_UPLOAD_BYTES, validateFile } from "@/lib/files";
@@ -92,8 +92,16 @@ function Index() {
   useEffect(() => { window.scrollTo({ top: 0, behavior: "smooth" }); }, [step]);
   useEffect(() => {
     if (!focusId) return;
-    const mark = [...document.querySelectorAll<HTMLElement>("[data-focus-mark]")].find((m) => m.offsetParent !== null);
-    mark?.scrollIntoView({ block: "center", behavior: "smooth" });
+    const marks = [...document.querySelectorAll<HTMLElement>("[data-focus-mark]")].filter((m) => m.offsetParent !== null);
+    marks[0]?.scrollIntoView({ block: "center", behavior: "smooth" });
+    // The other text column scrolls on its own: bring its first mark to its middle too.
+    const first = marks[0]?.closest("pre");
+    const other = marks.find((m) => m.closest("pre") && m.closest("pre") !== first);
+    const box = other?.closest("pre");
+    if (other && box) {
+      const top = box.scrollTop + other.getBoundingClientRect().top - box.getBoundingClientRect().top - box.clientHeight / 2;
+      box.scrollTo({ top, behavior: "smooth" });
+    }
   }, [focusId, resultView, docView]);
   const [summary, setSummary] = useState("");
   const [loading, setLoading] = useState(false);
@@ -373,9 +381,7 @@ function Index() {
                         <PageStack pages={pages} urls={pageUrls} redactedUrls={redactedUrls} boxes={redaction.boxes} mode={orig ? "original" : "redacted"} focusId={focusId} pageLabel={(n) => u.pageN.replace("{n}", String(n))} />
                       </div>
                       : <pre tabIndex={0} aria-label={String(h)} className="max-h-[60dvh] overflow-auto whitespace-pre-wrap break-words font-mono text-sm leading-6 [overflow-wrap:anywhere]">
-                        {orig ? <FocusedText text={text} entities={entities} focusId={focusId} /> : String(c).split("*").map((part, i, arr) => (
-                          <span key={i}>{part}{i < arr.length - 1 && <span className="lethe-wash text-primary" style={{ animationDelay: `${Math.min(i * 40, 1600)}ms` }}>*</span>}</span>
-                        ))}
+                        {orig ? <FocusedText text={text} entities={entities} focusId={focusId} /> : <FocusedMasked text={text} entities={entities} focusId={focusId} />}
                       </pre>}
                   </div>
                 ))}

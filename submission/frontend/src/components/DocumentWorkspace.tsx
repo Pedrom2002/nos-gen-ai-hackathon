@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useReducer, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react";
 import { toast } from "sonner";
 import {
   ArrowLeft, ArrowLeftRight, ArrowRight, Columns2, Copy, Download,
@@ -85,16 +85,19 @@ export function DocumentWorkspace({ doc, active, onStatus, onBack, onHome, onGen
   useEffect(() => { if (step !== 2) setFocusId(""); }, [step]);
   // An entity found only inside a longer one ("João" in "João Silva") has no
   // span of its own, so the views point at the entity that masks it instead.
-  const markId = useMemo(() => {
-    if (!focusId) return "";
+  const markOf = useCallback((id: string) => {
+    if (!id) return "";
     const spans = findSpans(text, entities.filter((e) => e.enabled));
-    if (spans.some((sp) => sp.entity.id === focusId)) return focusId;
-    const needle = entities.find((e) => e.id === focusId)?.text.trim();
-    return (needle && spans.find((sp) => text.slice(sp.start, sp.end).includes(needle))?.entity.id) || focusId;
-  }, [focusId, text, entities]);
+    if (spans.some((sp) => sp.entity.id === id)) return id;
+    const needle = entities.find((e) => e.id === id)?.text.trim();
+    return (needle && spans.find((sp) => text.slice(sp.start, sp.end).includes(needle))?.entity.id) || id;
+  }, [text, entities]);
+  const markId = useMemo(() => markOf(focusId), [markOf, focusId]);
+  // Set when a click switched the document view to the text for an entity the page lacks.
+  const [fellBack, setFellBack] = useState(false);
   useEffect(() => { if (active) window.scrollTo({ top: 0, behavior: "smooth" }); }, [step]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => {
-    if (!focusId) return;
+    if (!markId) return;
     // getClientRects, not offsetParent: page boxes are SVG rects, which have no
     // offsetParent, so the hidden view's marks would otherwise come first.
     const marks = [...document.querySelectorAll<HTMLElement>("[data-focus-mark]")].filter((m) => m.getClientRects().length > 0);
@@ -124,6 +127,16 @@ export function DocumentWorkspace({ doc, active, onStatus, onBack, onHome, onGen
   const pages = useMemo(() => source?.pages ?? [], [source]);
   const alignment = useMemo(() => alignText(text, pages), [text, pages]);
   const redaction = useMemo(() => redactionBoxes(text, entities, pages, alignment), [text, entities, pages, alignment]);
+  // An entity the page view cannot locate (the OCR here read those words
+  // differently) switches the view to the text, where it is always marked;
+  // the toggle then says so and switches back.
+  const focusEntity = (id: string) => {
+    const next = focusId === id ? "" : id;
+    const fallBack = !!next && showPages && !redaction.boxes.some((b) => b.entityId === markOf(next));
+    setFocusId(next);
+    setFellBack(fallBack);
+    if (fallBack) setDocView("text");
+  };
   // A photo's redacted half is the file the backend built and verified; the
   // boxes drawn here only locate the focused entity on it.
   const redactedUrls = useMemo(() => (redactedUrl && source?.kind === "image" ? [redactedUrl] : []), [redactedUrl, source]);
@@ -231,13 +244,14 @@ export function DocumentWorkspace({ doc, active, onStatus, onBack, onHome, onGen
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="min-w-0 text-sm text-muted-foreground">
               {finishing && <span role="status" aria-busy="true" className="inline-flex items-center gap-2 text-xs"><span className="size-2 animate-pulse rounded-full bg-primary" aria-hidden="true" />{u.finishing}</span>}
+              {fellBack && docView === "text" && <span role="status" className="inline-flex items-center gap-2 rounded-md border px-2 py-1 text-xs font-medium"><FileText className="size-3.5" aria-hidden="true" />{u.notOnPage}</span>}
               {unplaced > 0 && <span role="status" className="inline-flex items-center gap-2 rounded-md border border-amber-600/40 bg-amber-500/10 px-2 py-1 text-xs font-medium text-amber-700 dark:text-amber-300"><AlertTriangle className="size-3.5" aria-hidden="true" />{u.unplaced.replace("{n}", String(unplaced))}</span>}
             </div>
             <div className="flex flex-wrap gap-2">
               {hasPages && (
                 <div className="inline-flex rounded-lg border bg-muted/40 p-1" role="group" aria-label={u.docView}>
                   {([["pages", ImageIcon, u.viewDocument], ["text", FileText, u.viewText]] as const).map(([id, Icon, label]) => (
-                    <Button key={id} variant="ghost" aria-pressed={docView === id} onClick={() => setDocView(id)} className={`h-9 gap-2 rounded-md px-3 text-sm ${docView === id ? "bg-card text-foreground shadow-sm hover:bg-card" : "text-muted-foreground hover:bg-transparent hover:text-foreground"}`}><Icon className="size-4" aria-hidden="true" />{label}</Button>
+                    <Button key={id} variant="ghost" aria-pressed={docView === id} onClick={() => { setDocView(id); setFellBack(false); }} className={`h-9 gap-2 rounded-md px-3 text-sm ${docView === id ? "bg-card text-foreground shadow-sm hover:bg-card" : "text-muted-foreground hover:bg-transparent hover:text-foreground"}`}><Icon className="size-4" aria-hidden="true" />{label}</Button>
                   ))}
                 </div>
               )}
@@ -333,8 +347,8 @@ export function DocumentWorkspace({ doc, active, onStatus, onBack, onHome, onGen
                   {active_.map((e) => {
                     const cat = catOf(e.category);
                     return (
-                      <tr key={e.id} onClick={() => setFocusId((id) => id === e.id ? "" : e.id)} className={`cursor-pointer align-top transition-colors hover:bg-muted/30 ${focusId === e.id ? "bg-primary/10" : ""}`}>
-                        <td className="px-4 py-3"><button type="button" aria-pressed={focusId === e.id} onClick={(ev) => { ev.stopPropagation(); setFocusId((id) => id === e.id ? "" : e.id); }} className="inline-block min-h-0 rounded-md border-l-2 bg-muted px-2.5 py-1 text-left font-mono text-[13px] font-medium text-foreground transition-colors hover:bg-primary/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring [overflow-wrap:anywhere]" style={{ borderLeftColor: cat.color }}>{e.text}</button></td>
+                      <tr key={e.id} onClick={() => focusEntity(e.id)} className={`cursor-pointer align-top transition-colors hover:bg-muted/30 ${focusId === e.id ? "bg-primary/10" : ""}`}>
+                        <td className="px-4 py-3"><button type="button" aria-pressed={focusId === e.id} onClick={(ev) => { ev.stopPropagation(); focusEntity(e.id); }} className="inline-block min-h-0 rounded-md border-l-2 bg-muted px-2.5 py-1 text-left font-mono text-[13px] font-medium text-foreground transition-colors hover:bg-primary/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring [overflow-wrap:anywhere]" style={{ borderLeftColor: cat.color }}>{e.text}</button></td>
                         <td className="px-4 py-3"><span className="inline-flex items-center gap-2 whitespace-nowrap"><span aria-hidden="true" className="size-2 rounded-sm" style={{ background: cat.color }} />{x.cats[cat.id]}</span></td>
                         <td className="px-4 py-3 text-muted-foreground [overflow-wrap:anywhere]">{reason(e)}</td>
                       </tr>

@@ -10,13 +10,17 @@
       "supportsTablet": true
     },
     "android": {
+      "package": "pt.enxadadepedra.lethe",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "blockedPermissions": [
+        "android.permission.RECORD_AUDIO"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -27,10 +31,18 @@
         "expo-image-picker",
         {
           "cameraPermission": "A câmara é usada para fotografar documentos e anonimizá-los.",
-          "photosPermission": "A galeria é usada para escolher documentos a anonimizar."
+          "photosPermission": "A galeria é usada para escolher documentos a anonimizar.",
+          "microphonePermission": false
         }
       ]
     ],
-    "scheme": "lethe"
+    "scheme": "lethe",
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "8a5fb428-48f2-4d44-9f56-1f0a67cfb0b8"
+      }
+    },
+    "owner": "pedromarques2002"
   }
 }

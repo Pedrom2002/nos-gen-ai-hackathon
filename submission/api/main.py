@@ -9,7 +9,9 @@ through the API. Document text never goes to logs or error messages.
 
 import logging
 import os
-import uuid
+import secrets
+import threading
+import time
 from collections import Counter
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -90,12 +92,40 @@ class Session:
     keep: set[str] = field(default_factory=set)
     output: list[str] = field(default_factory=list)
     masked: list = field(default_factory=list)
+    touched: float = field(default_factory=lambda: time.monotonic())
 
     def masked_items(self) -> list[dict]:
         return [i for i in self.items if i["id"] not in self.keep]
 
 
 STORE: dict[str, Session] = {}
+# Documents live in memory only, and each keeps the original file (up to
+# 25 MB): without a limit, uploads alone could fill the server's memory.
+MAX_SESSIONS = 30
+SESSION_TTL = 30 * 60        # seconds without use before a document is dropped
+_STORE_LOCK = threading.Lock()
+
+
+def new_id() -> str:
+    """An id nobody can guess: the id is the only key to a document."""
+    return secrets.token_urlsafe(16)
+
+
+def _drop_expired() -> None:
+    now = time.monotonic()
+    for doc_id in [i for i, s in STORE.items()
+                   if now - s.touched > SESSION_TTL]:
+        del STORE[doc_id]
+
+
+def _remember(doc_id: str, session: Session) -> None:
+    """Keep a document, dropping the expired and then the least recently
+    used ones so there are never more than MAX_SESSIONS."""
+    with _STORE_LOCK:
+        _drop_expired()
+        while len(STORE) >= MAX_SESSIONS:
+            del STORE[min(STORE, key=lambda i: STORE[i].touched)]
+        STORE[doc_id] = session
 
 
 class Decisions(BaseModel):
@@ -107,9 +137,14 @@ class Question(BaseModel):
 
 
 def _session(doc_id: str) -> Session:
-    if doc_id not in STORE:
-        raise HTTPException(404, "Documento não encontrado ou já apagado.")
-    return STORE[doc_id]
+    with _STORE_LOCK:
+        _drop_expired()
+        session = STORE.get(doc_id)
+        if session is None:
+            raise HTTPException(
+                404, "Documento não encontrado, expirado ou já apagado.")
+        session.touched = time.monotonic()
+        return session
 
 
 def _summary(items: list[dict]) -> dict:
@@ -182,10 +217,11 @@ def _create(name: str, source: Source) -> dict:
     # the report, the leak check and the review must all use that text.
     lines = source.lines
     items = build_report(lines, result)["items"]
-    doc_id = uuid.uuid4().hex[:12]
-    STORE[doc_id] = Session(name, source, lines, result, items, set(),
-                            list(result.lines), list(result.masked))
-    return _state(doc_id, STORE[doc_id])
+    doc_id = new_id()
+    session = Session(name, source, lines, result, items, set(),
+                      list(result.lines), list(result.masked))
+    _remember(doc_id, session)
+    return _state(doc_id, session)
 
 
 @app.get("/api/health")
@@ -286,5 +322,6 @@ def ask(doc_id: str, question: Question) -> dict:
 @app.delete("/api/documents/{doc_id}", status_code=204)
 def delete(doc_id: str) -> Response:
     _session(doc_id)
-    del STORE[doc_id]
+    with _STORE_LOCK:
+        STORE.pop(doc_id, None)
     return Response(status_code=204)

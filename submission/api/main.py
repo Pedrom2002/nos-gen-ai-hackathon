@@ -71,7 +71,9 @@ app.add_middleware(
 
 
 def generate_fn(*args, **kwargs):
-    """Model call; replaced in tests."""
+    """Model call; replaced in tests. No disk cache: the answers quote the
+    document, and the API keeps documents in memory only."""
+    kwargs.setdefault("cache_dir", None)
     return llm.generate(*args, **kwargs)
 
 

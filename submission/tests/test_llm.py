@@ -41,6 +41,25 @@ def test_second_call_is_served_from_cache(tmp_path):
     assert len(list(tmp_path.glob("*.json"))) == 1
 
 
+def test_without_a_cache_directory_nothing_is_read_or_written(tmp_path):
+    client = FakeClient("a", "b")
+    first = llm.generate("Diz ok", cache_dir=None, client=client)
+    second = llm.generate("Diz ok", cache_dir=None, client=client)
+    assert (first, second) == ("a", "b")
+    assert len(client.models.calls) == 2
+    assert list(tmp_path.iterdir()) == []
+
+
+def test_the_api_never_caches_the_model_answers_on_disk(monkeypatch):
+    from api import main
+
+    seen = {}
+    monkeypatch.setattr(
+        llm, "generate", lambda *args, **kwargs: seen.update(kwargs) or "x")
+    assert main.generate_fn("prompt", model="m") == "x"
+    assert "cache_dir" in seen and seen["cache_dir"] is None
+
+
 def test_cache_key_depends_on_model_and_settings():
     base = llm.cache_key("p", "model-a", 0.0, False)
     assert base != llm.cache_key("p", "model-b", 0.0, False)

@@ -1,6 +1,6 @@
 import { LetheWordmark } from "@/components/LetheLogo";
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useMemo, useReducer, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react";
 import { toast } from "sonner";
 import {
   ArrowLeft, ArrowLeftRight, ArrowRight, Columns2, Copy, Download,
@@ -22,7 +22,7 @@ import { UI } from "@/lib/i18n-ui";
 import { emptyHistory, reviewHistory } from "@/lib/review-history";
 import { analyzeDocument, deleteDocument, downloadRedacted, isMockMode, syncDecisions } from "@/services/anonymizer";
 import {
-  CATEGORIES, anonymize, catOf, normalizeCategory, partialMask, stats,
+  CATEGORIES, anonymize, catOf, findSpans, normalizeCategory, partialMask, stats,
   type CategoryId, type Entity,
 } from "@/lib/anonymizer";
 import { ReviewPanel } from "@/components/ReviewPanel";
@@ -89,16 +89,29 @@ function Index() {
   // Photos and PDFs can be shown as their pages, with the masked words
   // blacked out in place, or as text; plain text and DOCX only have text.
   const [docView, setDocView] = useState<"text" | "pages">("pages");
-  const [sliderSeen, setSliderSeen] = useState(true);
   const [focusId, setFocusId] = useState("");
   const hasPages = (source?.pages.length ?? 0) > 0;
   const showPages = hasPages && docView === "pages";
   const pageUrls = usePageImages(source, step === 2 && hasPages);
   useEffect(() => { if (step !== 2) setFocusId(""); }, [step]);
+  // An entity found only inside a longer one ("João" in "João Silva") has no
+  // span of its own, so the views point at the entity that masks it instead.
+  const markOf = useCallback((id: string) => {
+    if (!id) return "";
+    const spans = findSpans(text, entities.filter((e) => e.enabled));
+    if (spans.some((sp) => sp.entity.id === id)) return id;
+    const needle = entities.find((e) => e.id === id)?.text.trim();
+    return (needle && spans.find((sp) => text.slice(sp.start, sp.end).includes(needle))?.entity.id) || id;
+  }, [text, entities]);
+  const markId = useMemo(() => markOf(focusId), [markOf, focusId]);
+  // Set when a click switched the document view to the text for an entity the page lacks.
+  const [fellBack, setFellBack] = useState(false);
   useEffect(() => { window.scrollTo({ top: 0, behavior: "smooth" }); }, [step]);
   useEffect(() => {
-    if (!focusId) return;
-    const marks = [...document.querySelectorAll<HTMLElement>("[data-focus-mark]")].filter((m) => m.offsetParent !== null);
+    if (!markId) return;
+    // getClientRects, not offsetParent: page boxes are SVG rects, which have no
+    // offsetParent, so the hidden view's marks would otherwise come first.
+    const marks = [...document.querySelectorAll<HTMLElement>("[data-focus-mark]")].filter((m) => m.getClientRects().length > 0);
     marks[0]?.scrollIntoView({ block: "center", behavior: "smooth" });
     // The other text column scrolls on its own: bring its first mark to its middle too.
     const first = marks[0]?.closest("pre");
@@ -108,7 +121,7 @@ function Index() {
       const top = box.scrollTop + other.getBoundingClientRect().top - box.getBoundingClientRect().top - box.clientHeight / 2;
       box.scrollTo({ top, behavior: "smooth" });
     }
-  }, [focusId, resultView, docView]);
+  }, [markId, resultView, docView]);
   const [summary, setSummary] = useState("");
   const [loading, setLoading] = useState(false);
   const { t, s: cfg } = useSettings();
@@ -125,6 +138,16 @@ function Index() {
   const pages = useMemo(() => source?.pages ?? [], [source]);
   const alignment = useMemo(() => alignText(text, pages), [text, pages]);
   const redaction = useMemo(() => redactionBoxes(text, entities, pages, alignment), [text, entities, pages, alignment]);
+  // An entity the page view cannot locate (the OCR here read those words
+  // differently) switches the view to the text, where it is always marked;
+  // the toggle then says so and switches back.
+  const focusEntity = (id: string) => {
+    const next = focusId === id ? "" : id;
+    const fallBack = !!next && showPages && !redaction.boxes.some((b) => b.entityId === markOf(next));
+    setFocusId(next);
+    setFellBack(fallBack);
+    if (fallBack) setDocView("text");
+  };
   // A photo's redacted half is the file the backend built and verified; the
   // boxes drawn here only locate the focused entity on it.
   const redactedUrls = useMemo(() => (redactedUrl && source?.kind === "image" ? [redactedUrl] : []), [redactedUrl, source]);
@@ -186,9 +209,8 @@ function Index() {
         ents.push({ id: `ai-${i}`, text: t, category: normalizeCategory(e.category), reason: e.reason ?? "", gdpr_basis: e.gdpr_basis ?? "Art. 4.º(1) RGPD", enabled: true, role: e.role, refs: e.refs, at: e.at });
       });
       dispatch({ type: "reset", entities: ents });
-      setResultView("side");
+      setResultView("slide");
       setDocView("pages");
-      setSliderSeen(false);
       setSummary(r.summary);
       setStep(1);
     } catch (e) {
@@ -366,27 +388,28 @@ function Index() {
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div className="min-w-0 text-sm text-muted-foreground">
                   {finishing && <span role="status" aria-busy="true" className="inline-flex items-center gap-2 text-xs"><span className="size-2 animate-pulse rounded-full bg-primary" aria-hidden="true" />{u.finishing}</span>}
+                  {fellBack && docView === "text" && <span role="status" className="inline-flex items-center gap-2 rounded-md border px-2 py-1 text-xs font-medium"><FileText className="size-3.5" aria-hidden="true" />{u.notOnPage}</span>}
                   {unplaced > 0 && <span role="status" className="inline-flex items-center gap-2 rounded-md border border-amber-600/40 bg-amber-500/10 px-2 py-1 text-xs font-medium text-amber-700 dark:text-amber-300"><AlertTriangle className="size-3.5" aria-hidden="true" />{u.unplaced.replace("{n}", String(unplaced))}</span>}
                 </div>
                 <div className="flex flex-wrap gap-2">
                   {hasPages && (
                     <div className="inline-flex rounded-lg border bg-muted/40 p-1" role="group" aria-label={u.docView}>
                       {([["pages", ImageIcon, u.viewDocument], ["text", FileText, u.viewText]] as const).map(([id, Icon, label]) => (
-                        <Button key={id} variant="ghost" aria-pressed={docView === id} onClick={() => setDocView(id)} className={`h-9 gap-2 rounded-md px-3 text-sm ${docView === id ? "bg-card text-foreground shadow-sm hover:bg-card" : "text-muted-foreground hover:bg-transparent hover:text-foreground"}`}><Icon className="size-4" aria-hidden="true" />{label}</Button>
+                        <Button key={id} variant="ghost" aria-pressed={docView === id} onClick={() => { setDocView(id); setFellBack(false); }} className={`h-9 gap-2 rounded-md px-3 text-sm ${docView === id ? "bg-card text-foreground shadow-sm hover:bg-card" : "text-muted-foreground hover:bg-transparent hover:text-foreground"}`}><Icon className="size-4" aria-hidden="true" />{label}</Button>
                       ))}
                     </div>
                   )}
                   <div className="inline-flex rounded-lg border bg-muted/40 p-1" role="group" aria-label={u.comparison}>
                     {([["side", Columns2, u.sideBySide], ["slide", ArrowLeftRight, u.slideView]] as const).map(([id, Icon, label]) => (
-                      <Button key={id} variant="ghost" aria-pressed={resultView === id} onClick={() => { setResultView(id); if (id === "slide") setSliderSeen(true); }} className={`h-9 gap-2 rounded-md px-3 text-sm ${resultView === id ? "bg-card text-foreground shadow-sm hover:bg-card" : "text-muted-foreground hover:bg-transparent hover:text-foreground"}`}><Icon className="size-4" aria-hidden="true" />{label}</Button>
+                      <Button key={id} variant="ghost" aria-pressed={resultView === id} onClick={() => setResultView(id)} className={`h-9 gap-2 rounded-md px-3 text-sm ${resultView === id ? "bg-card text-foreground shadow-sm hover:bg-card" : "text-muted-foreground hover:bg-transparent hover:text-foreground"}`}><Icon className="size-4" aria-hidden="true" />{label}</Button>
                     ))}
                   </div>
                 </div>
               </div>
               <div className={resultView === "slide" ? "" : "hidden"}>
-                {sliderSeen && (showPages
-                  ? <PageComparison pages={pages} urls={pageUrls} redactedUrls={redactedUrls} boxes={redaction.boxes} focusId={focusId} pending={awaitingRedacted} />
-                  : <RiverComparison text={text} entities={entities} output={output} focusId={focusId} />)}
+                {showPages
+                  ? <PageComparison pages={pages} urls={pageUrls} redactedUrls={redactedUrls} boxes={redaction.boxes} focusId={markId} pending={awaitingRedacted} />
+                  : <RiverComparison text={text} entities={entities} output={output} focusId={markId} />}
               </div>
               <div className={resultView === "side" ? "grid min-w-0 gap-4 md:grid-cols-2" : "hidden"}>
                 {[[t.original, text, true], [t.anonymized, output, false]].map(([h, c, orig]) => (
@@ -398,10 +421,10 @@ function Index() {
                         const me = e.currentTarget, other = me.parentElement?.parentElement?.querySelector<HTMLElement>(`[data-page-scroll]:not([data-page-scroll="${orig ? "o" : "a"}"])`);
                         if (other && Math.abs(other.scrollTop - me.scrollTop) > 1) other.scrollTop = me.scrollTop;
                       }}>
-                        <PageStack pages={pages} urls={pageUrls} redactedUrls={redactedUrls} boxes={redaction.boxes} mode={orig ? "original" : "redacted"} focusId={focusId} pending={awaitingRedacted} pageLabel={(n) => u.pageN.replace("{n}", String(n))} />
+                        <PageStack pages={pages} urls={pageUrls} redactedUrls={redactedUrls} boxes={redaction.boxes} mode={orig ? "original" : "redacted"} focusId={markId} pending={awaitingRedacted} pageLabel={(n) => u.pageN.replace("{n}", String(n))} />
                       </div>
                       : <pre tabIndex={0} aria-label={String(h)} className="max-h-[60dvh] overflow-auto whitespace-pre-wrap break-words font-mono text-sm leading-6 [overflow-wrap:anywhere]">
-                        {orig ? <FocusedText text={text} entities={entities} focusId={focusId} /> : <FocusedMasked text={text} entities={entities} focusId={focusId} />}
+                        {orig ? <FocusedText text={text} entities={entities} focusId={markId} /> : <FocusedMasked text={text} entities={entities} focusId={markId} />}
                       </pre>}
                   </div>
                 ))}
@@ -468,8 +491,8 @@ function Index() {
                       {active.map((e) => {
                         const cat = catOf(e.category);
                         return (
-                          <tr key={e.id} onClick={() => setFocusId((id) => id === e.id ? "" : e.id)} className={`cursor-pointer align-top transition-colors hover:bg-muted/30 ${focusId === e.id ? "bg-primary/10" : ""}`}>
-                            <td className="px-4 py-3"><button type="button" aria-pressed={focusId === e.id} onClick={(ev) => { ev.stopPropagation(); setFocusId((id) => id === e.id ? "" : e.id); }} className="inline-block min-h-0 rounded-md border-l-2 bg-muted px-2.5 py-1 text-left font-mono text-[13px] font-medium text-foreground transition-colors hover:bg-primary/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring [overflow-wrap:anywhere]" style={{ borderLeftColor: cat.color }}>{e.text}</button></td>
+                          <tr key={e.id} onClick={() => focusEntity(e.id)} className={`cursor-pointer align-top transition-colors hover:bg-muted/30 ${focusId === e.id ? "bg-primary/10" : ""}`}>
+                            <td className="px-4 py-3"><button type="button" aria-pressed={focusId === e.id} onClick={(ev) => { ev.stopPropagation(); focusEntity(e.id); }} className="inline-block min-h-0 rounded-md border-l-2 bg-muted px-2.5 py-1 text-left font-mono text-[13px] font-medium text-foreground transition-colors hover:bg-primary/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring [overflow-wrap:anywhere]" style={{ borderLeftColor: cat.color }}>{e.text}</button></td>
                             <td className="px-4 py-3"><span className="inline-flex items-center gap-2 whitespace-nowrap"><span aria-hidden="true" className="size-2 rounded-sm" style={{ background: cat.color }} />{x.cats[cat.id]}</span></td>
                             <td className="px-4 py-3 text-muted-foreground [overflow-wrap:anywhere]">{reason(e)}</td>
                           </tr>

@@ -12,7 +12,7 @@ export const normalize = (w: string): string => w.normalize("NFKC").toLowerCase(
 /** For token i of A, the inclusive range start[i]..end[i] of B, or -1 when nothing matched. */
 export interface Alignment { start: Int32Array; end: Int32Array }
 
-function levenshtein(a: string, b: string, max: number): number {
+export function levenshtein(a: string, b: string, max: number): number {
   if (Math.abs(a.length - b.length) > max) return max + 1;
   let prev = Array.from({ length: b.length + 1 }, (_, i) => i);
   for (let i = 1; i <= a.length; i++) {

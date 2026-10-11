@@ -63,4 +63,25 @@ describe("redactionBoxes", () => {
     const { boxes } = redactionBoxes(t, [ent("r", "Rui")], two, alignText(t, two));
     expect(boxes).toEqual([expect.objectContaining({ page: 1, entityId: "r" })]);
   });
+
+  it("still places masked words the backend read in another order", () => {
+    // The OCR here and the backend read the same scan's lines in different orders.
+    const page = pageFor("Seguro de saude: Plano Premium Total, apolice 987654321\nCartao: 4111 2222 3333 4444 CVV 123)\nRendimento anual: €62.500");
+    const t = "o Premium Total, apolice 987654321 |\nCartao: 4111 2222 3333 4444 CVV 123)\n62.500\nSeguro de saude: Plan\nRendimento anual: €";
+    const ents = [ent("cvv", "123)"), ent("eur", "€"), ent("val", "62.500")];
+    const plain = alignText(t, [page]);
+    expect([...plain.start].filter((s) => s < 0).length).toBeGreaterThan(0);
+    const { boxes, unplaced } = redactionBoxes(t, ents, [page], plain);
+    expect(unplaced).toBe(0);
+    const at = (id: string) => boxes.filter((b) => b.entityId === id).map((b) => b.x);
+    expect(at("cvv")).toEqual([10 + 6 * 60 - 1.5]);
+    expect(at("eur")).toEqual(at("val"));
+  });
+
+  it("does not move a short masked word onto a far-away copy of it", () => {
+    const page = pageFor("de um lado\nlinha dois\nlinha tres\nAna e Rui");
+    const t = "de um lado\nlinha dois\nlinha tres\nXy e Rui";
+    const { unplaced } = redactionBoxes(t, [ent("x", "Xy")], [page], alignText(t, [page]));
+    expect(unplaced).toBe(1);
+  });
 });

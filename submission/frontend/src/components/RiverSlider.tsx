@@ -30,6 +30,8 @@ export function RiverSlider({ after, before, labels, ariaLabel, sr, resetKey = "
   const cancelReveal = () => cancelAnimationFrame(frame.current);
   useEffect(() => { if (resetKey) { cancelReveal(); setPosition(0); } }, [resetKey]);
   useEffect(() => {
+    // Mounted to show a focused entity (the view switched for it): keep the original in sight.
+    if (resetKey) return;
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) { setPosition(50); return; }
     let started: number | undefined;
     const animate = (now: number) => {
@@ -40,6 +42,8 @@ export function RiverSlider({ after, before, labels, ariaLabel, sr, resetKey = "
     };
     frame.current = requestAnimationFrame(animate);
     return () => cancelAnimationFrame(frame.current);
+    // Mount only: the reveal plays once, a later focus is handled by the reset above.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   const content = useRef<HTMLDivElement>(null);
   const maskLayer = useRef<HTMLDivElement>(null);

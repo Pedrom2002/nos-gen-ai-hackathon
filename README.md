@@ -75,7 +75,10 @@ The review interface and the mobile app are optional; their commands are in `PRO
 
 ## Team
 
-Pedrom2002, TAF00, RicePerson101 and euick0 (Eric Golovatenko Simões).
+- Tiago Fragoso (TAF00)
+- Eric Simões (euick0)
+- Pedro Marques (Pedrom2002)
+- Leandro Gomes (RicePerson101)
 
 ---
 

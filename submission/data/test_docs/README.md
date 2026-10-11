@@ -6,6 +6,8 @@ Fictitious documents used to check that the pipeline generalises beyond the offi
 - `08`: school record, to test the school context: student, process, student card and enrolment numbers in several formats, which must be masked, next to the class, grades and room number, which must stay.
 - `R01`–`R10`: realistic Portuguese documents written by the team (service contract, complaint email, call notes, HR record, termination letter, technical report, power of attorney, support chat, social tariff request, customer records CSV). Their NIF, CC, IBAN and NISS values pass the official checksums.
 
+- `F01`–`F06`: photo versions of the two pages of the official document, made by `make_photos.py` (`python data/test_docs/make_photos.py`): a flat scan (`F01`, `F04`), the page on a dark table seen at an angle (`F02`, `F05`) and a page turned 1.6 degrees with no border to find (`F03`, `F06`). They are rendered from the PDF and degraded with blur, uneven light, noise and JPEG compression, so they are invented data, not real photographs. They test OCR, the line recovery, the deskew and the redacted image; `evaluate_docs` does not read them (it only takes PDF, TXT and CSV).
+
 Run the evaluation:
 
 ```bash

@@ -363,6 +363,26 @@ def test_noise_without_letters_or_digits_is_not_a_recovered_line(monkeypatch):
     assert len(still_unread) == 1
 
 
+def test_a_long_word_the_reader_is_unsure_of_is_still_recovered(monkeypatch):
+    # An email read as "carlos.mendes(&centromedicalisboa.pt" at confidence
+    # 36: the "@" confuses OCR, but the line is there and must be masked.
+    email = [ocr.OcrWord("Email:", ocr.Box(60, 80, 160, 110), 90.0),
+             ocr.OcrWord("carlos.mendes(&centromedicalisboa.pt",
+                         ocr.Box(170, 80, 912, 110), 36.0)]
+    monkeypatch.setattr(ocr, "_read_zone", lambda image, zone: email)
+    merged, still_unread = ocr.recover_unread(ink_bar(), [])
+    assert [w.text for w in merged[0]] == [w.text for w in email]
+    assert still_unread == []
+
+
+def test_a_short_unsure_word_is_noise(monkeypatch):
+    weak = [ocr.OcrWord("a1b", ocr.Box(60, 80, 400, 110), 30.0)]
+    monkeypatch.setattr(ocr, "_read_zone", lambda image, zone: weak)
+    merged, still_unread = ocr.recover_unread(ink_bar(), [])
+    assert merged == []
+    assert len(still_unread) == 1
+
+
 def test_low_confidence_words_are_not_recovered(monkeypatch):
     weak = [ocr.OcrWord("abc", ocr.Box(60, 80, 400, 110), 10.0)]
     monkeypatch.setattr(ocr, "_read_zone", lambda image, zone: weak)

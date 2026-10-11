@@ -63,7 +63,7 @@ export default function ResultScreen() {
   const api = useApi();
   const { result, source, history, output, prepared, reset } = useSession();
   const [view, setView] = useState<"document" | "text">("document");
-  const [layout, setLayout] = useState<"side" | "slide">("side");
+  const [layout, setLayout] = useState<"side" | "slide">("slide");
   // Summary and redacted photo were fetched by Generate result, so the screen
   // opens complete instead of filling in piece by piece.
   const summary = prepared?.summary ?? result?.summary ?? "";

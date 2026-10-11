@@ -20,9 +20,9 @@ ALLOWED_ORIGINS=https://<id>.lovable.app
 
 ## Privacy
 
-- Documents live only in memory: no disk, no database. `DELETE /api/documents/{id}` removes one.
+- Documents live only in memory: no disk, no database, and the model's answers are not cached either. At most 30 documents are kept (the least recently used goes first) and one idle for 30 minutes is dropped; `DELETE /api/documents/{id}` removes one at once. Ids are 22 random URL-safe characters.
 - Request logging is disabled, and document text never appears in logs or error messages.
-- Uploads: PDF (text or scanned), DOCX, PNG, JPG, WebP, TXT (UTF-8, UTF-16, Windows-1252) or CSV, at most 25 MB (scanned PDFs: 20 pages). Images and scans are read by Tesseract on the server; they never go to the model, only their text does.
+- Uploads: PDF (text or scanned), DOCX, PNG, JPG, WebP, TXT (UTF-8, UTF-16, Windows-1252) or CSV, at most 25 MB; a DOCX that unpacks past 50 MB, an image over 80 megapixels, a scanned PDF over 20 pages or a document over 8 000 words is refused (413) before any model call, and a binary file named `.txt` is refused as unsupported (415). Images and scans are read by Tesseract on the server; they never go to the model, only their text does.
 
 ## Routes
 
@@ -41,7 +41,7 @@ ALLOWED_ORIGINS=https://<id>.lovable.app
 
 `PUT /decisions` always sends the full list of items to keep visible; an empty list masks everything again.
 
-Errors return `{ "detail": "<message in Portuguese>" }`: 404 unknown document, 413 file too large, 415 unsupported format, 422 empty or unreadable document, empty question, unknown item or a redacted file that failed verification, 502 the model did not answer (try again).
+Errors return `{ "detail": "<message in Portuguese>" }`: 404 unknown, expired or deleted document, 413 file too large (see the limits above), 415 unsupported format, 422 empty or unreadable document, empty question, unknown item or a redacted file that failed verification, 502 the model did not answer (try again).
 
 ## Types
 

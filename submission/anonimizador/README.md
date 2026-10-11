@@ -60,5 +60,5 @@ python -m venv .venv
 .venv/Scripts/activate        # Windows (use source .venv/bin/activate on Linux/macOS)
 pip install -r requirements.txt
 cp .env.example .env           # then set GEMINI_API_KEY
-python -m pytest               # 197 tests
+python -m pytest               # 213 tests
 ```

@@ -46,13 +46,37 @@ def mask_more(original_lines: list[str], result: Anonymized,
     if not extra:
         return result
     masked = sorted(result.masked + extra, key=lambda w: (w.line, w.index))
+    lines = _render_all(original_lines, masked, keep_punct)
+    return replace(result, lines=lines, masked=masked,
+                   safety_masked=result.safety_masked + extra)
+
+
+def keep_visible(original_lines: list[str], result: Anonymized,
+                 positions: set[tuple[int, int]],
+                 keep_punct: bool = False) -> Anonymized:
+    """Never mask the given (line, word index) positions.
+
+    Used for the separators between the cells of a CSV row
+    (sources.Source.separators): a collapsed mask from the model ("* * ,"
+    given as "*") can cover one, and a masked separator would merge two
+    columns in the redacted file.
+    """
+    masked = [w for w in result.masked if (w.line, w.index) not in positions]
+    if len(masked) == len(result.masked):
+        return result
+    safety = [w for w in result.safety_masked
+              if (w.line, w.index) not in positions]
+    lines = _render_all(original_lines, masked, keep_punct)
+    return replace(result, lines=lines, masked=masked, safety_masked=safety)
+
+
+def _render_all(original_lines: list[str], masked: list[MaskedWord],
+                keep_punct: bool) -> list[str]:
     per_line: dict[int, set[int]] = {}
     for word in masked:
         per_line.setdefault(word.line, set()).add(word.index)
-    lines = [_render(line, per_line.get(n, set()), keep_punct)
-             for n, line in enumerate(original_lines)]
-    return replace(result, lines=lines, masked=masked,
-                   safety_masked=result.safety_masked + extra)
+    return [_render(line, per_line.get(n, set()), keep_punct)
+            for n, line in enumerate(original_lines)]
 
 
 def _word_count(lines: list[str]) -> int:
@@ -116,9 +140,11 @@ def anonymize_source(source, model: str = DEFAULT_MODEL, variant: str = "A",
     """Anonymise a sources.Source: its lines, plus its uncertain OCR words.
 
     Text read by OCR is first cleaned of misreads (ocr_fix), word by word,
-    so every word keeps its place in the image.
+    so every word keeps its place in the image. The separators between
+    the cells of a CSV row are never masked (keep_visible).
     """
     if source.kind in ("image", "scanned"):
         source.lines = fix_lines(source.lines, model, generate_fn)
     result = anonymize(source.lines, model, variant, keep_punct, generate_fn)
-    return mask_more(source.lines, result, source.uncertain, keep_punct)
+    result = mask_more(source.lines, result, source.uncertain, keep_punct)
+    return keep_visible(source.lines, result, source.separators, keep_punct)

@@ -56,7 +56,7 @@ def test_text_with_accents_and_other_encodings_is_still_read():
     assert sources.load_source("Olá, João".encode("cp1252"), ".txt").lines == [
         "Olá, João"]
     assert sources.load_source("Olá".encode("utf-16"), ".txt").lines == ["Olá"]
-    assert sources.load_source(b"a,b\n1,2\n", ".csv").lines == ["a,b", "1,2"]
+    assert sources.load_source(b"a,b\n1,2\n", ".csv").lines == ["a , b", "1 , 2"]
 
 
 def test_an_image_with_too_many_pixels_is_refused_before_it_is_decoded():

@@ -55,3 +55,9 @@ def test_errors_are_reported_instead_of_raised(tmp_path):
     result = evaluate_document(write_doc(tmp_path), out_dir=tmp_path,
                                generate_fn=broken)
     assert result.error.startswith("RuntimeError")
+
+
+def test_read_document_lays_a_csv_out_cell_by_cell(tmp_path):
+    path = tmp_path / "clientes.csv"
+    path.write_text("nome,nif\nAna Lima,123\n", encoding="utf-8")
+    assert read_document(path) == ["nome , nif", "Ana Lima , 123"]

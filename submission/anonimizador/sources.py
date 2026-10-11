@@ -3,7 +3,9 @@
 The lines go through the usual pipeline (and give submission.txt). The
 locations let redact.py remove the masked words from the file itself:
 
-- text (.txt, .csv): no file to redact, lines only;
+- text (.txt): no file to redact, lines only;
+- csv: each row is a line with the cells separated by the delimiter on
+  its own (tabular.py); the redacted file is the CSV with the masked cells;
 - pdf: a PDF with a text layer; each word has a page and a rectangle;
 - scanned: a PDF where a page has no text; every page is rendered and read
   by OCR, and the redacted PDF is rebuilt from images;
@@ -27,6 +29,7 @@ from PIL import Image
 
 from anonimizador import deskew, ocr
 from anonimizador.extract import BinaryFile, clean_lines, decode_text
+from anonimizador.tabular import read_csv
 
 TEXT = {".txt", ".csv"}
 IMAGE = {".png", ".jpg", ".jpeg", ".webp"}
@@ -87,6 +90,10 @@ class Source:
     unread: int = 0
     # The OCR reading before ocr_fix, word for word in step with ``lines``.
     ocr_lines: list = field(default_factory=list)
+    # CSV only: the file's delimiter, and the (line, word index) of every
+    # separator token in ``lines``; they are never masked.
+    delimiter: str = ","
+    separators: set = field(default_factory=set)
 
     @property
     def redactable(self) -> bool:
@@ -309,6 +316,11 @@ def load_source(data: bytes, suffix: str) -> Source:
             text = decode_text(data)
         except BinaryFile:
             raise UnsupportedFormat(suffix) from None
+        if suffix == ".csv":
+            table = read_csv(text)
+            return Source("csv", suffix, data, table.lines,
+                          delimiter=table.delimiter,
+                          separators=table.separators)
         return Source("text", suffix, data, clean_lines(text))
     if suffix == ".pdf":
         return _pdf(data)

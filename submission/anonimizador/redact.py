@@ -10,7 +10,10 @@
   under each word; then hidden text, metadata, attachments, JavaScript,
   links and form data are scrubbed, and the file is saved in full;
 - docx: masked words are rewritten inside the runs (formatting kept), and
-  comments, images, embedded objects and personal properties are removed.
+  comments, images, embedded objects and personal properties are removed;
+- csv: the rows are written back as CSV with the masked cells (one
+  asterisk per word) and the same delimiter; the separators were never
+  masked, so every row keeps its columns.
 
 Every result goes through redact_verify before it is returned. Anything
 that cannot be located or verified raises RedactionError: no file is
@@ -30,9 +33,10 @@ from docx.oxml.ns import qn
 from lxml import etree
 from PIL import Image, ImageDraw
 
-from anonimizador.align import MaskedWord, mask_token
+from anonimizador.align import MaskedWord, _render, mask_token
 from anonimizador.report import masked_spans
 from anonimizador.sources import SCAN_DPI, Source, docx_paragraphs, own_nodes
+from anonimizador.tabular import write_csv
 
 DOCX_TYPE = ("application/vnd.openxmlformats-officedocument."
              "wordprocessingml.document")
@@ -288,6 +292,21 @@ def _docx(source: Source, masked: list[MaskedWord],
     return _clean_zip(buffer.getvalue())
 
 
+# --- CSV ---
+
+def _csv(source: Source, masked: list[MaskedWord],
+         keep_punct: bool) -> bytes:
+    """The rows written back as CSV, with the masked cells.
+
+    Saved as UTF-8 with a BOM, so spreadsheets open the accents correctly.
+    """
+    per_line = _positions(masked)
+    lines = [_render(line, set(per_line.get(n, [])), keep_punct)
+             for n, line in enumerate(source.lines)]
+    text = write_csv(lines, source.separators, source.delimiter)
+    return text.encode("utf-8-sig")
+
+
 # --- entry point ---
 
 def redact(source: Source, masked: list[MaskedWord], name: str,
@@ -314,6 +333,9 @@ def redact(source: Source, masked: list[MaskedWord], name: str,
     elif source.kind == "pdf":
         result = Redacted(_pdf(source, masked), f"{stem}_censurado.pdf",
                           "application/pdf")
+    elif source.kind == "csv":
+        result = Redacted(_csv(source, masked, keep_punct),
+                          f"{stem}_censurado.csv", "text/csv")
     else:
         result = Redacted(_docx(source, masked, keep_punct),
                           f"{stem}_censurado.docx", DOCX_TYPE)

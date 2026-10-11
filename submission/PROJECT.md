@@ -95,7 +95,7 @@ The worked example includes a relationship word that stays visible ("(irmã)"): 
 
 ![A simulated photo of the official document and the redacted file returned by the API](docs/photo_redaction.png)
 
-Besides the challenge PDF, Lethe reads scanned PDFs, photos and images (PNG, JPG, WebP), DOCX, TXT and CSV. Every input still produces `submission.txt` and the report through the same pipeline. Images, PDFs and DOCX files also come back redacted, in their own format (`python run.py --pdf FILE --redact`, or `GET /api/documents/{id}/download/redacted`).
+Besides the challenge PDF, Lethe reads scanned PDFs, photos and images (PNG, JPG, WebP), DOCX, TXT and CSV. Every input still produces `submission.txt` and the report through the same pipeline. Images, PDFs, DOCX and CSV files also come back redacted, in their own format (`python run.py --pdf FILE --redact`, or `GET /api/documents/{id}/download/redacted`). A CSV is read cell by cell: each row becomes a line with the cells separated by the delimiter on its own, so every value is its own item, the separators are never masked, and the redacted file is the CSV again with the masked cells.
 
 - **Images and scans:** they are read by [Tesseract](https://github.com/tesseract-ocr/tesseract) on the machine, in Portuguese, so the image never leaves it; only its text goes to the model. Each word keeps its box.
   - The redaction paints opaque black over the masked words. It never blurs or pixelates, since those can be reversed. The boxes are padded so accents and descenders are covered too.
@@ -123,7 +123,7 @@ Besides the challenge PDF, Lethe reads scanned PDFs, photos and images (PNG, JPG
 
 - **Load a document:** import a PDF, DOCX, image (PNG, JPG, WebP), TXT or CSV, or paste text.
 - **Review the items:** see every item highlighted by category with its reason, keep any of them visible or mask extra words by selecting them, and undo or redo each change.
-- **Compare and download:** compare the original and the anonymised text (or, for PDFs and photos, the pages with black bars, side by side or under a slider), then download `submission.txt`, the report and, for PDF, DOCX and images, the redacted file.
+- **Compare and download:** compare the original and the anonymised text (or, for PDFs and photos, the pages with black bars, side by side or under a slider), then download `submission.txt`, the report and, for PDF, DOCX, CSV and images, the redacted file.
 
 Backend items are masked at the exact positions the backend found. The frontend's output equals the backend output byte for byte, which was checked on the official document.
 

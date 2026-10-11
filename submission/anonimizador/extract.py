@@ -10,6 +10,8 @@ from pathlib import Path
 
 import pymupdf
 
+from anonimizador.tabular import read_csv
+
 
 def clean_lines(text: str) -> list[str]:
     """Split text into lines, strip trailing spaces and drop empty lines."""
@@ -51,7 +53,15 @@ def read_bytes(data: bytes, suffix: str) -> list[str]:
         with pymupdf.open(stream=data, filetype="pdf") as doc:
             text = "\n".join(page.get_text() for page in doc)
         return clean_lines(text)
-    return clean_lines(decode_text(data))
+    return text_lines(decode_text(data), suffix)
+
+
+def text_lines(text: str, suffix: str) -> list[str]:
+    """Clean lines of a text file. A CSV is laid out cell by cell, with the
+    separators as words of their own (tabular.py)."""
+    if suffix.lower() == ".csv":
+        return read_csv(text).lines
+    return clean_lines(text)
 
 
 def read_document(path: str | Path) -> list[str]:
@@ -59,7 +69,7 @@ def read_document(path: str | Path) -> list[str]:
     path = Path(path)
     if path.suffix.lower() == ".pdf":
         return extract_lines(path)
-    return clean_lines(decode_text(path.read_bytes()))
+    return text_lines(decode_text(path.read_bytes()), path.suffix)
 
 
 if __name__ == "__main__":

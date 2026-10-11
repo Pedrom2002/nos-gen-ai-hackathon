@@ -106,3 +106,10 @@ def test_official_prompt_is_unchanged():
                           / "document_to_anonymize.pdf")
     committed = (submission / "prompt.txt").read_text(encoding="utf-8")
     assert build_prompt(lines) == committed.replace("\r\n", "\n")
+
+
+def test_table_rows_get_the_table_rules():
+    from anonimizador.prompt import build_prompt
+    lines = ["nome , nif", "Ana , 123", "Rui , 456"]
+    assert "CONTEXTO TABELA" in build_prompt(lines)
+    assert "CONTEXTO TABELA" not in build_prompt(["Nome: Ana", "NIF: 123"])

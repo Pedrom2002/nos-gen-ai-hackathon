@@ -493,3 +493,32 @@ def test_webp_photo_is_read_and_redacted():
     lines = ocr.line_texts(ocr.read_image(
         Image.open(io.BytesIO(result.data)).convert("RGB")))
     assert not any("Maria" in line for line in lines)
+
+
+CSV_ROWS = (b"nome;nif;nota\nMaria Santos;123456789;Consulta de rotina\n"
+            b"Rui Lima;;sem dados\n")
+
+
+def test_csv_comes_back_as_csv_with_the_cells_masked():
+    import csv
+    source = load_source(CSV_ROWS, ".csv")
+    assert source.kind == "csv" and source.delimiter == ";"
+    assert source.lines[1] == "Maria Santos ; 123456789 ; Consulta de rotina"
+    result = redact(source, secret_words(source.lines), "clientes.csv")
+    assert result.filename == "clientes_censurado.csv"
+    assert result.media_type == "text/csv"
+    rows = list(csv.reader(io.StringIO(result.data.decode("utf-8-sig")),
+                           delimiter=";"))
+    assert rows == [["nome", "nif", "nota"],
+                    ["* *", "*", "Consulta de rotina"],
+                    ["Rui Lima", "", "sem dados"]]
+    assert b"Maria" not in result.data and b"123456789" not in result.data
+
+
+def test_csv_that_still_shows_a_value_fails_verification():
+    from anonimizador import redact_verify
+    from anonimizador.redact import Redacted
+    source = load_source(CSV_ROWS, ".csv")
+    leaky = Redacted(CSV_ROWS, "clientes_censurado.csv", "text/csv")
+    with pytest.raises(RedactionError, match="Verificação falhou"):
+        redact_verify.verify(source, leaky, secret_words(source.lines), {})

@@ -70,6 +70,15 @@ a seguir a "Aluno N.º", "N.º de aluno", "N.º de estudante", "Matrícula", \
 ("12345", "a2021145", "up201904512", "2021 0457").
 - Mantém o ano letivo, o ano e a turma ("9.º B"), as disciplinas, as notas \
 e as faltas.""",
+    "tabela": """\
+CONTEXTO TABELA (detetado no documento):
+- Cada linha é uma fila de uma tabela (CSV) e as células estão separadas \
+por um separador isolado (",", ";" ou "|"). Avalia cada célula por si: a \
+mesma fila pode ter o nome, o NIF, o telefone, o email e o IBAN de uma \
+pessoa, e cada um deles mascara-se.
+- A primeira linha pode ser o cabeçalho com os nomes das colunas: usa-os \
+para perceber o que cada célula é, e mantém-nos visíveis.
+- Nunca mascares os separadores: ficam exatamente como estão.""",
 }
 
 _DOUBT = """\

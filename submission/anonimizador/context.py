@@ -6,6 +6,9 @@ or company registration elsewhere. The context is detected once from the
 whole document, and the prompt and the safety net then add the rules for
 that context. A document without a detected context is processed exactly
 as before.
+
+A table (the rows of a CSV, laid out by tabular.py) is detected from its
+shape instead: most lines have the same number of separators on their own.
 """
 
 import re
@@ -25,6 +28,11 @@ CONTEXT_TERMS = {
     ),
 }
 MIN_TERMS = 2
+# Separator tokens of a table read from a CSV (tabular.py). Prose has its
+# commas attached to words, so "," on its own is rare outside a table.
+SEPARATORS = {",", ";", "|"}
+MIN_TABLE_ROWS = 2
+TABLE_SHARE = 0.8
 
 
 def plain_text(text: str) -> str:
@@ -36,10 +44,20 @@ def plain_text(text: str) -> str:
     ).lower()
 
 
+def is_table(lines: list[str]) -> bool:
+    """Rows of a CSV: most lines have the same number of separators on
+    their own, one at least."""
+    if len(lines) < MIN_TABLE_ROWS:
+        return False
+    counts = [sum(w in SEPARATORS for w in line.split()) for line in lines]
+    common = max(set(counts), key=counts.count)
+    return common >= 1 and counts.count(common) >= TABLE_SHARE * len(lines)
+
+
 def detect_contexts(lines: list[str]) -> set[str]:
     """Return the contexts found in the whole document (e.g. {"escolar"})."""
     text = plain_text("\n".join(lines))
-    found = set()
+    found = {"tabela"} if is_table(lines) else set()
     for context, terms in CONTEXT_TERMS.items():
         hits = sum(
             1 for term in terms if re.search(rf"\b{term}\b", text)

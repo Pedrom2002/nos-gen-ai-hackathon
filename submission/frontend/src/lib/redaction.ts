@@ -1,5 +1,5 @@
 import { findSpans, type Entity } from "@/lib/anonymizer";
-import { alignTokens, normalize, tokenize, type Alignment } from "@/lib/align";
+import { alignTokens, levenshtein, normalize, tokenize, type Alignment } from "@/lib/align";
 import type { GeoWord, PageGeometry, RedactionBox } from "@/lib/document";
 
 // The visual redaction derives from the very same spans that anonymize()
@@ -44,8 +44,10 @@ export function redactionBoxes(text: string, entities: Entity[], pages: PageGeom
   const boxes: (RedactionBox & { line: number })[] = [];
   let unplaced = 0;
   let last: (RedactionBox & { line: number }) | null = null;
+  const rescued = rescueMasked(text, entities, words, alignment);
   for (const { index, entityId } of maskedTokens(text, entities)) {
-    const s = alignment.start[index] ?? -1, e = alignment.end[index] ?? -1;
+    const aligned = (alignment.start[index] ?? -1) >= 0;
+    const s = aligned ? alignment.start[index]! : rescued.get(index) ?? -1, e = aligned ? alignment.end[index]! : rescued.get(index) ?? -1;
     if (s < 0) { unplaced++; last = null; continue; }
     for (let k = s; k <= e; k++) {
       const w = words[k];
@@ -65,4 +67,41 @@ export function redactionBoxes(text: string, entities: Entity[], pages: PageGeom
     }
   }
   return { boxes: boxes.map(({ line: _line, ...b }) => b), unplaced };
+}
+
+/**
+ * A second chance for masked tokens the in-order alignment missed: when the
+ * backend read a scan in another order than the OCR here ("apólice nº …"
+ * before "Seguro de saúde"), the in-order pass loses those lines. Look for the
+ * word near where its placed neighbours landed. Short words must fall between
+ * those neighbours, so a "de" never lands on some other "de" on the page.
+ */
+function rescueMasked(text: string, entities: Entity[], words: PlacedWord[], alignment: Alignment): Map<number, number> {
+  const found = new Map<number, number>();
+  const masked = maskedTokens(text, entities);
+  if (!masked.some(({ index }) => (alignment.start[index] ?? -1) < 0)) return found;
+  const tokens = tokenize(text);
+  const used = new Uint8Array(words.length);
+  for (let i = 0; i < tokens.length; i++) for (let k = alignment.start[i] ?? -1; k >= 0 && k <= (alignment.end[i] ?? -1); k++) used[k] = 1;
+  const keys = words.map((w) => normalize(w.text));
+  const placedBefore = (i: number) => { for (let k = i - 1; k >= 0; k--) if ((alignment.end[k] ?? -1) >= 0) return alignment.end[k]!; return -1; };
+  const placedAfter = (i: number) => { for (let k = i + 1; k < tokens.length; k++) if ((alignment.start[k] ?? -1) >= 0) return alignment.start[k]!; return words.length; };
+  for (const { index } of masked) {
+    if ((alignment.start[index] ?? -1) >= 0) continue;
+    const raw = tokens[index]!, key = normalize(raw);
+    const lo = placedBefore(index), hi = placedAfter(index);
+    const slack = key.length >= 4 ? 20 : 0;
+    const from = Math.max(0, Math.min(lo, hi) - slack), to = Math.min(words.length - 1, Math.max(lo, hi) + slack);
+    const fits = (k: number) => key
+      ? keys[k] === key || (key.length >= 5 && levenshtein(key, keys[k]!, Math.floor(key.length / 5)) <= Math.floor(key.length / 5))
+      // Only symbols ("€"): the page word that carries them, glued or not ("€62.500").
+      : words[k]!.text.includes(raw);
+    let best = -1;
+    for (let k = from; k <= to; k++) {
+      if ((used[k] && key) || !fits(k)) continue;
+      if (best < 0 || Math.abs(k - lo) < Math.abs(best - lo)) best = k;
+    }
+    if (best >= 0) { found.set(index, best); if (key) used[best] = 1; }
+  }
+  return found;
 }

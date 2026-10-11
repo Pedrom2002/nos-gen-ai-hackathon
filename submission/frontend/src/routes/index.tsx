@@ -11,7 +11,7 @@ import { ReviewSkeleton } from "@/components/ReviewSkeleton";
 import { RiverComparison } from "@/components/RiverComparison";
 import { PageComparison } from "@/components/PageComparison";
 import { PageStack } from "@/components/PageStack";
-import { FocusedText } from "@/components/FocusedText";
+import { FocusedMasked, FocusedText } from "@/components/FocusedText";
 import { usePageImages } from "@/hooks/usePageImages";
 import type { SourceDoc } from "@/lib/document";
 import { MAX_UPLOAD_BYTES, validateFile } from "@/lib/files";
@@ -28,6 +28,7 @@ import {
 import { ReviewPanel } from "@/components/ReviewPanel";
 import { SettingsSheet } from "@/components/SettingsSheet";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { SettingsProvider, useSettings } from "@/lib/settings";
 import { EXTRA } from "@/lib/i18n-extra";
 import { IntroAnimation } from "@/components/IntroAnimation";
@@ -75,6 +76,11 @@ function Index() {
   const [redactable, setRedactable] = useState(false);
   const [unread, setUnread] = useState(0);
   const [redactedUrl, setRedactedUrl] = useState<string | null>(null);
+  // The result page opens at once; while the backend applies the review
+  // (and builds a photo's redacted PNG) the parts that depend on it show
+  // skeletons. The counter drops answers of a generate that was superseded.
+  const [finishing, setFinishing] = useState(false);
+  const generation = useRef(0);
   const showRedacted = (url: string | null) => setRedactedUrl((old) => { if (old) URL.revokeObjectURL(old); return url; });
   const [dragging, setDragging] = useState(false);
   const [busy, setBusy] = useState<ReadProgress | null>(null);
@@ -92,8 +98,16 @@ function Index() {
   useEffect(() => { window.scrollTo({ top: 0, behavior: "smooth" }); }, [step]);
   useEffect(() => {
     if (!focusId) return;
-    const mark = [...document.querySelectorAll<HTMLElement>("[data-focus-mark]")].find((m) => m.offsetParent !== null);
-    mark?.scrollIntoView({ block: "center", behavior: "smooth" });
+    const marks = [...document.querySelectorAll<HTMLElement>("[data-focus-mark]")].filter((m) => m.offsetParent !== null);
+    marks[0]?.scrollIntoView({ block: "center", behavior: "smooth" });
+    // The other text column scrolls on its own: bring its first mark to its middle too.
+    const first = marks[0]?.closest("pre");
+    const other = marks.find((m) => m.closest("pre") && m.closest("pre") !== first);
+    const box = other?.closest("pre");
+    if (other && box) {
+      const top = box.scrollTop + other.getBoundingClientRect().top - box.getBoundingClientRect().top - box.clientHeight / 2;
+      box.scrollTo({ top, behavior: "smooth" });
+    }
   }, [focusId, resultView, docView]);
   const [summary, setSummary] = useState("");
   const [loading, setLoading] = useState(false);
@@ -114,7 +128,8 @@ function Index() {
   // A photo's redacted half is the file the backend built and verified; the
   // boxes drawn here only locate the focused entity on it.
   const redactedUrls = useMemo(() => (redactedUrl && source?.kind === "image" ? [redactedUrl] : []), [redactedUrl, source]);
-  const unplaced = showPages && !redactedUrls.length ? redaction.unplaced : 0;
+  const awaitingRedacted = finishing && redactable && source?.kind === "image";
+  const unplaced = showPages && !redactedUrls.length && !awaitingRedacted ? redaction.unplaced : 0;
 
   const handleFile = async (f: File) => {
     const check = validateFile(f);
@@ -197,18 +212,30 @@ function Index() {
       gdpr_basis: ["saude", "biometrico", "religiao_etnia"].includes(category) ? "Art. 9.º(1) RGPD" : "Art. 4.º(1) RGPD",
     }]);
   };
-  // Tell the backend what the reviewer kept visible before showing the result,
-  // so its leak check and downloads match the page.
+  // Show the result at once and tell the backend what the reviewer kept
+  // visible, so its leak check and downloads match the page; the report
+  // and the redacted file wait behind skeletons until it has answered.
   const generate = async () => {
-    if (docId) {
-      const keep = entities.filter((e) => !e.enabled).flatMap((e) => e.refs ?? []);
-      try { setSummary(await syncDecisions(docId, keep)); } catch (e) { console.error(e); }
-      // A photo is shown back redacted, as the backend built and checked it.
-      if (redactable && source?.kind === "image") {
-        try { showRedacted(URL.createObjectURL((await downloadRedacted(docId)).blob)); } catch (e) { console.error(e); showRedacted(null); }
-      }
-    }
     setStep(2);
+    if (!docId) return;
+    const mine = ++generation.current;
+    const stale = () => generation.current !== mine;
+    setFinishing(true);
+    showRedacted(null);
+    try {
+      const keep = entities.filter((e) => !e.enabled).flatMap((e) => e.refs ?? []);
+      try {
+        const summary = await syncDecisions(docId, keep);
+        if (!stale()) setSummary(summary);
+      } catch (e) { console.error(e); }
+      // A photo is shown back redacted, as the backend built and checked it.
+      if (redactable && source?.kind === "image" && !stale()) {
+        try {
+          const { blob } = await downloadRedacted(docId);
+          if (!stale()) showRedacted(URL.createObjectURL(blob));
+        } catch (e) { console.error(e); if (!stale()) showRedacted(null); }
+      }
+    } finally { if (!stale()) setFinishing(false); }
   };
   const saveRedacted = async () => {
     try {
@@ -338,6 +365,7 @@ function Index() {
             <section className="animate-fade-up space-y-8">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div className="min-w-0 text-sm text-muted-foreground">
+                  {finishing && <span role="status" aria-busy="true" className="inline-flex items-center gap-2 text-xs"><span className="size-2 animate-pulse rounded-full bg-primary" aria-hidden="true" />{u.finishing}</span>}
                   {unplaced > 0 && <span role="status" className="inline-flex items-center gap-2 rounded-md border border-amber-600/40 bg-amber-500/10 px-2 py-1 text-xs font-medium text-amber-700 dark:text-amber-300"><AlertTriangle className="size-3.5" aria-hidden="true" />{u.unplaced.replace("{n}", String(unplaced))}</span>}
                 </div>
                 <div className="flex flex-wrap gap-2">
@@ -357,7 +385,7 @@ function Index() {
               </div>
               <div className={resultView === "slide" ? "" : "hidden"}>
                 {sliderSeen && (showPages
-                  ? <PageComparison pages={pages} urls={pageUrls} redactedUrls={redactedUrls} boxes={redaction.boxes} focusId={focusId} />
+                  ? <PageComparison pages={pages} urls={pageUrls} redactedUrls={redactedUrls} boxes={redaction.boxes} focusId={focusId} pending={awaitingRedacted} />
                   : <RiverComparison text={text} entities={entities} output={output} focusId={focusId} />)}
               </div>
               <div className={resultView === "side" ? "grid min-w-0 gap-4 md:grid-cols-2" : "hidden"}>
@@ -370,12 +398,10 @@ function Index() {
                         const me = e.currentTarget, other = me.parentElement?.parentElement?.querySelector<HTMLElement>(`[data-page-scroll]:not([data-page-scroll="${orig ? "o" : "a"}"])`);
                         if (other && Math.abs(other.scrollTop - me.scrollTop) > 1) other.scrollTop = me.scrollTop;
                       }}>
-                        <PageStack pages={pages} urls={pageUrls} redactedUrls={redactedUrls} boxes={redaction.boxes} mode={orig ? "original" : "redacted"} focusId={focusId} pageLabel={(n) => u.pageN.replace("{n}", String(n))} />
+                        <PageStack pages={pages} urls={pageUrls} redactedUrls={redactedUrls} boxes={redaction.boxes} mode={orig ? "original" : "redacted"} focusId={focusId} pending={awaitingRedacted} pageLabel={(n) => u.pageN.replace("{n}", String(n))} />
                       </div>
                       : <pre tabIndex={0} aria-label={String(h)} className="max-h-[60dvh] overflow-auto whitespace-pre-wrap break-words font-mono text-sm leading-6 [overflow-wrap:anywhere]">
-                        {orig ? <FocusedText text={text} entities={entities} focusId={focusId} /> : String(c).split("*").map((part, i, arr) => (
-                          <span key={i}>{part}{i < arr.length - 1 && <span className="lethe-wash text-primary" style={{ animationDelay: `${Math.min(i * 40, 1600)}ms` }}>*</span>}</span>
-                        ))}
+                        {orig ? <FocusedText text={text} entities={entities} focusId={focusId} /> : <FocusedMasked text={text} entities={entities} focusId={focusId} />}
                       </pre>}
                   </div>
                 ))}
@@ -384,8 +410,12 @@ function Index() {
                 <Button variant="ghost" onClick={() => setStep(1)} className="inline-flex items-center gap-2 rounded-xl border px-4 py-2 hover:bg-muted"><ArrowLeft className="h-4 w-4" /> {t.review}</Button>
                 <Button variant="ghost" onClick={async () => { try { await navigator.clipboard.writeText(output); toast.success(t.copied); } catch { toast.error(u.copyFailed); } }} className="inline-flex items-center gap-2 rounded-xl border px-4 py-2 hover:bg-muted"><Copy className="h-4 w-4" /> {t.copy}</Button>
                 <Button variant="ghost" onClick={() => download("submission.txt", output)} className="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2 font-medium text-primary-foreground hover:opacity-90"><Download className="h-4 w-4" /> {t.downloadTxt}</Button>
-                <Button variant="ghost" onClick={() => download("lethe-relatorio.md", report(), "text/markdown")} className="inline-flex items-center gap-2 rounded-xl border px-4 py-2 hover:bg-muted"><FileDown className="h-4 w-4" /> {t.downloadReport}</Button>
-                {docId && redactable && <Button variant="ghost" onClick={() => void saveRedacted()} className="inline-flex items-center gap-2 rounded-xl border px-4 py-2 hover:bg-muted"><ShieldCheck className="h-4 w-4" /> {u.downloadRedacted}</Button>}
+                {finishing
+                  ? <Skeleton aria-hidden="true" className="h-10 rounded-xl" style={{ width: "10rem" }} />
+                  : <Button variant="ghost" onClick={() => download("lethe-relatorio.md", report(), "text/markdown")} className="inline-flex items-center gap-2 rounded-xl border px-4 py-2 hover:bg-muted"><FileDown className="h-4 w-4" /> {t.downloadReport}</Button>}
+                {docId && redactable && (finishing
+                  ? <Skeleton aria-hidden="true" className="h-10 rounded-xl" style={{ width: "12rem", animationDelay: "120ms" }} />
+                  : <Button variant="ghost" onClick={() => void saveRedacted()} className="inline-flex items-center gap-2 rounded-xl border px-4 py-2 hover:bg-muted"><ShieldCheck className="h-4 w-4" /> {u.downloadRedacted}</Button>)}
               </div>
               {docId && unread > 0 && <p role="status" className="rounded-lg border border-warning/40 bg-warning/10 px-4 py-3 text-sm">{u.unreadLines.replace("{n}", String(unread))}</p>}
 

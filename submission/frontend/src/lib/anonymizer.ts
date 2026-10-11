@@ -112,26 +112,50 @@ function maskWord(word: string): string {
   return core ? `${lead}*${trail}` : "*";
 }
 
-/** Hackathon format: each word of a sensitive span -> one "*" (punctuation kept), empty lines removed. */
-export function anonymize(text: string, entities: Entity[]): string {
+export interface Run { text: string; entityId?: string | undefined }
+
+/** anonymize() as runs of text, each masked run tagged with its entity, so a view can point at one entity's "*". */
+export function anonymizeRuns(text: string, entities: Entity[]): Run[] {
   const spans = findSpans(text, entities.filter((e) => e.enabled));
-  let out = "";
+  let flat = "";
+  const owner: (string | undefined)[] = [];
+  const push = (s: string, entityId?: string) => { flat += s; for (let k = 0; k < s.length; k++) owner.push(entityId); };
   let cur = 0;
   for (const s of spans) {
-    out += text.slice(cur, s.start);
+    push(text.slice(cur, s.start));
     const segment = text.slice(s.start, s.end);
-    out += segment
+    push(segment
       .split("\n")
       .map((line) => line.split(/\s+/).filter(Boolean).map(maskWord).join(" "))
-      .join("\n");
+      .join("\n"), s.entity.id);
     cur = s.end;
   }
-  out += text.slice(cur);
-  return out
-    .split(/\r?\n/)
-    .map((l) => l.replace(/\s+$/, ""))
-    .filter((l) => l.trim().length > 0)
-    .join("\n");
+  push(text.slice(cur));
+  // Trailing spaces cut and empty lines removed, keeping each character's owner.
+  const runs: Run[] = [];
+  const emit = (ch: string, entityId?: string) => {
+    const last = runs[runs.length - 1];
+    if (last && last.entityId === entityId) last.text += ch; else runs.push({ text: ch, entityId });
+  };
+  let first = true;
+  for (let a = 0; a <= flat.length;) {
+    let nl = flat.indexOf("\n", a);
+    if (nl < 0) nl = flat.length;
+    let b = nl > a && flat[nl - 1] === "\r" ? nl - 1 : nl;
+    while (b > a && /\s/.test(flat.charAt(b - 1))) b--;
+    if (flat.slice(a, b).trim()) {
+      if (!first) emit("\n");
+      first = false;
+      for (let k = a; k < b; k++) emit(flat.charAt(k), owner[k]);
+    }
+    a = nl + 1;
+  }
+  return runs;
+}
+
+/** Hackathon format: each word of a sensitive span -> one "*" (punctuation kept), empty lines removed. */
+export function anonymize(text: string, entities: Entity[]): string {
+  return anonymizeRuns(text, entities).map((r) => r.text).join("");
 }
 
 export function partialMask(t: string): string {

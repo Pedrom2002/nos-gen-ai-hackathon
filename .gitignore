@@ -37,6 +37,9 @@ downloads/
 eggs/
 .eggs/
 lib/
+# The web code shared with the mobile app is tracked; tools that read this
+# file to package the repository (EAS Build) must not drop it.
+!submission/frontend/src/lib/
 lib64/
 parts/
 sdist/

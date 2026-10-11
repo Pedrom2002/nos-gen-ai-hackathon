@@ -1,8 +1,10 @@
+import Feather from "@expo/vector-icons/Feather";
 import { router, Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { Pressable, Text, View } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
+import { Wordmark } from "@/components/Logo";
 import { SessionProvider } from "@/session";
 import { SettingsProvider, useSettings } from "@/settings";
 import { DemoBadge, useColors } from "@/ui";
@@ -20,9 +22,10 @@ function HeaderRight() {
         accessibilityLabel={t.settings}
         hitSlop={12}
         onPress={() => router.push("/settings")}
-        style={{ minHeight: 44, justifyContent: "center", paddingHorizontal: 4 }}
+        style={{ minHeight: 44, flexDirection: "row", alignItems: "center", gap: 6, paddingHorizontal: 4 }}
       >
-        <Text style={{ color: c.primary, fontSize: 16, fontWeight: "600" }}>{t.settings}</Text>
+        <Feather name="settings" size={18} color={c.mutedForeground} />
+        <Text style={{ color: c.mutedForeground, fontSize: 15 }}>{t.settings}</Text>
       </Pressable>
     </View>
   );
@@ -40,9 +43,11 @@ function Navigator() {
           headerTintColor: c.foreground,
           contentStyle: { backgroundColor: c.background },
           headerRight: () => <HeaderRight />,
+          headerTitle: () => <Wordmark height={30} color={c.primary} />,
+          headerShadowVisible: false,
         }}
       >
-        <Stack.Screen name="index" options={{ title: "Lethe" }} />
+        <Stack.Screen name="index" options={{ title: "Lethe", headerTitleAlign: "left" }} />
         <Stack.Screen name="review" options={{ title: t.steps[1] }} />
         <Stack.Screen name="result" options={{ title: t.steps[2] }} />
         <Stack.Screen name="settings" options={{ title: t.settings, headerRight: () => null }} />

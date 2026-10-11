@@ -1,7 +1,8 @@
 // Visual building blocks with the web frontend's palette (styles.css, oklch
 // converted to sRGB). Touch targets are at least 44 pt and every control has
 // an accessible label.
-import type { ReactNode } from "react";
+import Feather from "@expo/vector-icons/Feather";
+import type { ComponentProps, ReactNode } from "react";
 import {
   ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, useColorScheme, View,
   type StyleProp, type ViewStyle,
@@ -57,9 +58,12 @@ export function Body({ children, muted = false }: { children: ReactNode; muted?:
 }
 
 type Variant = "primary" | "outline" | "ghost";
+export type IconName = ComponentProps<typeof Feather>["name"];
 
-export function Button({ label, onPress, variant = "outline", disabled = false, busy = false, hint, style }: {
+export function Button({ label, onPress, variant = "outline", disabled = false, busy = false, hint, style, icon }: {
   label: string;
+  /** Feather icon shown before the label (the web uses the matching Lucide icon). */
+  icon?: IconName;
   onPress: () => void;
   variant?: Variant;
   disabled?: boolean;
@@ -89,7 +93,8 @@ export function Button({ label, onPress, variant = "outline", disabled = false, 
         style,
       ]}
     >
-      {busy && <ActivityIndicator color={primary ? c.primaryForeground : c.primary} />}
+      {busy ? <ActivityIndicator color={primary ? c.primaryForeground : c.primary} />
+        : icon ? <Feather name={icon} size={18} color={primary ? c.primaryForeground : c.foreground} /> : null}
       <Text style={[styles.buttonText, { color: primary ? c.primaryForeground : c.foreground }]}>{label}</Text>
     </Pressable>
   );

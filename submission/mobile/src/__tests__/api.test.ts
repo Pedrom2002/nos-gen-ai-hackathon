@@ -138,3 +138,26 @@ test("sends pasted text as a documento.txt file the API can read", async () => {
   expect(part).toMatchObject({ name: "documento.txt", type: "text/plain" });
   expect(new TextDecoder().decode(await part.bytes())).toBe("Nome: Rui Costa");
 });
+
+test("on the web build, files go as real Blobs with their name", async () => {
+  const { Platform } = require("react-native") as typeof import("react-native");
+  const appended: unknown[][] = [];
+  const realFormData = globalThis.FormData;
+  globalThis.FormData = class {
+    append(...args: unknown[]) { appended.push(args); }
+  } as unknown as typeof FormData;
+  const realOS = Platform.OS;
+  Object.defineProperty(Platform, "OS", { value: "web", configurable: true });
+  try {
+    const api = createClient("h.example", (() => json(STATE)) as unknown as typeof fetch);
+    await api.analyze({ text: "Nome: Rui" });
+  } finally {
+    Object.defineProperty(Platform, "OS", { value: realOS, configurable: true });
+    globalThis.FormData = realFormData;
+  }
+  const [key, blob, name] = appended[0] as [string, Blob, string];
+  expect(key).toBe("file");
+  expect(blob).toBeInstanceOf(Blob);
+  expect(name).toBe("documento.txt");
+  expect(await blob.text()).toBe("Nome: Rui");
+});

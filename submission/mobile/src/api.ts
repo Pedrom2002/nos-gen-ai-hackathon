@@ -1,6 +1,7 @@
 // Talks to the Lethe API (submission/api). Same routes and model as the web
 // frontend; the mapping from the API state comes from the shared api-model.
 import { File, Paths } from "expo-file-system";
+import { Platform } from "react-native";
 
 import { demoAnalysis, describe, filenameFrom, fromState, type AnalysisResult, type DocumentState } from "@web/lib/api-model";
 
@@ -115,7 +116,16 @@ export function createClient(
         ? { name: file.name, type: file.type, bytes: () => new File(file.uri).bytes() }
         : { name: "documento.txt", type: "text/plain", bytes: async () => new TextEncoder().encode(text ?? "") };
       const form = new FormData();
-      form.append("file", part as unknown as Blob);
+      if (Platform.OS === "web") {
+        // In a browser, FormData only takes real Blobs (anything else turns
+        // into the text "[object Object]" and the API answers 422).
+        const blob = file
+          ? await (await fetch(file.uri)).blob()
+          : new Blob([text ?? ""], { type: "text/plain" });
+        form.append("file", blob, part.name);
+      } else {
+        form.append("file", part as unknown as Blob);
+      }
       const res = await call("/documents", { method: "POST", body: form }, longTimeoutMs);
       return fromState((await res.json()) as DocumentState);
     },

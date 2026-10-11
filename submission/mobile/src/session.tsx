@@ -38,6 +38,14 @@ export function keepIds(entities: Entity[]): string[] {
   return entities.filter((e) => !e.enabled).flatMap((e) => e.refs ?? []);
 }
 
+/** What Generate result fetched before opening the result, as the web does:
+ * the API summary for the decisions and, for a photo, its redacted copy. */
+export interface Prepared {
+  summary: string;
+  redacted: { uri: string; filename: string; mime: string } | null;
+  error: string;
+}
+
 interface SessionValue {
   source: Source | null;
   setSource: (s: Source | null) => void;
@@ -48,6 +56,8 @@ interface SessionValue {
   dispatch: (a: ReviewAction) => void;
   /** The anonymised text for the current review. */
   output: string;
+  prepared: Prepared | null;
+  setPrepared: (p: Prepared | null) => void;
   reset: () => void;
 }
 
@@ -57,6 +67,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   const [source, setSource] = useState<Source | null>(null);
   const [result, setResultState] = useState<AnalysisResult | null>(null);
   const [history, dispatch] = useReducer(reviewHistory, emptyHistory);
+  const [prepared, setPrepared] = useState<Prepared | null>(null);
 
   const value = useMemo<SessionValue>(() => ({
     source,
@@ -64,17 +75,21 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     result,
     setResult: (r) => {
       setResultState(r);
+      setPrepared(null);
       dispatch({ type: "reset", entities: r ? entitiesFrom(r) : [] });
     },
     history,
     dispatch,
     output: result ? anonymize(result.text, history.present) : "",
+    prepared,
+    setPrepared,
     reset: () => {
       setSource(null);
+      setPrepared(null);
       setResultState(null);
       dispatch({ type: "reset", entities: [] });
     },
-  }), [source, result, history]);
+  }), [source, result, history, prepared]);
 
   return <SessionContext.Provider value={value}>{children}</SessionContext.Provider>;
 }

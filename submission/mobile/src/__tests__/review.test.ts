@@ -1,7 +1,7 @@
 import type { Entity } from "@web/lib/anonymizer";
 import { emptyHistory, reviewHistory } from "@web/lib/review-history";
 
-import { addManual, categoryCounts, lineSegments, setCategory, toggle } from "@/review";
+import { addManual, alignedMask, categoryCounts, lineSegments, setCategory, toggle } from "@/review";
 
 const entity = (id: string, text: string, category: Entity["category"], enabled = true): Entity =>
   ({ id, text, category, reason: "", gdpr_basis: "", enabled });
@@ -45,4 +45,11 @@ test("manual marks: whole words with a letter or digit, never duplicates", () =>
   expect(addManual(ents, "Rui", "nome", "manual")).toBeNull();
   const added = addManual(ents, "Costa,", "nome", "manual");
   expect(added?.at(-1)).toMatchObject({ text: "Costa", category: "nome", manual: true, enabled: true, reason: "manual" });
+});
+
+test("aligned mask keeps every word's width, so both slider layers wrap alike", () => {
+  const text = "Nome: Ana Rita\nNIF: 123";
+  const out = alignedMask(text, [entity("a", "Ana Rita", "nome"), entity("n", "123", "identificador", false)]);
+  expect(out).toBe("Nome: *\u00A0\u00A0 *\u00A0\u00A0\u00A0\nNIF: 123");
+  expect(out).toHaveLength(text.length);
 });

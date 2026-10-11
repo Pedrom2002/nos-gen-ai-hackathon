@@ -5,7 +5,7 @@
 import Feather from "@expo/vector-icons/Feather";
 import * as Clipboard from "expo-clipboard";
 import { router } from "expo-router";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { Pressable, Text, View } from "react-native";
 
 import { CATEGORIES, stats } from "@web/lib/anonymizer";
@@ -13,7 +13,8 @@ import { CATEGORIES, stats } from "@web/lib/anonymizer";
 import { MaskedText, Panel, Photo, Slider } from "@/components/Comparison";
 import { Stepper } from "@/components/Stepper";
 import { reportMarkdown, reportRows, type ReportLabels } from "@/report";
-import { keepIds, useSession } from "@/session";
+import { alignedMask } from "@/review";
+import { useSession } from "@/session";
 import { useSettings } from "@/settings";
 import { shareFile, shareText } from "@/share";
 import { Body, Button, CATEGORY_COLORS, Notice, Screen, useColors } from "@/ui";
@@ -60,34 +61,18 @@ export default function ResultScreen() {
   const { t, u, x, m } = useSettings();
   const c = useColors();
   const api = useApi();
-  const { result, source, history, output, reset } = useSession();
+  const { result, source, history, output, prepared, reset } = useSession();
   const [view, setView] = useState<"document" | "text">("document");
   const [layout, setLayout] = useState<"side" | "slide">("side");
-  const [summary, setSummary] = useState(result?.summary ?? "");
-  const [redacted, setRedacted] = useState<Redacted | null>(null);
-  const [notice, setNotice] = useState<{ text: string; tone: "info" | "error" | "success" } | null>(null);
+  // Summary and redacted photo were fetched by Generate result, so the screen
+  // opens complete instead of filling in piece by piece.
+  const summary = prepared?.summary ?? result?.summary ?? "";
+  const [redacted, setRedacted] = useState<Redacted | null>(prepared?.redacted ?? null);
+  const [notice, setNotice] = useState<{ text: string; tone: "info" | "error" | "success" } | null>(
+    prepared?.error ? { text: prepared.error, tone: "error" } : null,
+  );
   const [busy, setBusy] = useState(false);
   const docId = result?.docId;
-
-  // Tell the API what the reviewer kept visible, so its summary, leak check
-  // and redacted file match this screen; then show a redacted photo back.
-  useEffect(() => {
-    if (!docId || api.demo) return;
-    let alive = true;
-    (async () => {
-      try {
-        const text = await api.decide(docId, keepIds(history.present));
-        if (alive && text) setSummary(text);
-        if (result?.redactable && source?.kind === "image") {
-          const file = await api.redacted(docId);
-          if (alive) setRedacted(file);
-        }
-      } catch (e) {
-        if (alive) setNotice({ text: e instanceof Error ? e.message : x.unknownErr, tone: "error" });
-      }
-    })();
-    return () => { alive = false; };
-  }, [docId, api, history.present, result?.redactable, source?.kind, x.unknownErr]);
 
   const rows = useMemo(() => (result ? reportRows(result.text, history.present) : []), [result, history.present]);
   const byCategory = useMemo(() => CATEGORIES
@@ -152,12 +137,8 @@ export default function ResultScreen() {
   const original = asPictures ? <Photo uri={photo.uri} label={t.original} /> : <Text selectable style={{ color: c.foreground, fontFamily: "monospace", fontSize: 13, lineHeight: 22 }}>{result.text}</Text>;
   const anonymised = asPictures && redacted ? <Photo uri={redacted.uri} label={u.redactedPreview} /> : <MaskedText text={output} />;
   const total = rows.length || 1;
-  // Masking keeps the line breaks, so line i of each version is the same line.
-  const originalLines = result.text.split("\n");
-  const maskedLines = output.split("\n");
-  const pairedLines = originalLines.length === maskedLines.length
-    ? originalLines.map((line, i): [string, string] => [line, maskedLines[i]])
-    : undefined;
+  // In the slider, each masked word keeps its width so both layers line up.
+  const sliding = asPictures ? anonymised : <MaskedText text={alignedMask(result.text, history.present)} />;
 
   return (
     <Screen>
@@ -178,7 +159,7 @@ export default function ResultScreen() {
           <Panel title={t.anonymized}>{anonymised}</Panel>
         </>
       ) : (
-        <Slider label={u.comparison} under={original} over={anonymised} lines={asPictures ? undefined : pairedLines} />
+        <Slider label={u.comparison} under={original} over={sliding} />
       )}
 
       {notice ? <Notice tone={notice.tone} text={notice.text} /> : null}

@@ -55,3 +55,19 @@ export function addManual(entities: Entity[], word: string, category: CategoryId
     gdpr_basis: SPECIAL.includes(category) ? "Art. 9.º(1) RGPD" : "Art. 4.º(1) RGPD",
   }];
 }
+
+/** The text with each masked word drawn as one "*" padded with non-breaking
+ * spaces to the word's length. In a monospaced font it keeps every word's
+ * width, as the web's river slider does, so the two layers of the slider
+ * wrap at the same places. Display only: the output is anonymize(). */
+export function alignedMask(text: string, entities: Entity[]): string {
+  const spans = findSpans(text, entities.filter((e) => e.enabled)).sort((a, b) => a.start - b.start);
+  let out = "";
+  let cursor = 0;
+  for (const span of spans) {
+    out += text.slice(cursor, span.start);
+    out += text.slice(span.start, span.end).replace(/\S+/g, (word) => `*${" ".repeat(word.length - 1)}`);
+    cursor = span.end;
+  }
+  return out + text.slice(cursor);
+}

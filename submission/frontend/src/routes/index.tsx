@@ -309,7 +309,7 @@ function Index() {
           )}
 
           {step === 0 && !error && (
-            <DocumentInput text={text} name={fileName} dragging={dragging} busy={busy} preview={source?.previewUrl ?? null} kind={source?.kind ?? null} ocr={!!source?.ocr} onFile={handleFile} onText={(value) => { setText(value); setError(""); }} onClear={clear} onAnalyze={run} />
+            <DocumentInput text={text} name={fileName} dragging={dragging} busy={busy} preview={source?.previewUrl ?? null} kind={source?.kind ?? null} onFile={handleFile} onText={(value) => { setText(value); setError(""); }} onClear={clear} onAnalyze={run} />
           )}
 
           {step === 1 && loading && <ReviewSkeleton />}

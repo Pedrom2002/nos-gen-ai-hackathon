@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { ChevronDown, ClipboardPaste, ScanText, ShieldCheck, Upload, X } from "lucide-react";
+import { ChevronDown, ClipboardPaste, ShieldCheck, Upload, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useSettings } from "@/lib/settings";
 import { UI } from "@/lib/i18n-ui";
@@ -15,11 +15,10 @@ interface Props {
   preview: string | null;
   kind: SourceKind | null;
   /** The text came from OCR and deserves a look before the analysis. */
-  ocr: boolean;
   onText: (text: string) => void; onFile: (file: File) => void;
   onClear: () => void; onAnalyze: () => void;
 }
-export function DocumentInput({ text, name, dragging, busy, preview, kind, ocr, onText, onFile, onClear, onAnalyze }: Props) {
+export function DocumentInput({ text, name, dragging, busy, preview, kind, onText, onFile, onClear, onAnalyze }: Props) {
   const { t, s } = useSettings();
   const u = UI[s.lang];
   const [paste, setPaste] = useState(false);
@@ -83,7 +82,6 @@ export function DocumentInput({ text, name, dragging, busy, preview, kind, ocr, 
               {loaded && <Button variant="ghost" size="icon" className="size-9 shrink-0 text-muted-foreground" aria-label={u.clearFile} title={u.clearFile} onClick={() => { onClear(); setPaste(false); }}><X className="size-4" /></Button>}
             </div>
             <div className="relative space-y-4 px-5 pb-5 sm:px-6 sm:pb-6">
-              {ocr && <p className="flex items-start gap-2 rounded-md border border-amber-600/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-800 dark:text-amber-200"><ScanText className="mt-0.5 size-3.5 shrink-0" aria-hidden="true" />{u.scannedNotice}</p>}
               <div className={bigPreview ? "grid gap-4 md:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]" : ""}>
                 {bigPreview && <div className="overflow-hidden rounded-lg border bg-muted/40"><img src={preview} alt={name} className="mx-auto max-h-64 w-full object-contain sm:max-h-80" /></div>}
                 <div className="overflow-hidden rounded-lg border bg-background/80">

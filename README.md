@@ -21,16 +21,31 @@ Lethe masks the words that identify a person in a Portuguese document: one `*` p
 
 `submission.txt` and `prompt.txt` are exactly what `python run.py` generates, and a test checks that `prompt.txt` is the prompt the code builds.
 
-## Results
+## How we evaluated
 
-| | |
-|---|---|
-| Official document, local Similarity / Accuracy | 100% / 100% |
-| Leak check on the official document | 0 leaks in 26 masked values |
-| Extra test documents | 17, 961 words masked, 0 errors |
-| Tests | 213 Python (96% coverage), 55 web, 31 mobile |
+Every number below was measured on the code in this branch.
 
-The local metric reproduces the two figures of the official evaluation logs against a reference we annotated by hand (see `PROJECT.md`). The official score is unknown until the final evaluation.
+| What | How | Result |
+|---|---|---|
+| Official document | Local replica of the two official metrics (`anonimizador/metric.py`) against a reference we annotated by hand (`submission/data/gold/gold.txt`) | Similarity 100%, Accuracy 100% |
+| Stability | The official document regenerated three times with no cache | Identical output every time |
+| Leak check | Every masked value searched for again in the output | 0 leaks in 26 values |
+| Extra documents | 17 fictitious documents (contracts, emails, records, CSV; PDF, TXT, UTF-16) | 961 words masked, 0 errors; no reference, so counts only |
+| Photos | 6 photos made from the official PDF (scan, on a dark table, tilted), through the API, then OCR on the file it returns | All 6 redacted; 0 of the 52 sensitive words still readable |
+| Tilt | The same pages turned from -5 to +5 degrees with no page border | OCR reads 306 of 315 sensitive words (251 before the tilt correction) |
+| Hostile files | Empty, corrupt, a binary named `.txt`, a 196-megapixel image, a 422 KB DOCX that unpacks to 132 MB, 9 000 words | All refused in under 0.1 s, before any model call |
+| Prompt changes | Each wording change run on the official and the 17 extra documents before adoption | One rejected: it fixed two misses but exposed two addresses (see `PROJECT.md`) |
+| Tests | pytest, vitest and jest in CI on every push | 215 Python (95% coverage), 55 web, 31 mobile |
+
+Two limits: the hidden reference is unknown, so 100% is against our own annotation, and the photos are simulated, not taken with a phone. One open question is the format of a masked word with punctuation glued to it: `submission.txt` writes `Flores,` as `*,`; if the reference uses a bare `*`, `python run.py --no-keep-punct` gives that form.
+
+## The review interface
+
+The reviewer sees every item highlighted by category with the reason it was masked, can keep any of them visible or mask more, and then compares the original with the anonymised document.
+
+![The review screen: the document with each sensitive value highlighted by category, and the list of items with their reasons](submission/docs/ui_review.png)
+
+![The result screen: the original and the anonymised pages side by side](submission/docs/ui_result.png)
 
 ## Run it
 

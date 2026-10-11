@@ -296,8 +296,8 @@ CSV_ROWS = ("nome,nif,telefone,email,morada\n"
             "\"Rua das Flores 23, Lisboa\"\n")
 
 
-def test_csv_is_masked_cell_by_cell_and_comes_back_as_csv(client,
-                                                           monkeypatch):
+def test_csv_is_masked_cell_by_cell_and_comes_back_as_csv(
+        client, monkeypatch):
     import csv
     import io
     from tests.test_redact import names_only

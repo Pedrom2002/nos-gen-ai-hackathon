@@ -11,7 +11,7 @@ Lethe masks the words that identify a person in a Portuguese document: one `*` p
 ## Try it
 
 - **Web:** [lethe-nos.vercel.app](https://lethe-nos.vercel.app). Upload a PDF, DOCX, photo, TXT or CSV, review what was masked, then download the text, the report or the redacted file.
-- **Android:** [install the APK](https://expo.dev/artifacts/eas/W1jxgI0oRh6OxMl2B8Wv0CxKdVs7ClcOr_97FQJ-ihg.apk) (allow installs from outside the Play Store when Android asks).
+- **Android:** [install the APK](https://expo.dev/artifacts/eas/senh9mrlPdfxIErtZ4JFmHEVLVfnFGpDv3ipADKZTIg.apk) (allow installs from outside the Play Store when Android asks).
 
 The web and the app use a demo API that runs on a team computer behind a temporary tunnel during the event, so they may stop answering once it is switched off. Everything also runs locally: see *Run it* below. Use fictitious documents only.
 

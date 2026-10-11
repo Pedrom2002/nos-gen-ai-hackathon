@@ -230,7 +230,7 @@ submission/
 | Part | Where | Address |
 |---|---|---|
 | Web interface | Vercel, project `lethe-enxada-de-pedra` | [lethe-nos.vercel.app](https://lethe-nos.vercel.app) |
-| Android app | EAS Build, profile `preview` (an installable APK) | [APK](https://expo.dev/artifacts/eas/W1jxgI0oRh6OxMl2B8Wv0CxKdVs7ClcOr_97FQJ-ihg.apk) |
+| Android app | EAS Build, profile `preview` (an installable APK) | [APK](https://expo.dev/artifacts/eas/senh9mrlPdfxIErtZ4JFmHEVLVfnFGpDv3ipADKZTIg.apk) |
 | API | A team computer, exposed by a Cloudflare quick tunnel | changes when the tunnel restarts |
 
 The API needs Tesseract and the Gemini key, which do not fit a static host, so for the event it runs on a team computer: `uvicorn api.main:app --port 8020` behind `cloudflared tunnel --url http://127.0.0.1:8020`. `ALLOWED_ORIGINS` lists the web addresses that may call it, and the documents still stay in that process's memory only.

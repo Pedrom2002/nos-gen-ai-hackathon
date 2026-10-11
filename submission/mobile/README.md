@@ -40,7 +40,7 @@ A lógica não é duplicada: a máscara por posição, o histórico de revisão,
 
 ## Instalar sem o Expo Go (APK)
 
-O APK da demo: [descarregar](https://expo.dev/artifacts/eas/W1jxgI0oRh6OxMl2B8Wv0CxKdVs7ClcOr_97FQJ-ihg.apk). Para gerar outro:
+O APK da demo: [descarregar](https://expo.dev/artifacts/eas/senh9mrlPdfxIErtZ4JFmHEVLVfnFGpDv3ipADKZTIg.apk). Para gerar outro:
 
 ```bash
 cd submission/mobile

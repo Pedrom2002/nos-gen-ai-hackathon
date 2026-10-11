@@ -1,5 +1,7 @@
+import json
 from types import SimpleNamespace
 
+import httpx
 import pytest
 from google.genai import errors
 
@@ -105,7 +107,6 @@ def test_json_output_requests_json_mime_type(tmp_path):
 
 
 def test_dropped_connection_is_retried(tmp_path):
-    import httpx
     drop = httpx.RemoteProtocolError("Server disconnected")
     client = FakeClient(drop, "ok")
     delays = []
@@ -132,3 +133,133 @@ def test_missing_api_key_gives_clear_error(tmp_path, monkeypatch):
     monkeypatch.setattr(llm, "SUBMISSION_DIR", tmp_path)
     with pytest.raises(llm.MissingApiKeyError, match="GEMINI_API_KEY"):
         llm.generate("p", cache_dir=tmp_path)
+
+
+# Local providers (Ollama and OpenAI-compatible servers), with a fake HTTP
+# server so no model is needed.
+
+def fake_server(handler):
+    """httpx transport that answers with ``handler(request) -> response``
+    and records the requests."""
+    requests = []
+
+    def handle(request):
+        requests.append(request)
+        return handler(request)
+
+    return httpx.MockTransport(handle), requests
+
+
+def ollama_client(handler, **kwargs):
+    transport, requests = fake_server(handler)
+    client = llm.OllamaClient(host="http://ollama.test/", transport=transport,
+                              **kwargs)
+    return client, requests
+
+
+def test_ollama_sends_prompt_and_options(tmp_path):
+    client, requests = ollama_client(
+        lambda r: httpx.Response(200, json={"response": "{\"a\": 1}"}),
+        num_ctx=4096)
+    text = llm.generate("p", model="gemma3:4b", json_output=True,
+                        temperature=0.3, cache_dir=tmp_path, client=client)
+    assert text == "{\"a\": 1}"
+    [request] = requests
+    assert str(request.url) == "http://ollama.test/api/generate"
+    body = json.loads(request.content)
+    assert body == {"model": "gemma3:4b", "prompt": "p", "stream": False,
+                    "format": "json",
+                    "options": {"temperature": 0.3, "num_ctx": 4096}}
+
+
+def test_ollama_text_answers_do_not_force_json(tmp_path):
+    client, requests = ollama_client(
+        lambda r: httpx.Response(200, json={"response": "ok"}))
+    assert llm.generate("p", model="m", cache_dir=tmp_path,
+                        client=client) == "ok"
+    assert "format" not in json.loads(requests[0].content)
+
+
+def test_ollama_down_gives_clear_error_without_retrying(tmp_path):
+    def refuse(request):
+        raise httpx.ConnectError("Connection refused", request=request)
+
+    client, requests = ollama_client(refuse)
+    delays = []
+    with pytest.raises(llm.ProviderUnavailableError, match="ollama.test"):
+        llm.generate("p", model="m", cache_dir=tmp_path, client=client,
+                     sleep=delays.append)
+    assert delays == [] and len(requests) == 1
+
+
+def test_ollama_missing_model_suggests_pull(tmp_path):
+    client, _ = ollama_client(
+        lambda r: httpx.Response(404, json={"error": "model not found"}))
+    with pytest.raises(llm.ProviderUnavailableError,
+                       match="ollama pull gemma3:4b"):
+        llm.generate("p", model="gemma3:4b", cache_dir=tmp_path,
+                     client=client)
+
+
+def test_ollama_server_errors_are_retried(tmp_path):
+    answers = [httpx.Response(503, text="busy"),
+               httpx.Response(200, json={"response": "ok"})]
+    client, requests = ollama_client(lambda r: answers.pop(0))
+    delays = []
+    assert llm.generate("p", model="m", cache_dir=tmp_path, client=client,
+                        sleep=delays.append) == "ok"
+    assert delays == [2.0] and len(requests) == 2
+
+
+def test_ollama_other_http_errors_are_not_retried(tmp_path):
+    client, requests = ollama_client(
+        lambda r: httpx.Response(400, json={"error": "bad"}))
+    with pytest.raises(llm.LocalServerError) as info:
+        llm.generate("p", model="m", cache_dir=tmp_path, client=client,
+                     sleep=lambda s: None)
+    assert info.value.code == 400 and len(requests) == 1
+
+
+def test_openai_compatible_chat_completions(tmp_path):
+    transport, requests = fake_server(lambda r: httpx.Response(200, json={
+        "choices": [{"message": {"role": "assistant", "content": "{}"}}]}))
+    client = llm.OpenAICompatibleClient(base_url="http://lmstudio.test/v1",
+                                        api_key="k", transport=transport)
+    assert llm.generate("p", model="local", json_output=True,
+                        cache_dir=tmp_path, client=client) == "{}"
+    [request] = requests
+    assert str(request.url) == "http://lmstudio.test/v1/chat/completions"
+    assert request.headers["authorization"] == "Bearer k"
+    assert json.loads(request.content) == {
+        "model": "local", "temperature": 0.0,
+        "messages": [{"role": "user", "content": "p"}],
+        "response_format": {"type": "json_object"}}
+
+
+def test_openai_without_model_asks_for_llm_model(tmp_path):
+    with pytest.raises(llm.ConfigError, match="LLM_MODEL"):
+        llm.generate("p", model="", cache_dir=tmp_path, client=object())
+
+
+def test_make_client_follows_llm_provider(monkeypatch, tmp_path):
+    monkeypatch.setattr(llm, "SUBMISSION_DIR", tmp_path)
+    monkeypatch.setenv("LLM_PROVIDER", "ollama")
+    monkeypatch.setenv("OLLAMA_HOST", "http://box:11434/")
+    monkeypatch.setenv("OLLAMA_NUM_CTX", "16384")
+    client = llm.make_client()
+    assert isinstance(client, llm.OllamaClient)
+    assert (client.host, client.num_ctx) == ("http://box:11434", 16384)
+    monkeypatch.setenv("LLM_MODEL", "")
+    assert llm.default_model() == "gemma3:12b"
+    monkeypatch.setenv("LLM_MODEL", "llama3.1:8b")
+    assert llm.default_model() == "llama3.1:8b"
+
+    monkeypatch.setenv("LLM_PROVIDER", "openai")
+    monkeypatch.setenv("OPENAI_BASE_URL", "http://lm:1234/v1")
+    client = llm.make_client()
+    assert isinstance(client, llm.OpenAICompatibleClient)
+    assert client.base_url == "http://lm:1234/v1"
+
+    monkeypatch.setenv("LLM_PROVIDER", "mistral")
+    with pytest.raises(llm.ConfigError, match="LLM_PROVIDER"):
+        llm.make_client()

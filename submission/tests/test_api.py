@@ -7,6 +7,7 @@ from fastapi.testclient import TestClient
 
 from anonimizador.align import align
 from anonimizador.metric import read_lines
+from anonimizador import llm
 from api import main
 
 SUBMISSION = Path(__file__).resolve().parents[1]
@@ -50,8 +51,29 @@ def name_item(doc):
     return next(i for i in doc["items"] if i["text"] == NAME)
 
 
-def test_health(client):
-    assert client.get("/api/health").json() == {"status": "ok"}
+def test_health(client, monkeypatch):
+    monkeypatch.setenv("LLM_PROVIDER", "gemini")
+    monkeypatch.setenv("LLM_MODEL", "")
+    assert client.get("/api/health").json() == {
+        "status": "ok", "provider": "gemini",
+        "model": "gemini-3.1-flash-lite", "local": False}
+    monkeypatch.setenv("LLM_PROVIDER", "ollama")
+    monkeypatch.setenv("LLM_MODEL", "llama3.1:8b")
+    assert client.get("/api/health").json() == {
+        "status": "ok", "provider": "ollama", "model": "llama3.1:8b",
+        "local": True}
+
+
+def test_local_server_down_says_so(client, monkeypatch):
+    def down(*args, **kwargs):
+        raise llm.ProviderUnavailableError("Não foi possível ligar ao "
+                                           "Ollama em http://localhost:11434.")
+
+    monkeypatch.setattr(main, "generate_fn", down)
+    response = client.post("/api/documents/official")
+    assert response.status_code == 503
+    assert "Ollama" in response.json()["detail"]
+    assert NAME not in response.text
 
 
 def test_official_document_is_anonymised_without_leaks(client):

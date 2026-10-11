@@ -143,16 +143,18 @@ Without `VITE_API_URL` the interface runs in demo mode with simulated results, a
 - Request logging is off, and document text never appears in logs or error messages.
 - The browser only stores the theme and the language.
 - Only the text is sent to the model. The API key stays in `submission/.env`, which is never committed.
+- With a local model (`LLM_PROVIDER=ollama` or `openai` in `.env`) the text never leaves the machine; the interface can read `GET /api/health` to tell which it is.
 - `ask.py` and `POST /api/documents/{id}/ask` show a pseudonymisation gateway: identifiers are replaced by placeholders such as `[PESSOA_1]` before a question reaches the model, then restored in the answer.
 
 ## Setup
 
-Requirements: Python 3.10+, Node.js 22.12+ (TanStack Start, used by the web interface, needs it) and a Gemini API key. For images and scanned PDFs, also [Tesseract](https://github.com/UB-Mannheim/tesseract/wiki) with Portuguese (`apt install tesseract-ocr-por` on Linux; on Windows, the UB-Mannheim installer, or `por.traineddata` in `%LOCALAPPDATA%\tessdata`).
+Requirements: Python 3.10+, Node.js 22.12+ (TanStack Start, used by the web interface, needs it) and a Gemini API key, or a local model through [Ollama](https://ollama.com) or any OpenAI-compatible server (see `api/README.md`, "Local models"). For images and scanned PDFs, also [Tesseract](https://github.com/UB-Mannheim/tesseract/wiki) with Portuguese (`apt install tesseract-ocr-por` on Linux; on Windows, the UB-Mannheim installer, or `por.traineddata` in `%LOCALAPPDATA%\tessdata`).
 
 ```bash
 cd submission
 pip install -r requirements.txt
 cp .env.example .env            # then set GEMINI_API_KEY in .env
+# or run fully offline: ollama pull gemma3:12b, and LLM_PROVIDER=ollama in .env
 ```
 
 ## Usage
@@ -210,7 +212,7 @@ submission/
 ## Decisions and limitations
 
 - **The LLM decides, the code guarantees.** The model only chooses what to mask. Alignment, the safety net and the leak check make sure the format is right and known identifier patterns never get through.
-- **Model choice:** `gemini-3.1-flash-lite` answers in about 5 to 6 seconds per document and reaches 100% on the reference. That time is the answer itself (about 2 500 output tokens: the model returns the masked lines and one explanation per item), not hidden reasoning: the model reports no thinking tokens, and turning thinking off gave identical output on three documents. `gemini-3.8-flash` took 12 to 15 seconds per call and hit rate limits more often.
+- **Model choice:** `gemini-3.1-flash-lite` answers in about 5 to 6 seconds per document and reaches 100% on the reference. That time is the answer itself (about 2 500 output tokens: the model returns the masked lines and one explanation per item), not hidden reasoning: the model reports no thinking tokens, and turning thinking off gave identical output on three documents. `gemini-3.8-flash` took 12 to 15 seconds per call and hit rate limits more often. For documents that may not leave the building, `LLM_PROVIDER=ollama` runs the same prompt on a local model (`gemma3:12b` by default); the alignment, safety net and leak check are the same, so a weaker model costs recall on context-dependent identifiers, never format or known patterns.
 - **Prompt changes are measured, not assumed:** rewording one rule ("keep the name of the institution that issues the document") left the official output identical, but on the 17 extra documents it changed 6 of them: it masked a missed surname and an ID card expiry date, yet left parts of two personal addresses and two personal amounts visible. The model is deterministic here (two runs of the old prompt give the same output), so the change came from the wording. It was rejected.
 - **No database:** documents are sensitive by definition, so nothing is stored.
 - **Limitations:**
@@ -257,6 +259,7 @@ Pedrom2002, TAF00, RicePerson101 and euick0 (Eric Golovatenko Simões).
 
 Models and services:
 - [Google Gemini API](https://ai.google.dev/gemini-api/docs) (`gemini-3.1-flash-lite`) through the [google-genai](https://github.com/googleapis/python-genai) SDK
+- [Ollama](https://ollama.com) ([API](https://github.com/ollama/ollama/blob/main/docs/api.md)) and the [OpenAI chat completions API](https://platform.openai.com/docs/api-reference/chat) for local models (`gemma3`, `llama3.1`, LM Studio, llama.cpp, vLLM)
 
 Python:
 - [PyMuPDF](https://pymupdf.readthedocs.io/): PDF text extraction

@@ -4,7 +4,7 @@ The Python package behind Lethe. The full documentation, with the pipeline, the 
 
 ## Pipeline
 
-`pipeline.py` runs one document: it builds the prompt (`prompt.py`), asks Gemini (`llm.py`), aligns the answer with the original word by word (`align.py`), applies the regex safety net (`safety.py`) and returns the masked lines. `run.py` writes the deliverables, and `verify.py` and `report.py` check and explain the result.
+`pipeline.py` runs one document: it builds the prompt (`prompt.py`), asks the model (`llm.py`: Gemini, or a local model), aligns the answer with the original word by word (`align.py`), applies the regex safety net (`safety.py`) and returns the masked lines. `run.py` writes the deliverables, and `verify.py` and `report.py` check and explain the result.
 
 ## Modules
 
@@ -17,7 +17,7 @@ The Python package behind Lethe. The full documentation, with the pipeline, the 
 | `ocr_fix.py` | fixes OCR misreads with the model before anonymising a photo or scan |
 | `context.py` | detects what kind of document it is (for example school records) to add rules to the prompt |
 | `prompt.py` | prompt construction and response parsing |
-| `llm.py` | Gemini client with a disk cache and retries |
+| `llm.py` | model client (Gemini, or a local model through Ollama or an OpenAI-compatible server) with a disk cache and retries |
 | `align.py` | accepts only "word becomes `*`" changes from the model's answer |
 | `safety.py` | regex safety net for identifiers the model missed |
 | `verify.py` | leak check: no masked value may still be readable in the final text |
@@ -59,6 +59,6 @@ cd submission
 python -m venv .venv
 .venv/Scripts/activate        # Windows (use source .venv/bin/activate on Linux/macOS)
 pip install -r requirements.txt
-cp .env.example .env           # then set GEMINI_API_KEY
-python -m pytest               # 213 tests
+cp .env.example .env           # then set GEMINI_API_KEY, or LLM_PROVIDER=ollama for a local model
+python -m pytest               # 225 tests
 ```

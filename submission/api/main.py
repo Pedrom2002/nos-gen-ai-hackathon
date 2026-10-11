@@ -38,6 +38,8 @@ SUBMISSION_DIR = Path(__file__).resolve().parents[1]
 OFFICIAL_PDF = SUBMISSION_DIR.parent / "raw_data" / "document_to_anonymize.pdf"
 # Phone photos at full resolution often pass 10 MB.
 MAX_BYTES = 25 * 1024 * 1024
+# Same output as run.py: punctuation next to a masked word stays ("*,").
+KEEP_PUNCT = True
 UNSUPPORTED = ("Formato não suportado: use PDF, DOCX, imagem (PNG, JPG, "
                "WebP), TXT ou CSV.")
 MODEL_DOWN = "O modelo não respondeu. Tente de novo dentro de um minuto."
@@ -161,7 +163,8 @@ def _create(name: str, source: Source) -> dict:
                  "tente uma imagem mais nítida."
         )
     try:
-        result = anonymize_source(source, generate_fn=generate_fn)
+        result = anonymize_source(source, keep_punct=KEEP_PUNCT,
+                                  generate_fn=generate_fn)
     except Exception:
         raise HTTPException(502, MODEL_DOWN) from None
     # Read after anonymize_source: OCR text has been fixed by then, and
@@ -210,8 +213,8 @@ def set_decisions(doc_id: str, decisions: Decisions) -> dict:
     keep = set(decisions.keep)
     try:
         output, masked = apply_decisions(
-            session.lines, session.result.masked, session.items, keep
-        )
+            session.lines, session.result.masked, session.items, keep,
+            KEEP_PUNCT)
     except KeyError:
         raise HTTPException(422, "Há dados que já não existem neste "
                                  "documento. Recarregue a revisão.") from None
@@ -229,7 +232,8 @@ def _redacted(session: Session) -> Response:
         raise HTTPException(404, "Este formato só tem saída em texto: use "
                                  "submission.")
     try:
-        result = redact(session.source, session.masked, session.name)
+        result = redact(session.source, session.masked, session.name,
+                        KEEP_PUNCT)
     except RedactionError as error:
         raise HTTPException(422, str(error)) from None
     return Response(result.data, media_type=result.media_type, headers={

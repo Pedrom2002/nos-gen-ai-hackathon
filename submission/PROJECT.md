@@ -79,7 +79,7 @@ flowchart LR
 - **Role:** a data protection officer who knows the GDPR and Portuguese documents.
 - **Policy:** an explicit list of what to mask and what to keep, matching the table above.
 - **Doubtful cases:** a self-test ("does this data, on its own, tell who the person is or how to contact them? If so, mask it").
-- **Format rules:** one `*` per word, punctuation glued to a word goes with it, and identifiers split across lines or struck through are still identifiers.
+- **Format rules:** one `*` per word, punctuation glued to a masked word stays next to the `*` (`Flores,` -> `*,`), so the layout of the document is kept, and identifiers split across lines or struck through are still identifiers.
 - **Worked example:** a short example that is not taken from the evaluated document.
 - **Self-check list:** what the model must verify before answering.
 - **Structured output:** JSON, so every decision comes with its explanation.
@@ -152,7 +152,7 @@ cp .env.example .env            # then set GEMINI_API_KEY in .env
 
 ```bash
 # 1. Generate submission.txt, prompt.txt and report.md from the official PDF
-python run.py                    # options: --pdf, --model, --variant A|B, --keep-punct
+python run.py                    # options: --pdf, --model, --variant A|B, --no-keep-punct
 
 # 2. Start the API (docs at http://localhost:8000/docs)
 uvicorn api.main:app --port 8000 --no-access-log

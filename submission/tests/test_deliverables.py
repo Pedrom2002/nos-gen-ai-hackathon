@@ -8,6 +8,7 @@ from pathlib import Path
 
 import pytest
 
+from anonimizador.align import mask_token
 from anonimizador.extract import extract_lines
 from anonimizador.metric import evaluate, read_lines
 from anonimizador.prompt import build_prompt
@@ -38,11 +39,16 @@ def test_submission_keeps_layout_and_only_replaces_words(original):
         assert after.strip() and after == after.rstrip()
         words, masked = before.split(), after.split()
         assert len(words) == len(masked)
-        assert all(m in (w, "*") for w, m in zip(words, masked))
+        # A masked word keeps its punctuation ("Flores," -> "*,").
+        assert all(m in (w, mask_token(w, True))
+                   for w, m in zip(words, masked))
 
 
 def test_submission_matches_the_reference_answer():
-    report = evaluate(read_lines(SUBMISSION / "submission.txt"),
+    # The reference marks each masked word as a bare "*".
+    output = [" ".join("*" if "*" in w else w for w in line.split())
+              for line in read_lines(SUBMISSION / "submission.txt")]
+    report = evaluate(output,
                       read_lines(SUBMISSION / "data" / "gold" / "gold.txt"))
     assert report.missed == [] and report.extra == []
 

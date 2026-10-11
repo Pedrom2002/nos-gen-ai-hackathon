@@ -2,7 +2,7 @@
 
 Usage (from the submission folder):
     python run.py [--pdf FILE] [--model MODEL] [--variant A|B]
-                  [--keep-punct] [--redact]
+                  [--no-keep-punct] [--redact]
 
 FILE can be a PDF (text or scanned), an image (PNG, JPG, WebP), a DOCX, a
 TXT or a CSV; the default is the challenge PDF. --redact also writes the
@@ -33,7 +33,7 @@ RUNS_DIR = SUBMISSION_DIR / "data" / "runs"
 
 
 def run(pdf: Path = DEFAULT_PDF, model: str = DEFAULT_MODEL,
-        variant: str = "A", keep_punct: bool = False,
+        variant: str = "A", keep_punct: bool = True,
         out_dir: Path = SUBMISSION_DIR, runs_dir: Path = RUNS_DIR,
         generate_fn=generate, redact_file: bool = False) -> dict:
     """Run the whole pipeline and write the output files.
@@ -104,8 +104,10 @@ def main(argv: list[str] | None = None) -> None:
     parser.add_argument("--pdf", type=Path, default=DEFAULT_PDF)
     parser.add_argument("--model", default=DEFAULT_MODEL)
     parser.add_argument("--variant", choices=VARIANTS, default="A")
-    parser.add_argument("--keep-punct", action="store_true",
-                        help='keep attached punctuation ("Flores," -> "*,")')
+    parser.add_argument("--keep-punct", action=argparse.BooleanOptionalAction,
+                        default=True,
+                        help='keep attached punctuation ("Flores," -> "*,"), '
+                             "as the challenge asks to keep the formatting")
     parser.add_argument("--out-dir", type=Path, default=SUBMISSION_DIR)
     parser.add_argument("--runs-dir", type=Path, default=RUNS_DIR)
     parser.add_argument("--redact", action="store_true",

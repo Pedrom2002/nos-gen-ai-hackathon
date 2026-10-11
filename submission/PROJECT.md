@@ -223,6 +223,21 @@ submission/
   - more real, annotated documents to measure recall;
   - per-organisation policies for what counts as identifying.
 
+## Deployment
+
+| Part | Where | Address |
+|---|---|---|
+| Web interface | Vercel, project `lethe-enxada-de-pedra` | [lethe-nos.vercel.app](https://lethe-nos.vercel.app) |
+| Android app | EAS Build, profile `preview` (an installable APK) | [APK](https://expo.dev/artifacts/eas/W1jxgI0oRh6OxMl2B8Wv0CxKdVs7ClcOr_97FQJ-ihg.apk) |
+| API | A team computer, exposed by a Cloudflare quick tunnel | changes when the tunnel restarts |
+
+The API needs Tesseract and the Gemini key, which do not fit a static host, so for the event it runs on a team computer: `uvicorn api.main:app --port 8020` behind `cloudflared tunnel --url http://127.0.0.1:8020`. `ALLOWED_ORIGINS` lists the web addresses that may call it, and the documents still stay in that process's memory only.
+
+- **Web:** `VITE_API_URL` is read at build time, so the web is built with the tunnel address: from `frontend/`, `vercel deploy --prod --build-env VITE_API_URL=<tunnel URL>`.
+- **Android:** the address is the EAS environment variable `EXPO_PUBLIC_API_URL` (environment `preview`), not a file in the repository; from `mobile/`, `eas build -p android --profile preview`. If the tunnel address changes, type the new one in the app's Settings instead of rebuilding.
+- **Limits of this setup:** it works only while that computer and the tunnel run, and anyone with the link can use the API (and the team's Gemini quota) until it is switched off; the upload limits above still apply. A permanent deployment would put the API in a container with Tesseract on a cloud host.
+- **iOS:** not built, since it needs a paid Apple developer account.
+
 ## Performance
 
 Measured on a photo of the official document: about 10 s to upload (OCR 2.5 s, model 5.5 s, the rest is fixed work) and 3 s to build and verify the redacted file. The model is the largest part and only shrinks by changing the prompt format, which would change the deliverable. What was tried for the OCR:

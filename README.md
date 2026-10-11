@@ -8,6 +8,13 @@ Lethe masks the words that identify a person in a Portuguese document: one `*` p
 
 *Left: a photo made from the official PDF (blur, noise, perspective). Right: the file the API returns. Names, date of birth, NIF, ID card, address, phone, email and social security number are removed; sex, ethnicity, age and the medical history stay.*
 
+## Try it
+
+- **Web:** [lethe-nos.vercel.app](https://lethe-nos.vercel.app). Upload a PDF, DOCX, photo, TXT or CSV, review what was masked, then download the text, the report or the redacted file.
+- **Android:** [install the APK](https://expo.dev/artifacts/eas/W1jxgI0oRh6OxMl2B8Wv0CxKdVs7ClcOr_97FQJ-ihg.apk) (allow installs from outside the Play Store when Android asks).
+
+The web and the app use a demo API that runs on a team computer behind a temporary tunnel during the event, so they may stop answering once it is switched off. Everything also runs locally: see *Run it* below. Use fictitious documents only.
+
 **Start here: [`submission/PROJECT.md`](submission/PROJECT.md)** documents the solution: how it works, the prompt, the privacy rules, setup, usage and the decisions we took.
 
 ## Deliverables

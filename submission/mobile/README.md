@@ -38,6 +38,18 @@ A lógica não é duplicada: a máscara por posição, o histórico de revisão,
 | `src/share.ts` | Partilha pelo menu do sistema |
 | `src/strings.ts` | Textos só do telemóvel, nas 8 línguas |
 
+## Instalar sem o Expo Go (APK)
+
+O APK da demo: [descarregar](https://expo.dev/artifacts/eas/W1jxgI0oRh6OxMl2B8Wv0CxKdVs7ClcOr_97FQJ-ihg.apk). Para gerar outro:
+
+```bash
+cd submission/mobile
+eas env:create --environment preview --name EXPO_PUBLIC_API_URL --value <endereço da API>
+eas build -p android --profile preview   # perfil em eas.json: APK instalável
+```
+
+O endereço da API fica gravado na app no build; se mudar, escreve-se o novo em **Definições**.
+
 ## Testes
 
 ```bash

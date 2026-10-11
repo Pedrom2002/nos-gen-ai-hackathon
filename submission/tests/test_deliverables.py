@@ -45,12 +45,10 @@ def test_submission_keeps_layout_and_only_replaces_words(original):
 
 
 def test_submission_matches_the_reference_answer():
-    # The reference marks each masked word as a bare "*".
-    output = [" ".join("*" if "*" in w else w for w in line.split())
-              for line in read_lines(SUBMISSION / "submission.txt")]
-    report = evaluate(output,
+    # Compared as is: the reference keeps the punctuation next to masks too.
+    report = evaluate(read_lines(SUBMISSION / "submission.txt"),
                       read_lines(SUBMISSION / "data" / "gold" / "gold.txt"))
-    assert report.missed == [] and report.extra == []
+    assert report.similarity == report.accuracy == 1.0
 
 
 def test_report_does_not_reveal_masked_values():

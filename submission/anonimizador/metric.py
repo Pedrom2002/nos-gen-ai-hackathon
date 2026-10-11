@@ -4,12 +4,16 @@ The official evaluation logs report two numbers:
 
 - Similarity: share of words that match the hidden reference exactly.
 - Accuracy: share of the words that should be censored that are fully
-  censored (a single ``*``).
+  censored (a ``*``, with any punctuation that was glued to the word).
 
 The official way of combining them is not public, so ``score`` is their
 mean. Words are compared by position over the whole document; the output of
 ``align`` always has the same words per line as the original, so positions
 line up with the reference.
+
+Whether the hidden reference writes "Flores," as "*," or as "*" is not
+known: is_mask accepts both, so Accuracy only counts what was censored, and
+Similarity shows whether the punctuation matches the reference.
 """
 
 import sys
@@ -17,6 +21,12 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 MASK = "*"
+_PUNCT = ".,;:!?()[]{}\"'«»"
+
+
+def is_mask(word: str) -> bool:
+    """A censored word: "*", or "*" with its punctuation ("*,", "(*,")."""
+    return word.strip(_PUNCT) == MASK
 
 
 @dataclass
@@ -51,13 +61,13 @@ def evaluate(output_lines: list[str], gold_lines: list[str],
     out_words = [w for _, w in out] + [""] * (total - len(out))
 
     same = sum(o == g for o, (_, g) in zip(out_words, gold))
-    to_mask = [i for i, (_, g) in enumerate(gold) if g == MASK]
-    masked_ok = sum(out_words[i] == MASK for i in to_mask)
+    to_mask = [i for i, (_, g) in enumerate(gold) if is_mask(g)]
+    masked_ok = sum(is_mask(out_words[i]) for i in to_mask)
 
-    missed = [orig[i] for i in to_mask if out_words[i] != MASK]
+    missed = [orig[i] for i in to_mask if not is_mask(out_words[i])]
     extra = [
         orig[i] for i, (_, g) in enumerate(gold)
-        if g != MASK and out_words[i] == MASK
+        if not is_mask(g) and is_mask(out_words[i])
     ]
     similarity = same / total if total else 1.0
     accuracy = masked_ok / len(to_mask) if to_mask else 1.0

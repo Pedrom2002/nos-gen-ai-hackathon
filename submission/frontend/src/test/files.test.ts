@@ -41,3 +41,10 @@ describe("ACCEPT and BADGES", () => {
     for (const badge of BADGES) expect(kindOf({ name: `x.${badge}`, type: "" })).not.toBeNull();
   });
 });
+
+describe("MAX_BATCH_FILES", () => {
+  it("mirrors the API's limit for one request", async () => {
+    const { MAX_BATCH_FILES } = await import("@/lib/files");
+    expect(MAX_BATCH_FILES).toBe(10);
+  });
+});

@@ -1,6 +1,18 @@
 import type { Lang } from "./i18n";
 
 const pt = {
+  "generateAll": "Gerar todos os resultados",
+  "addFiles": "Adicionar ficheiros",
+  "removeFile": "Remover “{name}”",
+  "analyzeN": "Anonimizar {n} documentos",
+  "documentTabs": "Documentos abertos",
+  "closeDocument": "Fechar “{name}”",
+  "downloadAll": "Transferir tudo (.zip)",
+  "downloadAllWhen": "Disponível quando todos os documentos tiverem o resultado gerado",
+  "tooManyFiles": "No máximo {max} ficheiros de cada vez.",
+  "failedFiles": "{n} ficheiro(s) não foram analisados",
+  "multiNoEdit": "Com vários ficheiros o texto não pode ser editado: cada ficheiro é enviado tal como está.",
+  "filesQueued": "{n} ficheiros",
   "downloadRedacted": "Descarregar ficheiro censurado",
   "unreadLines": "{n} linha(s) não foram lidas pelo OCR, por isso não há ficheiro censurado. Tire uma fotografia mais nítida e de frente.",
   "redactedPreview": "Pré-visualização do ficheiro censurado",
@@ -83,6 +95,18 @@ const pt = {
 };
 export type UIStrings = typeof pt;
 const en: UIStrings = {
+  "generateAll": "Generate all results",
+  "addFiles": "Add files",
+  "removeFile": "Remove “{name}”",
+  "analyzeN": "Anonymise {n} documents",
+  "documentTabs": "Open documents",
+  "closeDocument": "Close “{name}”",
+  "downloadAll": "Download all (.zip)",
+  "downloadAllWhen": "Available once every document has its result",
+  "tooManyFiles": "At most {max} files at a time.",
+  "failedFiles": "{n} file(s) were not analysed",
+  "multiNoEdit": "With several files the text cannot be edited: each file is sent as it is.",
+  "filesQueued": "{n} files",
   "downloadRedacted": "Download redacted file",
   "unreadLines": "{n} line(s) could not be read by OCR, so there is no redacted file. Take a sharper photo, straight on.",
   "redactedPreview": "Preview of the redacted file",
@@ -164,6 +188,18 @@ const en: UIStrings = {
   }
 };
 const fr: UIStrings = {
+  "generateAll": "Générer tous les résultats",
+  "addFiles": "Ajouter des fichiers",
+  "removeFile": "Retirer « {name} »",
+  "analyzeN": "Anonymiser {n} documents",
+  "documentTabs": "Documents ouverts",
+  "closeDocument": "Fermer « {name} »",
+  "downloadAll": "Tout télécharger (.zip)",
+  "downloadAllWhen": "Disponible quand chaque document a son résultat",
+  "tooManyFiles": "Au plus {max} fichiers à la fois.",
+  "failedFiles": "{n} fichier(s) n'ont pas été analysés",
+  "multiNoEdit": "Avec plusieurs fichiers, le texte ne peut pas être modifié : chaque fichier est envoyé tel quel.",
+  "filesQueued": "{n} fichiers",
   "downloadRedacted": "Télécharger le fichier caviardé",
   "unreadLines": "{n} ligne(s) n’ont pas pu être lues par l’OCR : pas de fichier caviardé. Prenez une photo plus nette, de face.",
   "redactedPreview": "Aperçu du fichier caviardé",
@@ -245,6 +281,18 @@ const fr: UIStrings = {
   }
 };
 const it: UIStrings = {
+  "generateAll": "Genera tutti i risultati",
+  "addFiles": "Aggiungi file",
+  "removeFile": "Rimuovi “{name}”",
+  "analyzeN": "Anonimizza {n} documenti",
+  "documentTabs": "Documenti aperti",
+  "closeDocument": "Chiudi “{name}”",
+  "downloadAll": "Scarica tutto (.zip)",
+  "downloadAllWhen": "Disponibile quando ogni documento ha il suo risultato",
+  "tooManyFiles": "Al massimo {max} file alla volta.",
+  "failedFiles": "{n} file non sono stati analizzati",
+  "multiNoEdit": "Con più file il testo non può essere modificato: ogni file viene inviato così com'è.",
+  "filesQueued": "{n} file",
   "downloadRedacted": "Scarica il file oscurato",
   "unreadLines": "{n} riga/righe non lette dall’OCR: nessun file oscurato. Scatta una foto più nitida e frontale.",
   "redactedPreview": "Anteprima del file oscurato",
@@ -326,6 +374,18 @@ const it: UIStrings = {
   }
 };
 const de: UIStrings = {
+  "generateAll": "Alle Ergebnisse erzeugen",
+  "addFiles": "Dateien hinzufügen",
+  "removeFile": "„{name}“ entfernen",
+  "analyzeN": "{n} Dokumente anonymisieren",
+  "documentTabs": "Geöffnete Dokumente",
+  "closeDocument": "„{name}“ schließen",
+  "downloadAll": "Alles herunterladen (.zip)",
+  "downloadAllWhen": "Verfügbar, sobald jedes Dokument sein Ergebnis hat",
+  "tooManyFiles": "Höchstens {max} Dateien auf einmal.",
+  "failedFiles": "{n} Datei(en) wurden nicht analysiert",
+  "multiNoEdit": "Bei mehreren Dateien kann der Text nicht bearbeitet werden: jede Datei wird unverändert gesendet.",
+  "filesQueued": "{n} Dateien",
   "downloadRedacted": "Geschwärzte Datei herunterladen",
   "unreadLines": "{n} Zeile(n) konnte die OCR nicht lesen, daher gibt es keine geschwärzte Datei. Machen Sie ein schärferes Foto von vorne.",
   "redactedPreview": "Vorschau der geschwärzten Datei",
@@ -407,6 +467,18 @@ const de: UIStrings = {
   }
 };
 const ar: UIStrings = {
+  "generateAll": "إنشاء كل النتائج",
+  "addFiles": "إضافة ملفات",
+  "removeFile": "إزالة «{name}»",
+  "analyzeN": "إخفاء هوية {n} مستندات",
+  "documentTabs": "المستندات المفتوحة",
+  "closeDocument": "إغلاق «{name}»",
+  "downloadAll": "تنزيل الكل (.zip)",
+  "downloadAllWhen": "متاح عندما تكون لكل مستند نتيجته",
+  "tooManyFiles": "{max} ملفات كحد أقصى في كل مرة.",
+  "failedFiles": "لم يتم تحليل {n} ملف(ات)",
+  "multiNoEdit": "مع عدة ملفات لا يمكن تعديل النص: يُرسل كل ملف كما هو.",
+  "filesQueued": "{n} ملفات",
   "downloadRedacted": "تنزيل الملف المحجوب",
   "unreadLines": "تعذّر على OCR قراءة {n} سطر، لذلك لا يوجد ملف محجوب. التقط صورة أوضح ومن الأمام.",
   "redactedPreview": "معاينة الملف المحجوب",
@@ -488,6 +560,18 @@ const ar: UIStrings = {
   }
 };
 const ja: UIStrings = {
+  "generateAll": "すべての結果を生成",
+  "addFiles": "ファイルを追加",
+  "removeFile": "「{name}」を削除",
+  "analyzeN": "{n} 件の文書を匿名化",
+  "documentTabs": "開いている文書",
+  "closeDocument": "「{name}」を閉じる",
+  "downloadAll": "すべてダウンロード (.zip)",
+  "downloadAllWhen": "すべての文書の結果が生成されると利用できます",
+  "tooManyFiles": "一度に最大 {max} ファイルまでです。",
+  "failedFiles": "{n} 件のファイルは解析されませんでした",
+  "multiNoEdit": "複数ファイルの場合、テキストは編集できません。各ファイルはそのまま送信されます。",
+  "filesQueued": "{n} ファイル",
   "downloadRedacted": "黒塗りファイルをダウンロード",
   "unreadLines": "OCR で {n} 行を読み取れなかったため、黒塗りファイルはありません。正面から鮮明に撮影してください。",
   "redactedPreview": "黒塗りファイルのプレビュー",
@@ -569,6 +653,18 @@ const ja: UIStrings = {
   }
 };
 const zh: UIStrings = {
+  "generateAll": "生成全部结果",
+  "addFiles": "添加文件",
+  "removeFile": "移除“{name}”",
+  "analyzeN": "匿名化 {n} 个文档",
+  "documentTabs": "已打开的文档",
+  "closeDocument": "关闭“{name}”",
+  "downloadAll": "全部下载 (.zip)",
+  "downloadAllWhen": "所有文档都生成结果后可用",
+  "tooManyFiles": "每次最多 {max} 个文件。",
+  "failedFiles": "{n} 个文件未被分析",
+  "multiNoEdit": "多个文件时无法编辑文本：每个文件按原样发送。",
+  "filesQueued": "{n} 个文件",
   "downloadRedacted": "下载已遮盖的文件",
   "unreadLines": "OCR 有 {n} 行无法识别，因此没有遮盖后的文件。请从正面拍摄更清晰的照片。",
   "redactedPreview": "已遮盖文件的预览",

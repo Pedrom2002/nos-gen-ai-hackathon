@@ -14,6 +14,8 @@ export const BADGES = ["pdf", "docx", "txt", "csv", "png", "jpg", "webp"] as con
 export const MAX_UPLOAD_BYTES = 25 * 1024 * 1024;
 /** Hard stop for what the browser will try to open. */
 export const MAX_LOCAL_BYTES = 25 * 1024 * 1024;
+/** Files one analysis can take at once; mirrors MAX_BATCH_FILES in api/main.py. */
+export const MAX_BATCH_FILES = 10;
 
 const extensionOf = (name: string) => { const m = /\.[^.]+$/.exec(name); return m ? m[0].toLowerCase() : ""; };
 

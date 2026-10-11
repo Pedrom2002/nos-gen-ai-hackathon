@@ -1,5 +1,7 @@
+import io
 import json
 import re
+import zipfile
 from pathlib import Path
 
 import pytest
@@ -38,6 +40,8 @@ def fake_generate(prompt, model=None, json_output=False, **kwargs):
 def client(monkeypatch):
     monkeypatch.setattr(main, "generate_fn", fake_generate)
     main.STORE.clear()
+    for limiter in main.LIMITERS:
+        limiter.clear()
     return TestClient(main.app)
 
 
@@ -384,3 +388,231 @@ def test_no_redacted_file_is_built_for_text_or_unread_documents(
     doc = client.post("/api/documents", files={
         "file": ("ficha.docx", make_docx(), DOCX_TYPE)}).json()
     assert main.STORE[doc["id"]].redaction is None
+
+
+# --- several files at once -------------------------------------------------
+
+def txt(name, text):
+    return ("files", (name, text.encode(), "text/plain"))
+
+
+def batch(client, *files, **kwargs):
+    return client.post("/api/documents/batch", files=list(files), **kwargs)
+
+
+def test_batch_creates_one_document_per_file(client):
+    response = batch(client, txt("a.txt", "Nome: Rui\n"),
+                     txt("b.txt", "Contacto: ana@x.pt\n"))
+    assert response.status_code == 200
+    docs = response.json()["documents"]
+    assert [d["name"] for d in docs] == ["a.txt", "b.txt"]
+    states = [d["state"] for d in docs]
+    assert states[0]["output"] == ["Nome: Rui"]
+    assert states[1]["output"] == ["Contacto: *"]
+    assert states[0]["id"] != states[1]["id"]
+    assert set(main.STORE) == {states[0]["id"], states[1]["id"]}
+    assert "error" not in docs[0] and "error" not in docs[1]
+
+
+def test_batch_reports_a_bad_file_without_losing_the_others(client):
+    response = batch(client, ("files", ("x.exe", b"MZ-SEGREDO", "x/y")),
+                     txt("vazio.txt", "  \n"), txt("ok.txt", "Nome: Rui\n"))
+    assert response.status_code == 200
+    bad, empty, good = response.json()["documents"]
+    assert bad["error"]["status"] == 415 and "state" not in bad
+    assert "SEGREDO" not in response.text
+    assert empty["error"]["status"] == 422
+    assert good["state"]["id"] in main.STORE
+    assert len(main.STORE) == 1
+
+
+def test_batch_model_failure_is_one_entry(client, monkeypatch):
+    def broken(*args, **kwargs):
+        raise RuntimeError(f"timeout while sending {NAME}")
+
+    monkeypatch.setattr(main, "generate_fn", broken)
+    response = batch(client, txt("a.txt", f"Nome: {NAME}\n"))
+    assert response.status_code == 200
+    (entry,) = response.json()["documents"]
+    assert entry["error"] == {"status": 502, "detail": main.MODEL_DOWN}
+    assert "Maria" not in response.text
+
+
+def test_batch_limits_the_number_of_files(client):
+    too_many = batch(client, *(txt(f"{n}.txt", "Nome: Rui\n")
+                               for n in range(main.MAX_BATCH_FILES + 1)))
+    assert too_many.status_code == 413
+    assert main.STORE == {}
+    assert client.post("/api/documents/batch").status_code == 422
+
+
+def test_batch_is_rate_limited_per_client(client, monkeypatch):
+    now = [1000.0]
+    monkeypatch.setattr(main.time, "monotonic", lambda: now[0])
+    monkeypatch.setattr(main, "BATCH_LIMITER", main.RateLimiter("2/minute"))
+    for _ in range(2):
+        assert batch(client, txt("a.txt", "Nome: Rui\n")).status_code == 200
+    refused = batch(client, txt("a.txt", "Nome: Rui\n"))
+    assert refused.status_code == 429
+    assert refused.headers["Retry-After"] == "60"
+    assert "60 s" in refused.json()["detail"]
+    # Another client (seen through the trusted tunnel) is not affected.
+    monkeypatch.setattr(main, "TRUSTED_PROXIES", {"testclient"})
+    other = batch(client, txt("a.txt", "Nome: Rui\n"),
+                  headers={"CF-Connecting-IP": "203.0.113.9"})
+    assert other.status_code == 200
+    monkeypatch.setattr(main, "TRUSTED_PROXIES", set())
+    # The window slides: after a minute the first client is served again.
+    now[0] += 30
+    assert batch(client, txt("a.txt", "Nome: Rui\n")).status_code == 429
+    now[0] += 30
+    assert batch(client, txt("a.txt", "Nome: Rui\n")).status_code == 200
+
+
+def test_direct_client_cannot_dodge_the_limit_with_headers(client,
+                                                           monkeypatch):
+    monkeypatch.setattr(main, "BATCH_LIMITER", main.RateLimiter("1/minute"))
+    assert batch(client, txt("a.txt", "Nome: Rui\n")).status_code == 200
+    # Not behind a trusted proxy: forwarded headers are the client's own
+    # words and are ignored.
+    for n, headers in enumerate([
+            {"X-Forwarded-For": "203.0.113.1"},
+            {"X-Forwarded-For": "203.0.113.2, 10.0.0.1"},
+            {"CF-Connecting-IP": "203.0.113.3"}]):
+        refused = batch(client, txt(f"{n}.txt", "Nome: Rui\n"),
+                        headers=headers)
+        assert refused.status_code == 429
+
+
+def test_client_key_behind_the_trusted_tunnel(monkeypatch):
+    from types import SimpleNamespace
+    monkeypatch.setattr(main, "TRUSTED_PROXIES", {"127.0.0.1"})
+
+    def key(peer, **headers):
+        request = SimpleNamespace(
+            client=SimpleNamespace(host=peer),
+            headers={k.lower().replace("_", "-"): v
+                     for k, v in headers.items()})
+        return main._client_key(request)
+
+    assert key("198.51.100.7", X_Forwarded_For="1.2.3.4") == "198.51.100.7"
+    assert key("127.0.0.1", CF_Connecting_IP="203.0.113.9",
+               X_Forwarded_For="1.2.3.4") == "203.0.113.9"
+    # Without Cloudflare's header: the hop the proxy added, not the first
+    # one, which the client wrote.
+    assert key("127.0.0.1",
+               X_Forwarded_For="6.6.6.6, 203.0.113.9") == "203.0.113.9"
+    assert key("127.0.0.1") == "127.0.0.1"
+
+
+def test_batch_unexpected_error_is_internal_not_model_down(client,
+                                                           monkeypatch):
+    def bug(*args, **kwargs):
+        raise ValueError(f"something quoting {NAME}")
+
+    monkeypatch.setattr(main, "_ingest", bug)
+    (entry,) = batch(client, txt("a.txt", "Nome: Rui\n")).json()["documents"]
+    assert entry["error"] == {"status": 500, "detail": main.INTERNAL_ERROR}
+
+
+def test_batch_file_budget_refuses_the_whole_request(client, monkeypatch):
+    monkeypatch.setattr(main, "BATCH_FILES_LIMITER",
+                        main.RateLimiter("3/minute"))
+    first = batch(client, txt("a.txt", "Nome: Rui\n"),
+                  txt("b.txt", "Nome: Ana\n"))
+    assert first.status_code == 200
+    second = batch(client, txt("c.txt", "Nome: Rui\n"),
+                   txt("d.txt", "Nome: Ana\n"))
+    assert second.status_code == 429
+    assert len(main.STORE) == 2  # nothing of the refused batch was processed
+    # A single file still fits in the remaining budget.
+    assert batch(client, txt("e.txt", "Nome: Eva\n")).status_code == 200
+
+
+def test_rate_limiter_counts_a_sliding_window():
+    now = [0.0]
+    limiter = main.RateLimiter("3/minute")
+    real = main.time.monotonic
+    main.time.monotonic = lambda: now[0]
+    try:
+        assert limiter.wait("a") == 0 and limiter.wait("a", 2) == 0
+        assert limiter.wait("a") == 60
+        now[0] = 59
+        assert limiter.wait("a") == 1
+        now[0] = 60
+        assert limiter.wait("a") == 0  # both hits from t=0 are gone
+        assert limiter.wait("a", 2) == 0
+        assert limiter.wait("a") == 60
+        # A cost that never fits is answered with the whole period.
+        assert limiter.wait("b", 4) == 60
+        assert "b" not in limiter._hits
+    finally:
+        main.time.monotonic = real
+    with pytest.raises(ValueError):
+        main.RateLimiter("many")
+
+
+def zip_of(client, ids, **kwargs):
+    response = client.post("/api/documents/zip", json={"ids": ids}, **kwargs)
+    return response, (zipfile.ZipFile(io.BytesIO(response.content))
+                      if response.status_code == 200 else None)
+
+
+def test_zip_has_a_folder_per_document(client):
+    docs = batch(client, txt("nota.txt", "Nome: Rui\n"),
+                 txt("nota.txt", "Contacto: ana@x.pt\n")).json()["documents"]
+    ids = [d["state"]["id"] for d in docs]
+    response, archive = zip_of(client, ids)
+    assert response.status_code == 200
+    assert response.headers["content-type"] == "application/zip"
+    assert "lethe-documentos.zip" in response.headers["content-disposition"]
+    assert sorted(archive.namelist()) == [
+        "LEIA-ME.txt", "nota (2)/report.md", "nota (2)/submission.txt",
+        "nota/report.md", "nota/submission.txt"]
+    assert archive.read("nota/submission.txt").decode() == "Nome: Rui\n"
+    assert archive.read("nota (2)/submission.txt").decode() == "Contacto: *\n"
+    assert "ana@x.pt" not in archive.read("nota (2)/report.md").decode()
+    readme = archive.read("LEIA-ME.txt").decode()
+    assert "nota:" in readme and "nota (2):" in readme
+    assert "texto" in readme  # the format only has a text output
+
+
+def test_zip_includes_the_redacted_file_after_the_review(client, monkeypatch):
+    from tests.test_redact import make_docx, names_only
+    monkeypatch.setattr(main, "generate_fn", names_only)
+    (doc,) = batch(client, ("files", ("ficha.docx", make_docx(),
+                                      "application/octet-stream"))
+                   ).json()["documents"]
+    doc_id = doc["state"]["id"]
+    assert doc["state"]["redactable"]
+    client.put(f"/api/documents/{doc_id}/decisions", json={"keep": []})
+    response, archive = zip_of(client, [doc_id, doc_id])  # repeats are one
+    assert response.status_code == 200
+    assert sorted(archive.namelist()) == [
+        "ficha/ficha_censurado.docx", "ficha/report.md",
+        "ficha/submission.txt"]
+    assert b"Maria" not in archive.read("ficha/ficha_censurado.docx")
+
+
+def test_zip_errors(client, monkeypatch):
+    assert zip_of(client, [])[0].status_code == 422
+    assert zip_of(client, ["nope"])[0].status_code == 404
+    doc = official(client)
+    # An expired document is noted in LEIA-ME.txt; the others still come.
+    response, archive = zip_of(client, [doc["id"], "nope"])
+    assert response.status_code == 200
+    folder = Path(main.OFFICIAL_PDF.name).stem
+    assert f"{folder}/submission.txt" in archive.namelist()
+    assert "- nope:" in archive.read("LEIA-ME.txt").decode()
+    monkeypatch.setattr(main, "ZIP_LIMITER", main.RateLimiter("1/minute"))
+    assert zip_of(client, [doc["id"]])[0].status_code == 200
+    refused = zip_of(client, [doc["id"]])[0]
+    assert refused.status_code == 429 and refused.headers["Retry-After"]
+
+
+def test_folder_names_are_safe_and_unique():
+    used = set()
+    assert main._folder_name("../a/b:c?.pdf", used) == "b c"
+    assert main._folder_name("B C.txt", used) == "B C (2)"
+    assert main._folder_name("", used) == "documento"
+    assert main._folder_name(".hidden", used) == "hidden"

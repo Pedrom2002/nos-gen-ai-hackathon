@@ -1,0 +1,387 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Lethe brand ad</title>
+<style>
+/* Tokens from submission/frontend/src/styles.css, dark theme (the site's default). */
+:root{--bg:#121212;--card:#181818;--panel:#1d1d1d;--ink:#eeeeee;--muted:#9e9e9e;--line:rgba(255,255,255,.1);--primary:#5fa7ff;--onprimary:#0b1a31;--accent:#1a2c44;--accentfg:#d3e7ff;--g:#24a965;--redact:#000;--r:6px}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:1920px;height:1080px;overflow:hidden;background:var(--bg);font-family:Arial,"Helvetica Neue",ui-sans-serif,system-ui,sans-serif;color:var(--ink);-webkit-font-smoothing:antialiased}
+.mono{font-family:"JetBrains Mono","JetBrainsMonoNL Nerd Font",ui-monospace,monospace}
+#stage{position:absolute;inset:0;overflow:hidden;background:var(--bg)}
+.scene{position:absolute;inset:0;opacity:0}
+.w{display:inline-block;white-space:pre}
+.h{font-weight:700;letter-spacing:-.025em;line-height:1.05}
+.center{position:absolute;left:0;right:0;text-align:center}
+.iri{color:var(--primary)}
+.dim{color:var(--muted)}
+.glass{background:var(--card);border:1px solid var(--line);border-radius:var(--r);box-shadow:0 24px 70px rgba(0,0,0,.55)}
+
+/* ambient: the soft blue glow the site puts behind its dropzone */
+#amb{position:absolute;inset:0}
+.blob{position:absolute;border-radius:50%;filter:blur(120px)}
+.hero{position:absolute;inset:0;width:1920px;height:1080px;object-fit:cover}
+.vign{position:absolute;inset:0;background:radial-gradient(ellipse 75% 70% at 50% 50%,rgba(18,18,18,0) 35%,rgba(18,18,18,.8) 100%)}
+
+/* S1 */
+#s1 .shade{position:absolute;inset:0;background:radial-gradient(ellipse 55% 40% at 50% 52%,rgba(18,18,18,.75) 0%,rgba(18,18,18,.35) 60%,rgba(18,18,18,0) 100%)}
+
+/* S2 doc */
+.stack{position:absolute;left:150px;top:50%;transform:translateY(-50%);width:860px}
+#doc{position:absolute;left:1040px;top:120px;width:740px;height:840px;padding:50px 54px;overflow:hidden}
+#doc .title{font-size:30px;font-weight:700}
+#doc .sub{font-size:18px;color:var(--muted);margin:8px 0 26px}
+.row{display:flex;align-items:center;height:76px;border-bottom:1px solid var(--line);font-size:24px}
+.row .lab{width:200px;color:var(--muted);font-size:19px}
+.val{position:relative;display:inline-block;padding:5px 10px;border-radius:4px}
+.val .hl{position:absolute;inset:0;border-radius:4px;opacity:0}
+.val .tx{position:relative;color:var(--ink)}
+.val .mask{position:absolute;inset:4px 0;border-radius:3px;background:var(--redact);box-shadow:inset 0 0 0 1px rgba(95,167,255,.55);transform-origin:left center;transform:scaleX(0)}
+.val .chip{position:absolute;right:-14px;top:50%;transform:translate(100%,-50%);font-size:14px;font-weight:700;color:#fff;padding:3px 8px;border-radius:4px;opacity:0;white-space:nowrap}
+#scan{position:absolute;left:0;right:0;height:160px;top:-160px;background:linear-gradient(180deg,rgba(95,167,255,0) 0%,rgba(95,167,255,.12) 80%,rgba(95,167,255,.9) 100%)}
+#dust{position:absolute;inset:0;pointer-events:none}
+#dust i{position:absolute;width:5px;height:5px;border-radius:50%}
+
+/* S3 api */
+#code{position:absolute;left:140px;top:330px;width:800px;height:560px;overflow:hidden;background:#0e0e0e}
+#code .bar{height:46px;display:flex;align-items:center;gap:9px;padding:0 20px;border-bottom:1px solid var(--line)}
+#code .bar b{width:13px;height:13px;border-radius:50%;display:block}
+#code .body{padding:26px 30px;font-size:22px;line-height:1.6;color:#cfcfcf;white-space:pre}
+.c-cmd{color:#eeeeee}.c-str{color:#5fd39a}.c-key{color:var(--primary)}.c-dim{color:#6b6b6b}
+#log{position:absolute;left:30px;right:30px;bottom:18px;height:150px;overflow:hidden;font-size:17px;line-height:30px;color:#6b6b6b;border-top:1px solid var(--line);padding-top:10px}
+#log .in{position:absolute;left:0;right:0}
+#log .ok{color:var(--g)}
+#vp{position:absolute;left:990px;top:330px;width:790px;height:560px;overflow:hidden}
+#tiles{position:absolute;left:50%;top:50%;display:grid;grid-template-columns:repeat(12,160px);gap:18px;transform-origin:center}
+.tile{width:160px;height:110px;border-radius:var(--r);background:var(--panel);border:1px solid var(--line);padding:16px;display:flex;flex-direction:column;justify-content:space-between}
+.tile .ic{width:30px;height:30px;border-radius:4px}
+.tile .nm{font-size:15px;font-weight:700;color:#d6d6d6;display:flex;justify-content:space-between;align-items:center}
+.tile .dot{width:10px;height:10px;border-radius:50%;background:#2e2e2e}
+#pipe{position:absolute;left:940px;top:606px;width:50px;height:4px;overflow:hidden}
+#pipe i{position:absolute;top:0;width:16px;height:4px;border-radius:2px;background:var(--primary)}
+
+/* S4 privacy */
+.chipd{display:inline-block;font-size:24px;padding:12px 22px;border-radius:var(--r);border:1px solid var(--line);color:#cfcfcf;margin:0 8px;background:var(--card)}
+.chipd b{color:var(--g);font-weight:600}
+#infra{position:absolute;left:1080px;top:190px;width:640px;height:700px}
+#infra svg{position:absolute;inset:0}
+.srv{position:absolute;left:90px;width:460px;height:92px;border-radius:var(--r);background:var(--card);border:1px solid var(--line);display:flex;align-items:center;padding:0 26px;gap:14px}
+.srv i{display:block;width:10px;height:10px;border-radius:50%;background:#2e2e2e}
+.srv .slots{margin-left:auto;display:flex;gap:6px}
+.srv .slots span{display:block;width:44px;height:8px;border-radius:4px;background:rgba(255,255,255,.1)}
+#chip{position:absolute;left:195px;top:470px;width:250px;height:140px;border-radius:var(--r);background:var(--primary);display:flex;flex-direction:column;align-items:center;justify-content:center;font-weight:700;font-size:34px;color:var(--onprimary)}
+#chip small{font-size:17px;font-weight:400;opacity:.85}
+#infra .lbl{position:absolute;left:40px;top:-16px;background:var(--bg);padding:4px 14px;font-size:17px;letter-spacing:.2em;color:var(--primary);font-weight:700}
+
+/* S4 privacy: document → memory → masked document; the database link is cut */
+#flow{position:absolute;left:50%;top:585px;width:1100px;height:340px;margin-left:-550px;transform:scale(1.2);transform-origin:50% 0}
+.fdoc{position:absolute;top:0;width:160px;height:200px;background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:22px 18px;display:flex;flex-direction:column;gap:14px;box-shadow:0 18px 50px rgba(0,0,0,.45)}
+.fdoc i{display:block;height:9px;border-radius:3px;background:#3a3a3a}
+.fdoc i.m{height:12px;margin:-1.5px 0;background:#000;box-shadow:0 0 0 1.5px rgba(95,167,255,.85)}
+#fin{left:0}#fout{left:940px}
+.fline{position:absolute;top:99px;height:2px;width:190px;background:#2e2e2e;overflow:hidden}
+.fline b{position:absolute;top:0;width:26px;height:2px;background:var(--primary)}
+#fl1{left:190px}#fl2{left:720px}
+#mem{position:absolute;left:410px;top:10px;width:280px;height:180px;background:var(--card);border:1px solid var(--line);border-radius:var(--r);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px}
+#mem span{font-family:"JetBrains Mono","JetBrainsMonoNL Nerd Font",ui-monospace,monospace;font-size:18px;color:var(--muted);letter-spacing:.04em}
+#mem .cells{display:grid;grid-template-columns:repeat(8,18px);gap:6px}
+#mem .cells i{display:block;width:18px;height:18px;border-radius:3px;background:#262626}
+#mem .pins{position:absolute;left:24px;right:24px;height:8px;background:repeating-linear-gradient(90deg,#3a3a3a 0 8px,transparent 8px 18px)}
+#mem .pins.t{top:-9px}#mem .pins.b{bottom:-9px}
+#dbl{position:absolute;left:450px;top:200px}
+
+/* S5 accuracy */
+#panel{position:absolute;left:1010px;top:140px;width:770px;height:800px;padding:40px 44px}
+#panel .hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px}
+#panel .hd h3{font-size:32px}
+#panel .cnt{font-size:17px;font-weight:700;color:var(--accentfg);background:var(--accent);padding:7px 14px;border-radius:var(--r)}
+.rv{display:flex;align-items:center;height:92px;border-top:1px solid var(--line);gap:18px}
+.rv .cd{width:12px;height:12px;border-radius:50%;flex:none}
+.rv .meta{flex:1}
+.rv .meta b{display:block;font-size:21px;font-weight:700}
+.rv .meta span{font-size:16px;color:var(--muted)}
+.rv .bars{width:130px;height:16px;border-radius:3px;background:var(--redact);box-shadow:inset 0 0 0 1px rgba(95,167,255,.5);flex:none}
+.ok{width:40px;height:40px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;background:rgba(36,169,101,.14);color:var(--g);font-size:20px;font-weight:700}
+#audit{position:absolute;left:44px;right:44px;bottom:34px;height:74px;border-radius:var(--r);display:flex;align-items:center;gap:16px;padding:0 22px;background:rgba(36,169,101,.08);border:1px solid rgba(36,169,101,.35);font-size:20px;font-weight:700;color:#d2f1e0}
+#audit .bar2{margin-left:auto;width:200px;height:8px;border-radius:4px;background:rgba(255,255,255,.08);overflow:hidden}
+#audit .bar2 i{display:block;height:100%;background:var(--g)}
+
+/* S6 end: the logo appears with the site's intro motion */
+#s6{background:transparent}
+#logo{position:absolute;left:680px;top:300px;width:560px;height:257.6px;transform-origin:0 0;color:var(--primary);visibility:hidden}
+</style></head>
+<body><div id="stage">
+<div id="amb">
+  <div class="blob" id="b1" style="width:900px;height:700px;background:rgba(95,167,255,.10)"></div>
+  <div class="blob" id="b2" style="width:800px;height:700px;background:rgba(95,167,255,.06)"></div>
+  <div class="blob" id="b3" style="width:600px;height:600px;background:rgba(95,167,255,.0)"></div>
+</div>
+
+<!-- S1: hero A + opening line -->
+<div class="scene" id="s1">
+  <img class="hero" id="heroA" alt="">
+  <div class="vign"></div><div class="shade"></div>
+  <div class="center h" style="top:340px;font-size:64px;font-weight:600;letter-spacing:-.03em">
+    <span class="w" data-k="0.3" data-ko="3.25">Every </span><span class="w" data-k="0.62" data-ko="3.28">day, </span><span class="w" data-k="1.05" data-ko="3.31">your </span><span class="w" data-k="1.25" data-ko="3.34">company </span><span class="w" data-k="1.7" data-ko="3.37">moves</span>
+  </div>
+  <div class="center h" style="top:430px;font-size:150px">
+    <span class="w iri" data-k="2.05" data-ko="3.3">thousands </span><span class="w" data-k="2.55" data-ko="3.35">of </span><span class="w" data-k="2.72" data-ko="3.4">documents.</span>
+  </div>
+  <div class="center h" style="top:420px;font-size:150px">
+    <span class="w" data-k="3.4">Full </span><span class="w" data-k="3.6">of </span><span class="w iri" data-k="3.8">personal data.</span>
+  </div>
+</div>
+
+<!-- S2: find + make it disappear -->
+<div class="scene" id="s2">
+  <div class="stack">
+    <div class="h" style="font-size:98px">
+      <div><span class="w" data-k="5.3" data-ko="9.75" id="l1">Every name.</span></div>
+      <div><span class="w" data-k="7.08" data-ko="9.8" id="l2">Every ID.</span></div>
+      <div><span class="w" data-k="8.25" data-ko="9.85" id="l3">Every account.</span></div>
+    </div>
+  </div>
+  <div class="stack"><div class="h" style="font-size:110px">
+    <div><span class="w" data-k="9.95">And </span><span class="w" data-k="10.1">makes </span><span class="w" data-k="10.25">it</span></div>
+    <div id="dis"></div>
+  </div></div>
+  <div id="doc" class="glass">
+    <div class="title">Client Onboarding Form</div>
+    <div class="sub">Ref. 2026-0481 · Confidential</div>
+    <div id="rows"></div>
+    <div id="scan"></div>
+    <div id="dust"></div>
+  </div>
+</div>
+
+<!-- S3: API -->
+<div class="scene" id="s3">
+  <div class="center h" style="top:118px;font-size:104px">
+    <span class="w" data-k="11.75">One API. </span><span class="w" data-k="13.05">Every client. </span><span class="w iri" data-k="14.6">Any scale.</span>
+  </div>
+  <div id="code" class="glass">
+    <div class="bar"><b style="background:#ff5f57"></b><b style="background:#febc2e"></b><b style="background:#28c840"></b></div>
+    <div class="body mono" id="cbody"></div>
+    <div id="log" class="mono"><div class="in" id="login"></div></div>
+  </div>
+  <div id="pipe"><i></i><i></i><i></i></div>
+  <div id="vp" class="glass"><div id="tiles"></div></div>
+</div>
+
+<!-- S4: privacy -->
+<div class="scene" id="s4">
+  <div id="p4a" style="position:absolute;inset:0">
+    <div class="center h" style="top:240px;font-size:140px">
+      <span class="w" data-k="16.45">Kept </span><span class="w" data-k="16.7">in </span><span class="w iri" data-k="16.9">memory.</span>
+    </div>
+    <div class="center h" style="top:400px;font-size:84px;font-weight:600;letter-spacing:-.035em">
+      <span class="w dim" data-k="18.05">Never </span><span class="w dim" data-k="18.3">in </span><span class="w dim" data-k="18.42">a </span><span class="w" data-k="18.55">database.</span>
+    </div>
+    <div id="flow">
+      <div class="fdoc" id="fin"><i style="width:70%"></i><i class="c" style="width:85%;background:#2393f1"></i><i style="width:60%"></i><i class="c" style="width:75%;background:#9260da"></i><i style="width:80%"></i><i class="c" style="width:55%;background:#eb7c33"></i></div>
+      <div class="fline" id="fl1"><b></b><b></b><b></b></div>
+      <div id="mem"><div class="pins t"></div><div class="pins b"></div><div class="cells"></div><span>in memory</span></div>
+      <div class="fline" id="fl2"><b></b><b></b><b></b></div>
+      <div class="fdoc" id="fout"><i style="width:70%"></i><i class="m" style="width:85%"></i><i style="width:60%"></i><i class="m" style="width:75%"></i><i style="width:80%"></i><i class="m" style="width:55%"></i></div>
+      <svg id="dbl" width="200" height="140" viewBox="0 0 200 140"><line id="dbline" x1="100" y1="0" x2="100" y2="58" stroke="#3a3a3a" stroke-width="3" stroke-dasharray="6 6"/><g id="dbx" stroke="#e93a4e" stroke-width="4" stroke-linecap="round"><line x1="88" y1="17" x2="112" y2="41"/><line x1="112" y1="17" x2="88" y2="41"/></g>
+        <g id="dbc" fill="none" stroke="#5a5a5a" stroke-width="3"><ellipse cx="100" cy="76" rx="42" ry="11"/><path d="M58 76v40c0 6 19 11 42 11s42-5 42-11V76"/><path d="M58 96c0 6 19 11 42 11s42-5 42-11"/></g></svg>
+    </div>
+  </div>
+  <div id="p4b" style="position:absolute;inset:0;opacity:0">
+    <div class="stack" style="width:880px">
+      <div class="h" style="font-size:104px"><span class="w" data-k="19.75">Built </span><span class="w" data-k="19.95">to </span><span class="w" data-k="20.05">run</span></div>
+      <div class="h" style="font-size:104px"><span class="w" data-k="20.2">on </span><span class="w iri" data-k="20.4">your own</span></div>
+      <div class="h" style="font-size:104px"><span class="w iri" data-k="20.7">infrastructure.</span></div>
+    </div>
+    <div id="infra">
+      <svg viewBox="0 0 640 700"><rect id="bound" x="4" y="4" width="632" height="692" rx="6" fill="none" stroke="#5fa7ff" stroke-width="3" stroke-dasharray="14 10"/></svg>
+      <div class="lbl">YOUR INFRASTRUCTURE</div>
+      <div class="srv" id="sv0" style="top:70px"><i></i><i></i><i></i><div class="slots"><span></span><span></span><span></span><span></span></div></div>
+      <div class="srv" id="sv1" style="top:184px"><i></i><i></i><i></i><div class="slots"><span></span><span></span><span></span><span></span></div></div>
+      <div class="srv" id="sv2" style="top:298px"><i></i><i></i><i></i><div class="slots"><span></span><span></span><span></span><span></span></div></div>
+      <div id="chip">AI model<small>your deployment</small></div>
+    </div>
+  </div>
+</div>
+
+<!-- S5: accuracy -->
+<div class="scene" id="s5">
+  <div class="stack" style="width:860px">
+    <div class="h" style="font-size:140px"><span class="w" data-k="22.75">Checked.</span></div>
+    <div class="h" style="font-size:140px"><span class="w" data-k="23.9">Explained.</span></div>
+    <div class="h" style="font-size:140px"><span class="w iri" data-k="24.6">Auditable.</span></div>
+  </div>
+  <div id="panel" class="glass">
+    <div class="hd"><h3>Review</h3><span class="cnt">26 items · 0 open</span></div>
+    <div id="rvs"></div>
+    <div id="audit"><span>report.md</span><span style="color:#9e9e9e;font-weight:400">audit trail exported</span><span class="bar2"><i id="abar"></i></span></div>
+  </div>
+</div>
+
+<!-- S6: wordmark washed in from the left like the site's intro, then settles above the tagline -->
+<div class="scene" id="s6">
+  <div class="center h" style="top:620px;font-size:60px">
+    <span class="w" data-k="26.72">Share </span><span class="w" data-k="26.86">the </span><span class="w" data-k="26.98">document. </span><span class="w iri" data-k="28.05">Not the person.</span>
+  </div>
+</div>
+<svg id="logo" viewBox="0 0 726 334" fill="currentColor"><path fill-rule="evenodd" d="__WORDMARK__"/></svg>
+</div>
+
+<script>
+const clamp=(x,a=0,b=1)=>Math.min(b,Math.max(a,x));
+const P=(t,a,b)=>clamp((t-a)/(b-a));
+const eo=x=>1-Math.pow(1-x,4);
+const eio=x=>x<.5?8*x*x*x*x:1-Math.pow(-2*x+2,4)/2;
+const back=x=>{const c=1.5;return 1+(c+1)*Math.pow(x-1,3)+c*Math.pow(x-1,2)};
+const L=(a,b,x)=>a+(b-a)*x;
+// CSS cubic-bezier(x1,y1,x2,y2) as a function of progress, for the site's own curves.
+const bez=(x1,y1,x2,y2)=>x=>{if(x<=0)return 0;if(x>=1)return 1;let lo=0,hi=1,u=x;for(let i=0;i<30;i++){u=(lo+hi)/2;const bx=3*(1-u)*(1-u)*u*x1+3*(1-u)*u*u*x2+u*u*u;if(bx<x)lo=u;else hi=u}return 3*(1-u)*(1-u)*u*y1+3*(1-u)*u*u*y2+u*u*u};
+const REVEAL=bez(.6,.05,.3,1), FLY=bez(.65,0,.25,1), EASE=bez(.25,.1,.25,1);
+const $=id=>document.getElementById(id);
+const FPS=30;
+const HERO={a:{n:__NA__,start:0,end:5.15}};
+
+// ---------- build ----------
+// group: 0 name, 1 id, 2 financial
+const ROWS=[['Full name','Ana Sofia Ribeiro',0],['Citizen card','15482337 4ZX9',1],['Tax ID','245 118 903',1],['Address','Rua das Flores 112, Lisboa',1],['Phone','+351 912 445 210',1],['IBAN','PT50 0035 0412 0001 2345',2],['Card','4539 1488 0343 6467',2],['Emergency contact','Miguel Costa',0]];
+const GC=['#2393f1','#9260da','#eb7c33'], GN=['Name','ID','Financial'], GT=[5.35,7.12,8.3];
+$('rows').innerHTML=ROWS.map((r,i)=>`<div class="row"><span class="lab">${r[0]}</span><span class="val" id="v${i}"><span class="hl" style="background:${GC[r[2]]}22;box-shadow:inset 0 0 0 1.5px ${GC[r[2]]}"></span><span class="tx">${r[1]}</span><span class="mask"></span><span class="chip" style="background:${GC[r[2]]}">${GN[r[2]]}</span></span></div>`).join('');
+$('dis').innerHTML=[...'disappear.'].map((ch,i)=>`<span class="w iri" data-k="${10.45+i*0.03}" data-gone="${11.0+i*0.04}">${ch}</span>`).join('');
+// dust particles that fly off when values vanish
+const dust=[];{const d=$('dust');for(let i=0;i<70;i++){const e=document.createElement('i');const r=i%ROWS.length;e.style.background=GC[ROWS[r][2]];d.appendChild(e);
+  const s=Math.sin(i*12.9898)*43758.5453;const f=s-Math.floor(s);dust.push({el:e,row:r,x:225+f*300,dx:(f-.3)*260,dy:-60-((i*37)%90),d:((i*13)%10)/40})}}
+
+const CODE=[['$ ','c-dim'],['curl -X POST $LETHE/api/documents \\','c-cmd'],['\n    -F ','c-cmd'],['"file=@contract_0481.pdf"','c-str']];
+const CODETXT=CODE.map(c=>c[0]).join('');
+const RESP=`\n\n<span class="c-dim">{</span>\n  <span class="c-key">"status"</span>: <span class="c-str">"anonymized"</span>,\n  <span class="c-key">"entities"</span>: <span class="c-key">26</span>,\n  <span class="c-key">"report"</span>: <span class="c-str">"report.md"</span>\n<span class="c-dim">}</span>`;
+const SECT=['bank','hospital','insurer','telecom','lawfirm','retail','univ','gov','pharma','energy'];
+let logh='';for(let i=0;i<60;i++){const s=SECT[(i*7)%10];const id=String(100+((i*137)%900)).padStart(4,'0');logh+=`<div><span class="ok">200</span>  POST /api/documents  <span style="color:#5fa7ff">${s}-${id}</span>  anonymized</div>`}
+$('login').innerHTML=logh;
+const NAMES=['Bank','Hospital','Insurer','Telecom','Law firm','Retailer','University','Public sector','Pharma','Energy','Logistics','Airline'];
+const ICC=['#2393f1','#9260da','#00aa9a','#eb7c33','#e93a4e','#24a965','#5fa7ff','#d9a21b'];
+const tiles=[];const tl=$('tiles');
+for(let r=0;r<8;r++)for(let c=0;c<12;c++){const d=document.createElement('div');d.className='tile';const col=ICC[(r*5+c*3)%8];
+  d.innerHTML=`<div class="ic" style="background:${col}22;box-shadow:inset 0 0 0 2px ${col}66"></div><div class="nm"><span>${NAMES[(r*5+c*7)%12]}</span><span class="dot"></span></div>`;
+  tl.appendChild(d);tiles.push({el:d,dot:d.querySelector('.dot'),dist:Math.hypot(c-5.5,r-3.5)})}
+
+const RV=[['Name · data subject','#2393f1','Personal name in header'],['Tax ID · data subject','#9260da','9-digit NIF, checksum valid'],['Phone · data subject','#00aa9a','Mobile number, PT format'],['IBAN · data subject','#eb7c33','IBAN, check digits valid'],['Health · special category','#e93a4e','Diagnosis linked to person'],['Emergency contact · third party','#2393f1','Name of related person']];
+$('rvs').innerHTML=RV.map((r,i)=>`<div class="rv" id="r${i}"><span class="cd" style="background:${r[1]}"></span><div class="meta"><b>${r[0].split(' · ')[0]} <span style="font-size:15px;color:#9e9e9e;font-weight:400">· ${r[0].split(' · ')[1]}</span></b><span class="why">${r[2]}</span></div><span class="bars"></span><span class="ok">✓</span></div>`).join('');
+
+{const c=document.querySelector('#mem .cells');c.innerHTML='<i></i>'.repeat(24)}
+const kins=[...document.querySelectorAll('[data-k]')].map(el=>({el,k:+el.dataset.k,ko:el.dataset.ko?+el.dataset.ko:null,g:el.dataset.gone?+el.dataset.gone:null}));
+const iris=[...document.querySelectorAll('.iri')];
+
+function env(el,t,a,b,{inD=.45,outD=.4,first=false,last=false}={}){
+  if(t<a-0.01||t>b+0.01){el.style.opacity=0;el.style.visibility='hidden';return false}
+  el.style.visibility='visible';
+  const i=first?1:eo(P(t,a,a+inD)), o=last?0:eio(P(t,b-outD,b));
+  const s=L(.9,1,i)*L(1,1.16,o); const bl=(1-i)*24+o*28;
+  el.style.opacity=Math.min(i,1-o);
+  el.style.transform=`scale(${s})`;
+  el.style.filter=bl>.05?`blur(${bl}px)`:'none';
+  return true;
+}
+function kin(t){for(const o of kins){let x=eo(P(t,o.k,o.k+.55));let y=(1-x)*46,bl=(1-x)*14,op=x,sc=L(.94,1,x);
+  if(o.ko!=null){const z=eio(P(t,o.ko,o.ko+.32));op*=1-z;y-=z*36;bl+=z*14}
+  if(o.g!=null){const z=eo(P(t,o.g,o.g+.5));op*=1-z;y-=z*24;bl+=z*18;sc*=L(1,1.25,z)}
+  o.el.style.opacity=op;o.el.style.transform=`translateY(${y}px) scale(${sc})`;o.el.style.filter=bl>.05?`blur(${bl}px)`:'none'}}
+
+function heroFrame(img,dir,h,t){
+  const f=1+Math.min(h.n-1,Math.max(0,Math.floor((t-h.start)/(h.end-h.start)*h.n)));
+  const src=`${dir}/${String(f).padStart(4,'0')}.jpg`;
+  if(img.getAttribute('src')===src)return null;
+  img.setAttribute('src',src);
+  return img.decode().catch(()=>{});
+}
+
+// ---------- timeline ----------
+window.seek=function(t){
+  const waits=[];
+  kin(t);
+  for(const e of iris)e.style.backgroundPosition=`${(t*18)%220}% 0`;
+  $('b1').style.transform=`translate(${-250+Math.sin(t*.35)*200}px,${-300+Math.cos(t*.27)*140}px)`;
+  $('b2').style.transform=`translate(${1250+Math.cos(t*.3)*180}px,${450+Math.sin(t*.4)*140}px)`;
+  $('b3').style.transform=`translate(${600+Math.sin(t*.22)*300}px,${600+Math.cos(t*.33)*120}px)`;
+  $('stage').style.opacity=eo(P(t,0,.4))*(t>29.3?1-eio(P(t,29.3,30)):1);
+
+  // S1 hero A
+  if(env($('s1'),t,0,5.15,{first:true})){
+    const w=heroFrame($('heroA'),'assets/heroA',HERO.a,t);if(w)waits.push(w);
+    $('heroA').style.transform=`scale(${L(1.0,1.08,P(t,0,5.15))})`;
+  }
+
+  // S2 doc 4.95 - 11.55
+  if(env($('s2'),t,4.95,11.55)){
+    const d=$('doc');const e=eo(P(t,5.0,5.9));
+    d.style.transform=`perspective(1800px) translateX(${(1-e)*240}px) rotateY(${L(-24,-7,e)+P(t,5.9,11.55)*4}deg) scale(${L(.9,1,e)})`;
+    const sp=P(t,5.0,6.1);$('scan').style.top=`${L(-160,840,eio(sp))}px`;$('scan').style.opacity=sp>0&&sp<1?1:0;
+    // active line highlight on left
+    [['l1',5.3,7.08],['l2',7.08,8.25],['l3',8.25,9.75]].forEach(([id,a,b])=>{$(id).style.color=(t>=a&&t<b)?'#eeeeee':'#4a4a4a'});
+    ROWS.forEach((r,i)=>{const v=$('v'+i);const ht=GT[r[2]]+(i%4)*0.07;const x=back(P(t,ht,ht+.4));
+      const hl=v.querySelector('.hl'),ch=v.querySelector('.chip'),m=v.querySelector('.mask'),tx=v.querySelector('.tx');
+      hl.style.opacity=clamp(x);hl.style.transform=`scale(${L(.85,1,clamp(x))})`;
+      ch.style.opacity=clamp(x)*(1-eo(P(t,10.9,11.3)));ch.style.transform=`translate(100%,-50%) translateY(${(1-clamp(x))*12}px)`;
+      const mt=10.45+i*0.07;const mx=eio(P(t,mt,mt+.38));m.style.transform=`scaleX(${mx})`;
+      tx.style.opacity=1-P(t,mt+.1,mt+.3);tx.style.filter=`blur(${P(t,mt,mt+.3)*8}px)`;hl.style.opacity=clamp(x)*(1-P(t,mt+.2,mt+.4))});
+    for(const p of dust){const mt=10.45+p.row*0.07+p.d;const z=P(t,mt,mt+.9);const ze=eo(z);
+      p.el.style.left=`${p.x+p.dx*ze}px`;p.el.style.top=`${170+p.row*76+p.dy*ze}px`;p.el.style.opacity=z>0&&z<1?(1-z)*.9:0;p.el.style.transform=`scale(${1-z*.6})`}
+  }
+
+  // S3 API 11.4 - 16.25
+  if(env($('s3'),t,11.4,16.25)){
+    const ce=eo(P(t,11.5,12.1));$('code').style.transform=`translateY(${(1-ce)*80}px)`;$('code').style.opacity=ce;
+    const n=Math.floor(P(t,11.8,12.7)*CODETXT.length);let left=n,h='';
+    for(const [s,c] of CODE){const part=s.slice(0,Math.max(0,left));left-=s.length;h+=`<span class="${c}">${part}</span>`}
+    const showResp=t>12.95;h+=showResp?`<span style="opacity:${eo(P(t,12.95,13.3))}">${RESP}</span>`:'';
+    if(!showResp&&Math.floor(t*2.5)%2===0)h+='<span style="background:#cfcfcf">&nbsp;</span>';
+    $('cbody').innerHTML=h;
+    const lg=P(t,13.4,16.25);$('login').style.transform=`translateY(${150-lg*lg*1500}px)`;$('log').style.opacity=eo(P(t,13.3,13.6));
+    const ve=eo(P(t,12.2,12.9));$('vp').style.opacity=ve;$('vp').style.transform=`translateX(${(1-ve)*120}px)`;
+    const z=eio(P(t,14.2,15.6));tl.style.transform=`translate(-50%,-50%) scale(${L(1.05,0.42,z)})`;
+    for(const ti of tiles){const a=13.1+ti.dist*0.1;const x=back(P(t,a,a+.4));ti.el.style.opacity=clamp(x*1.3);ti.el.style.transform=`scale(${Math.max(0,x)})`;
+      ti.dot.style.background=t>a+0.5+((ti.dist*7)%1)*0.4?'#24a965':'#2e2e2e'}
+    [...$('pipe').children].forEach((el,k)=>{el.style.left=`${(((t*1.6+k/3)%1)*66)-16}px`;el.style.opacity=P(t,12.8,13.1)});
+  }
+
+  // S4 privacy 16.1 - 22.3. Two screens; their visuals arrive early and stay to the swap.
+  if(env($('s4'),t,16.1,22.3)){
+    const a=eio(P(t,19.45,19.75));$('p4a').style.opacity=1-a;$('p4a').style.transform=`scale(${L(1,1.15,a)})`;$('p4a').style.filter=a>0?`blur(${a*20}px)`:'none';
+    // memory flow (16.9 - 19.45): doc in, processed in memory, masked doc out; db link cut on "database"
+    {const fi=eo(P(t,16.85,17.35));$('fin').style.opacity=fi;$('fin').style.transform=`translateX(${(1-fi)*-60}px)`;
+     const me=back(P(t,16.95,17.4));$('mem').style.opacity=clamp(me);$('mem').style.transform=`scale(${L(.85,1,clamp(me))})`;
+     [['fl1',17.3],['fl2',17.9]].forEach(([id,a])=>{const el=$(id);el.style.opacity=eo(P(t,a-.1,a+.2));[...el.children].forEach((d,k)=>{d.style.left=`${(((t-a)*1.1+k/3)%1+1)%1*216-26}px`;d.style.opacity=t>a?1:0})});
+     const busy=P(t,17.4,19.45);[...document.querySelectorAll('#mem .cells i')].forEach((c,k)=>{const on=t>17.45&&((Math.floor(t*9)+k*7)%5===0);c.style.background=on?'#5fa7ff':(t>17.45&&(k*3+Math.floor(t*4))%7===0?'#1a2c44':'#262626')});
+     const fo=eo(P(t,18.0,18.5));$('fout').style.opacity=fo;$('fout').style.transform=`translateX(${(1-fo)*-60}px)`;
+     [...document.querySelectorAll('#fout i.m')].forEach((m,k)=>{m.style.transform=`scaleX(${eio(P(t,18.15+k*.1,18.45+k*.1))})`;m.style.transformOrigin='left'});
+     const dl=eo(P(t,18.3,18.7));$('dbline').style.opacity=dl;$('dbc').style.opacity=.25+.75*eo(P(t,18.4,18.8))*(1-.6*eo(P(t,18.95,19.3)));
+     const x=back(P(t,18.6,18.95));$('dbx').style.opacity=clamp(x);$('dbx').style.transform=`scale(${Math.max(0,x)})`;$('dbx').style.transformOrigin='100px 29px';
+     $('dbl').style.opacity=t>18.25?1:0;}
+    const b=eo(P(t,19.55,19.95));$('p4b').style.opacity=b;$('p4b').style.transform=`scale(${L(.92,1,b)})`;$('p4b').style.filter=b<1?`blur(${(1-b)*20}px)`:'none';
+    $('bound').style.opacity=eo(P(t,19.6,20.0));$('bound').style.strokeDashoffset=-t*30;document.querySelector('#infra .lbl').style.opacity=eo(P(t,19.7,20.1));
+    $('infra').style.transform=`scale(${L(.94,1,eo(P(t,19.55,20.3)))})`;
+    for(let k=0;k<3;k++){const s=$('sv'+k);const x=eo(P(t,19.75+k*.12,20.2+k*.12));s.style.opacity=x;s.style.transform=`translateY(${(1-x)*50}px)`;
+      [...s.querySelectorAll('i')].forEach((led,j)=>{led.style.background=(Math.floor(t*6+k*3+j*5)%4===0||j===0)?'#24a965':'#2e2e2e'})}
+    const cx=back(P(t,20.25,20.7));const ch=$('chip');ch.style.transform=`scale(${Math.max(0,cx)})`;ch.style.boxShadow=`0 0 ${50+Math.sin(t*4)*20}px rgba(95,167,255,.35)`;
+  }
+
+  // S5 accuracy 22.1 - 25.75
+  if(env($('s5'),t,22.1,25.75)){
+    const pe=eo(P(t,22.2,22.8));$('panel').style.transform=`perspective(1800px) translateX(${(1-pe)*260}px) rotateY(${L(-22,-6,pe)}deg)`;$('panel').style.opacity=pe;
+    RV.forEach((r,i)=>{const row=$('r'+i);const x=eo(P(t,22.3+i*.08,22.7+i*.08));row.style.opacity=x;row.style.transform=`translateY(${(1-x)*24}px)`;
+      const ok=row.querySelector('.ok');const pa=back(P(t,22.8+i*.14,23.15+i*.14));ok.style.transform=`scale(${Math.max(0,pa)})`;
+      const why=row.querySelector('.why');const wx=eo(P(t,23.9+i*.1,24.2+i*.1));why.style.opacity=.25+.75*wx;why.style.color=wx>.5?'#d6d6d6':'#9e9e9e'});
+    const ae=eo(P(t,24.5,24.9));$('audit').style.opacity=ae;$('audit').style.transform=`translateY(${(1-ae)*30}px)`;$('abar').style.width=`${eio(P(t,24.6,25.4))*100}%`;
+  }
+
+  // S6 25.6 - 30: the site's IntroAnimation motion. The wordmark is revealed with
+  // clip-path over 1.5 s (cubic-bezier(.6,.05,.3,1), .15 s delay), then moves in 1 s
+  // (cubic-bezier(.65,0,.25,1)) — here it settles smaller above the tagline.
+  const I=25.6, WIPE=I+.15, FLYAT=I+1.75;
+  env($('s6'),t,I,30.5,{last:true,inD:.01});
+  {const lg=$('logo');const on=t>=I&&t<=30.5;lg.style.visibility=on?'visible':'hidden';
+   if(on){const r=REVEAL(P(t,WIPE,WIPE+1.5));lg.style.clipPath=`inset(-10% ${(1-r)*100}% -10% 0)`;
+     const f=FLY(P(t,FLYAT,FLYAT+1));const sc=L(1,.76,f);
+     lg.style.transform=`translate(${L(0,560*(1-.76)/2,f)}px,${L(0,40,f)}px) scale(${sc})`;}}
+  return Promise.all(waits);
+};
+seek(0);
+</script>
+</body></html>

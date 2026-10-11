@@ -144,8 +144,12 @@ def unread_lines(image: Image.Image, lines: list[list["OcrWord"]]) -> int:
     return len(unread_blobs(image, lines))
 
 
-# A word read again from a skipped zone must be this sure to count.
+# A word read again from a skipped zone must be this sure to count, unless it
+# is long: an email read as "name(&host.pt" gets a low score because of the
+# "@", yet it is clearly there, and a short guess at that score is noise.
 RECOVER_CONFIDENCE = 40
+WEAK_CONFIDENCE = 25
+WEAK_MIN_CHARS = 6
 # A word whose box mostly lies over a box already read is the same word.
 SAME_WORD_OVERLAP = 0.5
 
@@ -168,6 +172,16 @@ def _same_word(box: "Box", lines: list[list["OcrWord"]]):
             if own and shared >= SAME_WORD_OVERLAP * own:
                 return i, j
     return None
+
+
+def _worth_keeping(word: "OcrWord") -> bool:
+    """Whether a word read again from a skipped zone is real text."""
+    chars = sum(c.isalnum() for c in word.text)
+    if not chars:
+        return False
+    return (word.confidence >= RECOVER_CONFIDENCE
+            or (word.confidence >= WEAK_CONFIDENCE
+                and chars >= WEAK_MIN_CHARS))
 
 
 def _read_zone(image: Image.Image, zone: "Box") -> list["OcrWord"]:
@@ -198,11 +212,7 @@ def recover_unread(image: Image.Image, lines: list[list["OcrWord"]]):
         # The whole strip of the line, not just the blob: ink left over from
         # a word already read is only a fragment of that word.
         zone = Box(0, blob.top, image.width, blob.bottom).padded(image.size)
-        words = [
-            w for w in _read_zone(image, zone)
-            if w.confidence >= RECOVER_CONFIDENCE
-            and any(c.isalnum() for c in w.text)
-        ]
+        words = [w for w in _read_zone(image, zone) if _worth_keeping(w)]
         fresh = []
         for word in words:
             at = _same_word(word.box, lines)

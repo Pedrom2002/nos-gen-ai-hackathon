@@ -136,17 +136,25 @@ def even_light(image: Image.Image) -> Image.Image:
     return ImageOps.autocontrast(flat, cutoff=1)
 
 
-def unread_blobs(image: Image.Image,
-                 lines: list[list["OcrWord"]]) -> list["Box"]:
+def ink_mask(image: Image.Image, lit: Image.Image | None = None) -> np.ndarray:
+    """Where the (evenly lit) image has ink. ``lit`` is ``even_light(image)``
+    when the caller already has it, so it is not computed again."""
+    return np.asarray(lit if lit is not None else even_light(image)) < INK
+
+
+def unread_blobs(image: Image.Image, lines: list[list["OcrWord"]], *,
+                 ink: np.ndarray | None = None) -> list["Box"]:
     """Return the zones of the image with a line of text OCR did not read.
 
     Ink outside every word box is merged along the line; a blob with the
     height and length of a line of text means text that was never read,
-    so it was never checked by the model either.
+    so it was never checked by the model either. ``ink`` (see ``ink_mask``)
+    can be given so several calls on one page share it.
     """
     heights = [word.box.height for line in lines for word in line]
     height = float(np.median(heights)) if heights else 20.0
-    ink = np.asarray(even_light(image)) < INK
+    if ink is None:
+        ink = ink_mask(image)
     covered = Image.new("L", image.size, 0)
     draw = ImageDraw.Draw(covered)
     for line in lines:
@@ -155,8 +163,13 @@ def unread_blobs(image: Image.Image,
             draw.rectangle([box.left, box.top, box.right, box.bottom],
                            fill=255)
     left = ink & (np.asarray(covered) == 0)
-    left = ndimage.binary_dilation(
-        left, structure=np.ones((1, max(3, int(height * 0.8)))))
+    # Merge the ink along the line: a running maximum over a window of about
+    # a word's height. It is the same as a binary dilation with a 1 x width
+    # structure (an even width is centred one pixel earlier) and 5x faster.
+    width = max(3, int(height * 0.8))
+    left = ndimage.maximum_filter1d(
+        left.astype(np.uint8), size=width, axis=1,
+        origin=0 if width % 2 else -1).astype(bool)
     labels, _ = ndimage.label(left)
     blobs = []
     for rows, cols in ndimage.find_objects(labels):
@@ -224,7 +237,8 @@ def _read_zone(image: Image.Image, zone: "Box") -> list["OcrWord"]:
     ]
 
 
-def recover_unread(image: Image.Image, lines: list[list["OcrWord"]]):
+def recover_unread(image: Image.Image, lines: list[list["OcrWord"]], *,
+                   lit: Image.Image | None = None):
     """Read again, one line at a time, the zones page OCR skipped.
 
     Page layout analysis sometimes drops a whole line of a photo, and a
@@ -232,11 +246,13 @@ def recover_unread(image: Image.Image, lines: list[list["OcrWord"]]):
     Reading the zone as a single line fixes both: lines OCR never saw are
     added, and a word already read gets the wider box, so a mask paints all
     of its ink. Returns all the lines and the zones that are still unread,
-    which cannot be trusted: nothing in them was masked or checked.
+    which cannot be trusted: nothing in them was masked or checked. ``lit``
+    is ``even_light(image)`` when the caller already has it.
     """
     lines = [list(line) for line in lines]
     found = []
-    for blob in unread_blobs(image, lines):
+    ink = ink_mask(image, lit)
+    for blob in unread_blobs(image, lines, ink=ink):
         # The whole strip of the line, not just the blob: ink left over from
         # a word already read is only a fragment of that word.
         zone = Box(0, blob.top, image.width, blob.bottom).padded(image.size)
@@ -255,7 +271,7 @@ def recover_unread(image: Image.Image, lines: list[list["OcrWord"]]):
     # What is still unread is measured again on the merged result, so a zone
     # only partly recovered (low-confidence words dropped) is never trusted.
     merged = merge_lines(lines, found)
-    return merged, unread_blobs(image, merged)
+    return merged, unread_blobs(image, merged, ink=ink)
 
 
 def merge_lines(lines: list[list["OcrWord"]],
@@ -270,15 +286,17 @@ def merge_lines(lines: list[list["OcrWord"]],
     return merged
 
 
-def read_image(image: Image.Image, psm: int = 3) -> list[list[OcrWord]]:
+def read_image(image: Image.Image, psm: int = 3, *,
+               lit: Image.Image | None = None) -> list[list[OcrWord]]:
     """Return the words of an RGB image grouped in lines, in reading order.
 
     ``image`` must already be prepared (see ``prepare``). ``psm`` is the
     Tesseract page segmentation mode: 3 for a page, 7 for a single line.
+    ``lit`` is ``even_light(image)`` when the caller already has it.
     """
     pytesseract = _pytesseract()
     scale = max(1, -(-MIN_WIDTH // image.width))
-    source = even_light(image)
+    source = lit if lit is not None else even_light(image)
     if scale > 1:
         source = source.resize((image.width * scale, image.height * scale),
                                Image.LANCZOS)

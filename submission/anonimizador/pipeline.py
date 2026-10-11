@@ -5,7 +5,8 @@ prompt -> Gemini (JSON) -> word-by-word alignment -> regex safety net.
 
 from dataclasses import dataclass, replace
 
-from anonimizador.align import MaskedWord, _render, align, count_dropped
+from anonimizador.align import (MaskedWord, _render, align, count_dropped,
+                                forget)
 from anonimizador.llm import DEFAULT_MODEL, InvalidResponseError, generate
 from anonimizador.ocr_fix import fix_lines
 from anonimizador.prompt import build_prompt, parse_response
@@ -117,6 +118,7 @@ def anonymize(lines: list[str], model: str = DEFAULT_MODEL,
         masked_lines, entities = parse_response(answer)
         break
     else:
+        forget()
         raise last_error
 
     result = align(lines, masked_lines, keep_punct=keep_punct)

@@ -13,6 +13,7 @@ import secrets
 import threading
 import time
 from collections import Counter
+from concurrent.futures import Future, ThreadPoolExecutor
 from dataclasses import dataclass, field
 from pathlib import Path
 from types import SimpleNamespace
@@ -95,6 +96,9 @@ class Session:
     output: list[str] = field(default_factory=list)
     masked: list = field(default_factory=list)
     touched: float = field(default_factory=lambda: time.monotonic())
+    # The redacted file being built (or built) for a set of masked
+    # positions; see _start_redaction.
+    redaction: tuple[tuple, Future] | None = None
 
     def masked_items(self) -> list[dict]:
         return [i for i in self.items if i["id"] not in self.keep]
@@ -106,6 +110,12 @@ STORE: dict[str, Session] = {}
 MAX_SESSIONS = 30
 SESSION_TTL = 30 * 60        # seconds without use before a document is dropped
 _STORE_LOCK = threading.Lock()
+# Redacted files are built in the background as soon as the masks are known
+# (upload, review): building and checking one takes seconds (a second OCR
+# pass for a photo), and the interface asks for it twice, for the preview
+# and for the download. A few at a time: each holds a decoded page.
+REDACTION_POOL = ThreadPoolExecutor(max_workers=2,
+                                    thread_name_prefix="redaction")
 
 
 def new_id() -> str:
@@ -225,8 +235,33 @@ def _create(name: str, source: Source) -> dict:
     doc_id = new_id()
     session = Session(name, source, lines, result, items, set(),
                       list(result.lines), list(result.masked))
+    _start_redaction(session)
     _remember(doc_id, session)
     return _state(doc_id, session)
+
+
+def _mask_key(masked: list) -> tuple:
+    return tuple((w.line, w.index) for w in masked)
+
+
+def _start_redaction(session: Session) -> None:
+    """Start building the redacted file for the session's current masks,
+    unless the file for exactly these masks is already being built.
+
+    Nothing is started when no file can be given (text formats, or lines
+    the OCR never read): the request then explains why, as before.
+    """
+    if not session.source.redactable or session.source.unread:
+        return
+    key = _mask_key(session.masked)
+    if session.redaction is not None:
+        if session.redaction[0] == key:
+            return
+        # A superseded build that has not started yet is dropped.
+        session.redaction[1].cancel()
+    future = REDACTION_POOL.submit(redact, session.source, session.masked,
+                                   session.name, KEEP_PUNCT)
+    session.redaction = (key, future)
 
 
 @app.get("/api/health")
@@ -274,21 +309,29 @@ def set_decisions(doc_id: str, decisions: Decisions) -> dict:
         raise HTTPException(422, "Há dados que já não existem neste "
                                  "documento. Recarregue a revisão.") from None
     session.keep, session.output, session.masked = keep, output, masked
+    _start_redaction(session)
     return _state(doc_id, session)
 
 
 def _redacted(session: Session) -> Response:
     """The original file with the reviewer's current masks removed for good.
 
-    Built on request from memory and verified before it is sent; nothing is
-    written to disk.
+    Built from memory and verified before it is sent; nothing is written to
+    disk. The build started with the upload or the review (see
+    _start_redaction) is used when it is for the current masks, so the
+    preview and the download of the same review share one build.
     """
     if not session.source.redactable:
         raise HTTPException(404, "Este formato só tem saída em texto: use "
                                  "submission.")
+    _start_redaction(session)
     try:
-        result = redact(session.source, session.masked, session.name,
-                        KEEP_PUNCT)
+        if (session.redaction is not None
+                and session.redaction[0] == _mask_key(session.masked)):
+            result = session.redaction[1].result()
+        else:
+            result = redact(session.source, session.masked, session.name,
+                            KEEP_PUNCT)
     except RedactionError as error:
         raise HTTPException(422, str(error)) from None
     return Response(result.data, media_type=result.media_type, headers={

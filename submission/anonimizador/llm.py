@@ -21,6 +21,7 @@ backoff.
 import hashlib
 import json
 import os
+import threading
 import time
 from pathlib import Path
 
@@ -223,6 +224,37 @@ def make_client():
     return genai.Client(api_key=api_key)
 
 
+# One client per provider configuration, shared by every call: building a
+# client and opening its first connection is paid once, and later calls
+# reuse the connection pool (an OCR document makes two calls in a row).
+_CLIENTS: dict[tuple, object] = {}
+_CLIENTS_LOCK = threading.Lock()
+
+
+def _client_key() -> tuple:
+    """What the configured client depends on: a change in .env or the
+    environment gives a different key, and a new client."""
+    name = provider()
+    if name == "ollama":
+        return (name, os.getenv("OLLAMA_HOST") or DEFAULT_OLLAMA_HOST,
+                os.getenv("OLLAMA_NUM_CTX") or "")
+    if name == "openai":
+        return (name, os.getenv("OPENAI_BASE_URL") or DEFAULT_OPENAI_BASE_URL,
+                os.getenv("OPENAI_API_KEY") or "")
+    return (name, os.getenv("GEMINI_API_KEY") or "")
+
+
+def shared_client():
+    """The client for the configured provider, built on first use and then
+    reused. A configuration that fails (missing key) caches nothing."""
+    key = _client_key()
+    with _CLIENTS_LOCK:
+        client = _CLIENTS.get(key)
+        if client is None:
+            client = _CLIENTS[key] = make_client()
+    return client
+
+
 def _generate_once(client, prompt: str, model: str, temperature: float,
                    json_output: bool) -> str:
     if hasattr(client, "generate_text"):  # local provider
@@ -289,7 +321,7 @@ def generate(prompt: str, model: str = DEFAULT_MODEL,
         if validate is None or _passes(validate, cached):
             return cached
 
-    client = client or make_client()
+    client = client or shared_client()
     text = _call_with_retries(
         client, prompt, model, temperature, json_output, sleep
     )

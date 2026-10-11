@@ -48,12 +48,23 @@ def masked_spans(original_lines: list[str],
     ]
 
 
-def find_entity(text: str, entities: list[dict]) -> dict | None:
-    """Return the model entity that best matches a masked span."""
+def _prepared(entities: list[dict]) -> list[tuple[dict, str]]:
+    """Each entity with its bare text, computed once for a whole report."""
+    return [(entity, _bare(str(entity.get("text", ""))))
+            for entity in entities]
+
+
+def find_entity(text: str, entities: list[dict],
+                prepared: list[tuple[dict, str]] | None = None) -> dict | None:
+    """Return the model entity that best matches a masked span.
+
+    ``prepared`` (see ``_prepared``) spares normalising every entity again
+    for every span; a long document has hundreds of each.
+    """
     target = _bare(text)
     best = None
-    for entity in entities:
-        candidate = _bare(str(entity.get("text", "")))
+    for entity, candidate in prepared if prepared is not None \
+            else _prepared(entities):
         if not candidate:
             continue
         if candidate == target:
@@ -66,13 +77,14 @@ def find_entity(text: str, entities: list[dict]) -> dict | None:
 def build_report(original_lines: list[str], result) -> dict:
     """Build the report for a pipeline result (pipeline.Anonymized)."""
     safety = {(w.line, w.index) for w in result.safety_masked}
+    prepared = _prepared(result.entities)
     items = []
     for span in masked_spans(original_lines, result.masked):
         by_safety_net = all(
             (span.line, i) in safety for i in range(span.first, span.last + 1)
         )
         entity = None if by_safety_net else find_entity(
-            span.text, result.entities
+            span.text, result.entities, prepared
         )
         entity = entity or {}
         items.append({

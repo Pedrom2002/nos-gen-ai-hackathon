@@ -331,3 +331,56 @@ def test_csv_is_masked_cell_by_cell_and_comes_back_as_csv(
     kept = list(csv.reader(io.StringIO(
         client.get(url).content.decode("utf-8-sig"))))
     assert kept[1][0] == "Maria Santos"
+
+
+def test_the_redacted_file_is_built_once_per_review(client, monkeypatch):
+    from anonimizador import redact as redact_module
+    from tests.test_redact import make_docx, names_only
+
+    builds = []
+
+    def counted(*args, **kwargs):
+        builds.append(args[1])  # the masked words of that build
+        return redact_module.redact(*args, **kwargs)
+
+    monkeypatch.setattr(main, "generate_fn", names_only)
+    monkeypatch.setattr(main, "redact", counted)
+    doc = client.post("/api/documents", files={
+        "file": ("ficha.docx", make_docx(), DOCX_TYPE)}).json()
+    url = f"/api/documents/{doc['id']}/download/redacted"
+    # The build starts with the upload; the preview and the download reuse it.
+    first, second = client.get(url), client.get(url)
+    assert first.status_code == second.status_code == 200
+    assert first.content == second.content
+    assert len(builds) == 1
+    # The same review again changes nothing; a new review builds a new file.
+    client.put(f"/api/documents/{doc['id']}/decisions", json={"keep": []})
+    assert client.get(url).status_code == 200 and len(builds) == 1
+    name = next(i for i in doc["items"] if i["text"] == "Maria Santos")
+    client.put(f"/api/documents/{doc['id']}/decisions",
+               json={"keep": [name["id"]]})
+    kept = client.get(url)
+    assert kept.status_code == 200 and kept.content != first.content
+    assert len(builds) == 2 and len(builds[1]) < len(builds[0])
+
+
+def test_no_redacted_file_is_built_for_text_or_unread_documents(
+        client, monkeypatch):
+    from anonimizador.sources import load_source
+
+    monkeypatch.setattr(main, "redact", lambda *a, **k: pytest.fail(
+        "a text document started a redacted file"))
+    doc = client.post("/api/documents", files={
+        "file": ("notas.txt", "Nome: Rui".encode(), "text/plain")}).json()
+    assert main.STORE[doc["id"]].redaction is None
+
+    def read_with_unread_lines(data, suffix):
+        source = load_source(data, suffix)
+        source.unread = 1
+        return source
+
+    monkeypatch.setattr(main, "_read", read_with_unread_lines)
+    from tests.test_redact import make_docx
+    doc = client.post("/api/documents", files={
+        "file": ("ficha.docx", make_docx(), DOCX_TYPE)}).json()
+    assert main.STORE[doc["id"]].redaction is None

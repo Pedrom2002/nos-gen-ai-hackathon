@@ -242,7 +242,18 @@ The API needs Tesseract and the Gemini key, which do not fit a static host, so f
 
 ## Performance
 
-Measured on a photo of the official document: about 10 s to upload (OCR 2.5 s, model 5.5 s, the rest is fixed work) and 3 s to build and verify the redacted file. The model is the largest part and only shrinks by changing the prompt format, which would change the deliverable. What was tried for the OCR:
+Measured on a photo of the official document: about 10 s to upload (OCR 2.5 s, model 5.5 s, the rest is fixed work) and 3 s to build and verify the redacted file. The model is the largest part and only shrinks by changing the prompt format, which would change the deliverable.
+
+For text documents the work outside the model takes under 30 ms. For photos and scans it was measured stage by stage (model stubbed, so only the local work counts) and the waste removed, with the OCR output checked to be identical on every test photo and scan:
+
+| Document | Upload, local work | Redacted file | After | |
+|---|---|---|---|---|
+| Phone photo, 12 MP, tilted | 6.8 s | 5.1 s | 3.4 s and 3.1 s | the file is ready when the review is, so the preview and the download take 5 ms |
+| Scan at 300 dpi | 4.3 s | 2.2 s | 2.1 s and 1.6 s | |
+| Scanned PDF, 2 pages | 3.4 s | 6.0 s | 1.9 s and 2.6 s | |
+| Text of 8 000 words (the limit) | 2.6 s | | 0.6 s | |
+
+What was tried:
 
 | Idea | Result | Used |
 |---|---|---|
@@ -250,6 +261,14 @@ Measured on a photo of the official document: about 10 s to upload (OCR 2.5 s, m
 | Cut a page into bands read at the same time | OCR 48% faster, but 134 against 135 sensitive words read and twice the unread zones | no |
 | Enlarge the image less before OCR | 25% faster, one word lost | no |
 | One Tesseract thread | slower | no |
+| Tesseract options (`--oem 1`, no inverted pass, uncompressed temporary image, image on stdin) | no gain, or slower | no |
+| Even the page's light once per page instead of three times (OCR, unread-line search, again after recovery) | identical result, 0.3 s less per page | yes |
+| Running maximum instead of a 1 x 30 binary dilation in the unread-line search | identical pixels, 5x faster (0.4 s to 0.07 s per call, two calls per page) | yes |
+| PNG compression level 3 instead of 6 for the redacted photo | half the encoding time, file 7% larger | yes |
+| Build the redacted file in the background as soon as the review is known, and reuse it | the preview and the download of the same review share one build; a new review starts a new one | yes |
+| One model client per configuration instead of one per call | the connection is reused by the two calls an OCR document makes | yes |
+| Normalise the model's entities once per report, and diff the answer once for the validation and the alignment | 8 000-word text 2.6 s to 0.6 s | yes |
+| Scanned PDF page inserted from pixels instead of a PNG stream | 5% on a 300 dpi page | no |
 
 ## Team
 

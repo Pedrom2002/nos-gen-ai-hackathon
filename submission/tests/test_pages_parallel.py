@@ -99,7 +99,7 @@ def test_a_failing_page_raises_its_error():
 
 def fake_ocr(monkeypatch, probe=None, failing=None):
     """Pages are images whose width says which page they are (100 + n)."""
-    def read_image(image, psm=3):
+    def read_image(image, psm=3, **kwargs):
         n = image.width - 100
         if n == failing:
             raise RuntimeError("OCR crashed")
@@ -113,7 +113,7 @@ def fake_ocr(monkeypatch, probe=None, failing=None):
     monkeypatch.setattr(ocr, "available", lambda: True)
     monkeypatch.setattr(ocr, "read_image", read_image)
     monkeypatch.setattr(ocr, "recover_unread",
-                        lambda image, lines: (lines, []))
+                        lambda image, lines, **kwargs: (lines, []))
     monkeypatch.setattr(
         Source, "page_images",
         lambda self: (Image.new("RGB", (100 + n, 80), "white")

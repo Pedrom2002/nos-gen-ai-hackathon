@@ -119,8 +119,11 @@ def _from_ocr(source: Source, straighten: bool = False) -> Source:
         # A photographed page is read flattened; boxes stay in that space.
         warp = deskew.page_warp(image) if straighten else None
         readable = warp.flatten(image) if warp else image
+        # The evenly lit page is computed once and shared by the OCR pass
+        # and the search for lines it skipped (each took it again before).
+        lit = ocr.even_light(readable)
         lines, still_unread = ocr.recover_unread(
-            readable, ocr.read_image(readable))
+            readable, ocr.read_image(readable, lit=lit), lit=lit)
         return page_no, warp, lines, len(still_unread)
 
     # Pages are read a few at a time; they are put together in page order.

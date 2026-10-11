@@ -122,9 +122,14 @@ def paint(image: Image.Image, boxes: list,
     return clean, shapes
 
 
+# zlib level for the redacted PNG: level 3 encodes a 12 MP photo in half
+# the time of the default (6) for a file 7% larger; PNG stays lossless.
+PNG_COMPRESS_LEVEL = 3
+
+
 def png_bytes(image: Image.Image) -> bytes:
     buffer = io.BytesIO()
-    image.save(buffer, format="PNG")
+    image.save(buffer, format="PNG", compress_level=PNG_COMPRESS_LEVEL)
     return buffer.getvalue()
 
 

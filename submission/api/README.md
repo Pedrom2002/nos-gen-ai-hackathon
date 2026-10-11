@@ -38,7 +38,7 @@ ALLOWED_ORIGINS=https://<id>.lovable.app
 | PUT | `/api/documents/{id}/decisions` | `{ "keep": ["L5-1"] }` | `DocumentState` after the review |
 | GET | `/api/documents/{id}/download/submission` | | `submission.txt` (masked text) |
 | GET | `/api/documents/{id}/download/report` | | `report.md` (values hidden) |
-| GET | `/api/documents/{id}/download/redacted` | | the original file with the masked words removed for good (PNG for images, PDF, DOCX, CSV with the masked cells), with the review applied; 404 for TXT, 422 if the safety checks fail |
+| GET | `/api/documents/{id}/download/redacted` | | the original file with the masked words removed for good (PNG for images, PDF, DOCX, CSV with the masked cells), with the review applied; 404 for TXT, 422 if the safety checks fail. The file is built in the background as soon as the document or a new review is saved, so this request waits only for a build still in progress and the same review is never built twice |
 | POST | `/api/documents/{id}/ask` | `{ "question": "..." }` | `GatewayAnswer` |
 | DELETE | `/api/documents/{id}` | | 204 |
 

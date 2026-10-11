@@ -263,3 +263,33 @@ def test_make_client_follows_llm_provider(monkeypatch, tmp_path):
     monkeypatch.setenv("LLM_PROVIDER", "mistral")
     with pytest.raises(llm.ConfigError, match="LLM_PROVIDER"):
         llm.make_client()
+
+
+def test_the_client_is_built_once_and_follows_the_configuration(
+        tmp_path, monkeypatch):
+    built = []
+
+    def make_client():
+        built.append(1)
+        return FakeClient("a", "b", "c")
+
+    monkeypatch.setattr(llm, "_CLIENTS", {})
+    monkeypatch.setattr(llm, "make_client", make_client)
+    monkeypatch.setenv("LLM_PROVIDER", "gemini")
+    monkeypatch.setenv("GEMINI_API_KEY", "k1")
+    assert llm.generate("p", cache_dir=None) == "a"
+    assert llm.generate("q", cache_dir=None) == "b"
+    assert len(built) == 1
+    # Another key (or provider) is another client.
+    monkeypatch.setenv("GEMINI_API_KEY", "k2")
+    llm.generate("p", cache_dir=None)
+    assert len(built) == 2
+
+
+def test_a_client_that_cannot_be_built_is_not_cached(tmp_path, monkeypatch):
+    monkeypatch.setattr(llm, "_CLIENTS", {})
+    monkeypatch.delenv("GEMINI_API_KEY", raising=False)
+    monkeypatch.setattr(llm, "SUBMISSION_DIR", tmp_path)
+    with pytest.raises(llm.MissingApiKeyError):
+        llm.generate("p", cache_dir=tmp_path)
+    assert llm._CLIENTS == {}

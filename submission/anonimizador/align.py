@@ -8,6 +8,7 @@ original text, so the output keeps the original formatting.
 """
 
 import re
+import threading
 from dataclasses import dataclass
 from difflib import SequenceMatcher
 
@@ -54,6 +55,31 @@ def mask_token(token: str, keep_punct: bool = False) -> str:
     return f"{lead}{MASK}{trail}" if core else MASK
 
 
+# The last diff computed in this thread: the answer is diffed to validate it
+# (count_dropped) and again to apply it (align), on the same words, and a
+# long document takes half a second each time. Only the last one is kept,
+# and align() forgets it, so no document outlives its own processing here.
+_LAST = threading.local()
+
+
+def _opcodes(orig_norm: tuple[str, ...],
+             model_norm: tuple[str, ...]) -> list[tuple]:
+    """The word-level diff of the document against the model's answer.
+    ``autojunk`` is off so a common word is never ignored in a long one."""
+    memo = getattr(_LAST, "memo", None)
+    if memo is not None and memo[0] == orig_norm and memo[1] == model_norm:
+        return memo[2]
+    matcher = SequenceMatcher(None, orig_norm, model_norm, autojunk=False)
+    opcodes = matcher.get_opcodes()
+    _LAST.memo = (orig_norm, model_norm, opcodes)
+    return opcodes
+
+
+def forget() -> None:
+    """Drop the remembered diff (see _opcodes)."""
+    _LAST.memo = None
+
+
 def _flatten(lines: list[str]) -> list[tuple[int, int, str]]:
     return [
         (line_no, index, word)
@@ -71,11 +97,10 @@ def count_dropped(original_lines: list[str], model_lines: list[str]) -> int:
     line_of = [
         n for n, line in enumerate(original_lines) for _ in line.split()
     ]
-    orig = [_norm(w) for line in original_lines for w in line.split()]
-    model = [_norm(w) for line in model_lines for w in line.split()]
-    matcher = SequenceMatcher(None, orig, model, autojunk=False)
+    orig = tuple(_norm(w) for line in original_lines for w in line.split())
+    model = tuple(_norm(w) for line in model_lines for w in line.split())
     dropped = 0
-    for tag, i1, i2, j1, j2 in matcher.get_opcodes():
+    for tag, i1, i2, j1, j2 in _opcodes(orig, model):
         if tag == "delete":
             dropped += i2 - i1
         elif tag == "replace" and all(w == MASK for w in model[j1:j2]):
@@ -91,11 +116,10 @@ def count_dropped(original_lines: list[str], model_lines: list[str]) -> int:
 def _masked_positions(original: list[str], model: list[str],
                       line_of: list[int]) -> set[int]:
     """Return the indexes of original words that the model masked."""
-    orig_norm = [_norm(w) for w in original]
-    model_norm = [_norm(w) for w in model]
-    matcher = SequenceMatcher(None, orig_norm, model_norm, autojunk=False)
+    orig_norm = tuple(_norm(w) for w in original)
+    model_norm = tuple(_norm(w) for w in model)
     masked = set()
-    for tag, i1, i2, j1, j2 in matcher.get_opcodes():
+    for tag, i1, i2, j1, j2 in _opcodes(orig_norm, model_norm):
         if tag != "replace":
             # equal: unchanged; delete: dropped by the model, keep it;
             # insert: words the model added, ignore them.
@@ -173,6 +197,7 @@ def align(original_lines: list[str], model_lines: list[str],
         model_words,
         [line_no for line_no, _, _ in orig_words],
     )
+    forget()
 
     per_line: dict[int, set[int]] = {}
     masked = []

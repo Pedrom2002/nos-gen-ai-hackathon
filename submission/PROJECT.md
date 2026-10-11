@@ -79,7 +79,8 @@ flowchart LR
 - **Role:** a data protection officer who knows the GDPR and Portuguese documents.
 - **Policy:** an explicit list of what to mask and what to keep, matching the table above.
 - **Doubtful cases:** a self-test ("does this data, on its own, tell who the person is or how to contact them? If so, mask it").
-- **Format rules:** one `*` per word, punctuation glued to a masked word stays next to the `*` (`Flores,` -> `*,`), so the layout of the document is kept, and identifiers split across lines or struck through are still identifiers.
+- **Format rules:** one `*` per word, and identifiers split across lines or struck through are still identifiers. The prompt asks the model for a bare `*` (`Flores,` -> `*`); the alignment code then puts back the punctuation glued to the word (`Flores,` -> `*,`), so the layout of the document is kept. This is a code step after the model, not an instruction in the prompt, and `run.py --no-keep-punct` gives the bare form.
+- **Open question:** whether the hidden reference writes `Flores,` as `*,` or as `*` is not known; it changes 9 words of the official document. The reference in `data/gold/gold.txt` keeps the punctuation, like `submission.txt`, and the local metric counts both forms as censored.
 - **Worked example:** a short example that is not taken from the evaluated document.
 - **Self-check list:** what the model must verify before answering.
 - **Structured output:** JSON, so every decision comes with its explanation.

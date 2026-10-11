@@ -142,7 +142,7 @@ Without `VITE_API_URL` the interface runs in demo mode with simulated results, a
 
 ## Setup
 
-Requirements: Python 3.10+, Node.js 20+ and a Gemini API key. For images and scanned PDFs, also [Tesseract](https://github.com/UB-Mannheim/tesseract/wiki) with Portuguese (`apt install tesseract-ocr-por` on Linux; on Windows, the UB-Mannheim installer, or `por.traineddata` in `%LOCALAPPDATA%\tessdata`).
+Requirements: Python 3.10+, Node.js 22.12+ (TanStack Start, used by the web interface, needs it) and a Gemini API key. For images and scanned PDFs, also [Tesseract](https://github.com/UB-Mannheim/tesseract/wiki) with Portuguese (`apt install tesseract-ocr-por` on Linux; on Windows, the UB-Mannheim installer, or `por.traineddata` in `%LOCALAPPDATA%\tessdata`).
 
 ```bash
 cd submission

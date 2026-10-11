@@ -16,9 +16,9 @@ Lethe masks the words that identify a person in a Portuguese document. It uses o
 | Words masked in the official document | 52, in 28 explained items |
 | Extra test documents | 17 (PDF, TXT in UTF-8 and UTF-16, CSV), 961 words masked, 0 errors |
 | Tilted photos of the official document (-5 to +5 degrees, no page border) | 306 of 315 sensitive words read by OCR (251 before the tilt correction) |
-| Python tests | 213, coverage 96% (gate 90%) |
-| Web frontend tests | 55 |
-| Mobile app tests | 31 |
+| Python tests | 256, coverage 96% (gate 90%) |
+| Web frontend tests | 68 |
+| Mobile app tests | 33 |
 
 The local metric (`anonimizador/metric.py`) reproduces the two figures of the official evaluation logs:
 - **Similarity:** the share of words identical to the reference.

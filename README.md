@@ -42,7 +42,7 @@ Every number below was measured on the code in this branch.
 | Tilt | The same pages turned from -5 to +5 degrees with no page border | OCR reads 306 of 315 sensitive words (251 before the tilt correction) |
 | Hostile files | Empty, corrupt, a binary named `.txt`, a 196-megapixel image, a 422 KB DOCX that unpacks to 132 MB, 9 000 words | All refused in under 0.1 s, before any model call |
 | Prompt changes | Each wording change run on the official and the 17 extra documents before adoption | One rejected: it fixed two misses but exposed two addresses (see `PROJECT.md`) |
-| Tests | pytest, vitest and jest in CI on every push | 215 Python (95% coverage), 55 web, 31 mobile |
+| Tests | pytest, vitest and jest in CI on every push | 256 Python (96% coverage), 68 web, 33 mobile |
 
 Two limits: the hidden reference is unknown, so 100% is against our own annotation, and the photos are simulated, not taken with a phone. One open question is the format of a masked word with punctuation glued to it: `submission.txt` writes `Flores,` as `*,`; if the reference uses a bare `*`, `python run.py --no-keep-punct` gives that form.
 

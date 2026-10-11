@@ -15,7 +15,7 @@ cd submission/frontend
 cp .env.example .env     # VITE_API_URL=/ reencaminha /api para a API
 npm install
 npm run dev              # http://localhost:8080
-npm test                 # vitest, 55 testes
+npm test                 # vitest, 68 testes
 npm run build
 ```
 

@@ -53,6 +53,6 @@ O endereço da API fica gravado na app no build; se mudar, escreve-se o novo em 
 ## Testes
 
 ```bash
-npm test          # jest-expo, 31 testes
+npm test          # jest-expo, 33 testes
 npm run typecheck # tsc
 ```

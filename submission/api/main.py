@@ -30,14 +30,17 @@ from anonimizador.report import build_report, to_markdown
 from anonimizador.redact import RedactionError, redact
 from anonimizador.review import apply_decisions
 from anonimizador.sources import (MAX_OCR_PAGES, SUPPORTED, NeedsOcr,
-                                  Source, TooManyPages, UnsupportedFormat,
-                                  load_source)
+                                  Source, TooLarge, TooManyPages,
+                                  UnsupportedFormat, load_source)
 from anonimizador.verify import check_leaks
 
 SUBMISSION_DIR = Path(__file__).resolve().parents[1]
 OFFICIAL_PDF = SUBMISSION_DIR.parent / "raw_data" / "document_to_anonymize.pdf"
 # Phone photos at full resolution often pass 10 MB.
 MAX_BYTES = 25 * 1024 * 1024
+# The model returns every line again (about 6 tokens a word), and its answer
+# has a limit: 8 000 words is a 20-page scan or a long contract.
+MAX_WORDS = 8000
 UNSUPPORTED = ("Formato não suportado: use PDF, DOCX, imagem (PNG, JPG, "
                "WebP), TXT ou CSV.")
 MODEL_DOWN = "O modelo não respondeu. Tente de novo dentro de um minuto."
@@ -141,6 +144,8 @@ def _read(data: bytes, suffix: str) -> Source:
         return load_source(data, suffix)
     except UnsupportedFormat:
         raise HTTPException(415, UNSUPPORTED) from None
+    except TooLarge as error:
+        raise HTTPException(413, str(error)) from None
     except TooManyPages:
         raise HTTPException(
             413, f"O PDF digitalizado tem mais de {MAX_OCR_PAGES} páginas: "
@@ -162,6 +167,13 @@ def _create(name: str, source: Source) -> dict:
             422, "O documento não tem texto legível. Se for uma fotografia, "
                  "tente uma imagem mais nítida."
         )
+    words = sum(len(line.split()) for line in source.lines)
+    if words > MAX_WORDS:
+        # The model answers with every line again: a longer document would
+        # not fit in one answer, and would only fail after a long wait.
+        raise HTTPException(
+            413, f"O documento tem {words} palavras; o máximo é {MAX_WORDS}. "
+                 "Divida-o em partes.")
     try:
         result = anonymize_source(source, generate_fn=generate_fn)
     except Exception:

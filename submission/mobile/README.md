@@ -25,9 +25,14 @@ A lógica não é duplicada: a máscara por posição, o histórico de revisão,
 | Ficheiro | Papel |
 |---|---|
 | `src/app/index.tsx` | Importar: câmara, galeria, ficheiros, colar texto, exemplo |
+| `src/app/review.tsx` | Revisão: tocar num valor para o mascarar ou mostrar, filtrar e ligar categorias, desfazer e refazer, e carregar numa palavra para a mascarar à mão |
 | `src/app/result.tsx` | Resultado: original e anonimizado, copiar, partilhar `.txt`, relatório e ficheiro censurado |
 | `src/app/settings.tsx` | Tema, língua e endereço da API |
 | `src/api.ts` | Cliente da API (modo demo, tempo limite, erros da API mostrados tal como vêm) |
+| `src/address.ts`, `src/useApi.ts` | Onde está a API: o endereço das Definições ou, se estiver vazio, o automático |
+| `src/review.ts` | Auxiliares da revisão sobre a máscara partilhada com a web: marcas, contagem por categoria e alterações |
+| `src/report.ts` | Relatório explicativo do ecrã de resultado: cada valor mascarado, categoria e motivo, mais os totais |
+| `src/ui.tsx` | Componentes visuais com a paleta da web (alvos de toque de 44 pt e etiquetas acessíveis) |
 | `src/session.tsx` | Documento, resultado e revisão (histórico partilhado com a web) |
 | `src/pick.ts` | Câmara, galeria e ficheiros, com validação antes do envio (tipo, 25 MB) |
 | `src/share.ts` | Partilha pelo menu do sistema |
@@ -36,6 +41,6 @@ A lógica não é duplicada: a máscara por posição, o histórico de revisão,
 ## Testes
 
 ```bash
-npm test          # jest-expo
+npm test          # jest-expo, 31 testes
 npm run typecheck # tsc
 ```

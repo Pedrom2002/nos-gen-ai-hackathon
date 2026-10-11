@@ -12,29 +12,33 @@ Lethe masks the words that identify a person in a Portuguese document. It uses o
 |---|---|
 | Official document, Similarity (local metric) | 100% |
 | Official document, Accuracy (local metric) | 100% |
-| Leak check on the official document | 0 leaks in 24 masked values |
-| Words masked in the official document | 46, in 26 items |
-| Extra test documents | 17 (PDF, TXT in UTF-8 and UTF-16, CSV), 920 words masked, 0 errors |
-| Python tests | 163, coverage gate 90% |
-| Frontend tests | 20 |
+| Leak check on the official document | 0 leaks in 26 masked values |
+| Words masked in the official document | 52, in 28 explained items |
+| Extra test documents | 17 (PDF, TXT in UTF-8 and UTF-16, CSV), 961 words masked, 0 errors |
+| Tilted photos of the official document (-5 to +5 degrees, no page border) | 306 of 315 sensitive words read by OCR (251 before the tilt correction) |
+| Python tests | 197, coverage 95% (gate 90%) |
+| Web frontend tests | 55 |
+| Mobile app tests | 31 |
 
 The local metric (`anonimizador/metric.py`) reproduces the two figures of the official evaluation logs:
 - **Similarity:** the share of words identical to the reference.
 - **Accuracy:** the share of sensitive words fully masked.
 
-The reference (`data/gold/gold.txt`) was annotated by hand under the policy below. Since the rules forbid intermediate submissions, the official score is unknown until the final evaluation.
+The reference (`data/gold/gold.txt`) was annotated by hand under the policy below, and `submission.txt` and `prompt.txt` are exactly what `python run.py` generates today. Since the rules forbid intermediate submissions, the official score is unknown until the final evaluation.
 
 ## What is masked
 
-The policy was confirmed with the challenge mentors: **mask only what identifies a person.**
+The policy follows the mentors' answers: **mask what can make the person identifiable, and keep the rest of the document.** A profession on its own does not identify anyone, but together with the name of the place where the person works it does, so the profession stays and the workplace goes.
 
 | Masked | Kept visible |
 |---|---|
 | Names of every person (patient, relatives, contacts, professionals), including first names on their own | Clinical content: symptoms, diagnoses, HIV status, medication, results |
-| Date of birth | Characteristics that do not identify anyone on their own, such as sex, ethnicity or age |
+| Date of birth | Characteristics that do not identify anyone on their own, such as sex, ethnicity, age or profession |
 | ID numbers: NIF, Cartão de Cidadão, NISS, health number, insurance policy, professional licence, biometric IDs | The document's date and reference (`ADM-2025-04-15-089`) |
 | Full address, with postal code and town | Years of past events |
-| Phone numbers and emails, also professional ones | Institutions, room and class numbers, grades |
+| Workplace or school of a person (the name of the company or institution) | |
+| Declared salary or income (the value) | |
+| Phone numbers and emails, also professional ones | The institution that issues the document (in its title), room and class numbers, grades |
 | Payment data: card number, expiry date, CVV, IBAN, account number | |
 | Credentials, IP addresses, GPS coordinates | |
 
@@ -82,7 +86,9 @@ flowchart LR
 - **Context hints:** for school and similar documents, detected from the text (`context.py`).
 - **Determinism:** temperature 0.
 
-Variant B also masks ages and employers. It exists to compare scores and is not the submitted one.
+Variant B also masks ages. It exists to compare scores and is not the submitted one.
+
+The worked example includes a relationship word that stays visible ("(irmã)"): without it, the model started masking "(irmão)" and "(amiga próxima)" once the workplace rule was added.
 
 ## Other formats and redacted files
 
@@ -92,9 +98,10 @@ Besides the challenge PDF, Lethe reads scanned PDFs, photos and images (PNG, JPG
   - The redaction paints opaque black over the masked words. It never blurs or pixelates, since those can be reversed. The boxes are padded so accents and descenders are covered too.
   - The image is rebuilt from its pixels only and saved as PNG, so EXIF data (GPS, the embedded thumbnail), XMP and text chunks are gone.
   - A scanned PDF is rebuilt from the redacted page images only.
-- **Phone photos:** the page is found in the photo and flattened (perspective correction) and its lighting is evened out before OCR. The bars are then mapped back onto the original photo as polygons that follow the slant of the text. Before anonymising, the model fixes OCR misreads ("Financelras" becomes "Financeiras", "OVV" becomes "CVV"). The fixes are taken word by word, and only when a line keeps its word count and each word stays close to what OCR read, so every word keeps its place in the image and no name or number can be swapped. Two real phone photos of the official document (taken of a screen, in perspective) give text **identical to `submission.txt`**: 60/60 lines, 100% Similarity and Accuracy.
+  - The pages of a scanned document are read up to three at a time (a rendered page is about 26 MB, so no more). A two-page scan went from 16 s to 8 s with the model answer cached, and the result is identical to reading them one by one.
+- **Phone photos:** the page is found in the photo and flattened (perspective correction) and its lighting is evened out before OCR. When there is no visible page border (a cropped photo, or a light page on a light table), the tilt of the text lines is estimated and corrected instead (`deskew.py`); the boxes found on the levelled page are mapped back onto the photo the same way. The bars are then mapped back onto the original photo as polygons that follow the slant of the text. Before anonymising, the model fixes OCR misreads ("Financelras" becomes "Financeiras", "OVV" becomes "CVV"). The fixes are taken word by word, and only when a line keeps its word count and each word stays close to what OCR read, so every word keeps its place in the image and no name or number can be swapped. Two real phone photos of the official document (taken of a screen, in perspective) give text **identical to `submission.txt`**: 60/60 lines, 100% Similarity and Accuracy.
 - **OCR misreads:** OCR words read with low confidence that look like identifiers (3 or more digits, `@` or a domain) are masked as a precaution. OCR can turn `maria@x.pt` into `mariaQx.pt`, which neither the model nor the patterns would recognise.
-- **Text OCR could not read:** ink left outside every word box that has the shape of a text line means text that was never checked. The backend first reads that strip again as a single line (Tesseract page layout analysis sometimes drops a whole line of a photo, even the patient's name) and widens the box of words whose ink stuck out; only what still cannot be read is left over. The backend refuses the redacted file (`redactable` is false and `download/redacted` answers 422); only `submission.txt` and the report are given, and the interface shows how many lines were skipped and asks for a sharper photo.
+- **Text OCR could not read:** ink left outside every word box that has the shape of a text line means text that was never checked. The backend first reads that strip again as a single line (Tesseract page layout analysis sometimes drops a whole line of a photo, even the patient's name) and widens the box of words whose ink stuck out; only what still cannot be read is left over. A long word read with low confidence is kept (an email read as `name(&host.pt`), while a short one at that confidence is treated as noise. The backend refuses the redacted file (`redactable` is false and `download/redacted` answers 422); only `submission.txt` and the report are given, and the interface shows how many lines were skipped and asks for a sharper photo.
 - **Text PDFs:** PyMuPDF redactions delete the text, image pixels and drawings under each word. Hidden text, metadata, attachments, JavaScript, links and form data are scrubbed, and the file is saved in full, never incrementally.
 - **DOCX:** masked words are rewritten inside the runs, so formatting is kept. This covers the body, tables, headers, footers and footnotes. Tracked changes are resolved, and comments, images, embedded objects and author fields are removed.
 - **Fail closed:** every redacted file is read back by an independent check before it is returned:
@@ -118,6 +125,10 @@ Backend items are masked at the exact positions the backend found. The frontend'
 Keyboard: `J`/`↓` next item, `K`/`↑` previous item, `Enter` or `Space` toggles the item, `Ctrl+Z` undo, `Ctrl+Shift+Z` redo.
 
 Without `VITE_API_URL` the interface runs in demo mode with simulated results, and says so in the header.
+
+## Mobile app
+
+`mobile/` is an Expo (React Native) app for Android and iOS: photograph a document or pick a file, review what was masked, and share the anonymised text, the report or the redacted file. It reuses the web code for the position-based mask, the review history, the API model and the 8 languages, so both interfaces behave the same. Run it with `npx expo start --tunnel` (see `mobile/README.md`).
 
 ### Privacy by design
 
@@ -151,6 +162,11 @@ cd frontend
 cp .env.example .env             # VITE_API_URL=/ proxies /api to the API
 npm install
 npm run dev
+
+# 4. Optional: the mobile app (Expo Go on the phone)
+cd ../mobile
+npm install
+npx expo start --tunnel
 ```
 
 Other commands:
@@ -158,9 +174,11 @@ Other commands:
 ```bash
 python -m anonimizador.metric submission.txt data/gold/gold.txt   # local score
 python -m anonimizador.evaluate_docs data/test_docs               # 17 extra documents
+python data/test_docs/make_photos.py                              # rebuild the 6 test photos
 python ask.py "Que medicação toma a paciente?"                    # gateway demo
 python -m pytest                                                  # Python tests
-cd frontend && npm test                                           # frontend tests
+cd frontend && npm test                                           # web tests
+cd mobile && npm test                                             # mobile tests
 ```
 
 ## Repository layout
@@ -174,25 +192,39 @@ submission/
 ├── ask.py                pseudonymisation gateway demo
 ├── anonimizador/         pipeline: extract, prompt, llm, align, safety, verify, report, metric
 ├── api/                  FastAPI backend for the review interface (see api/README.md)
-├── frontend/             review interface (see frontend/README.md)
+├── frontend/             web review interface (see frontend/README.md)
+├── mobile/               Expo app for Android and iOS (see mobile/README.md)
 ├── data/gold/            hand-annotated reference for the official document
-├── data/test_docs/       17 fictitious documents to test generalisation
-└── tests/                pytest suite
+├── data/test_docs/       17 fictitious documents and 6 test photos (see its README)
+├── tests/                pytest suite
+└── PROJECT.md            this file
 ```
 
 ## Decisions and limitations
 
 - **The LLM decides, the code guarantees.** The model only chooses what to mask. Alignment, the safety net and the leak check make sure the format is right and known identifier patterns never get through.
-- **Model choice:** `gemini-3.1-flash-lite` answers in about a second and reaches 100% on the reference. `gemini-3.8-flash` took 12 to 15 seconds per call and hit rate limits more often.
+- **Model choice:** `gemini-3.1-flash-lite` answers in about 5 to 6 seconds per document and reaches 100% on the reference. That time is the answer itself (about 2 500 output tokens: the model returns the masked lines and one explanation per item), not hidden reasoning: the model reports no thinking tokens, and turning thinking off gave identical output on three documents. `gemini-3.8-flash` took 12 to 15 seconds per call and hit rate limits more often.
 - **No database:** documents are sensitive by definition, so nothing is stored.
 - **Limitations:**
-  - scanned PDFs need OCR first (the API says so);
+  - a blurry or strongly tilted photo can leave a line the OCR cannot read; the redacted file is then refused rather than delivered with that line visible, and only the text output is given;
+  - the test photos are made from the official PDF (blur, noise, tilt, JPEG), not taken with a phone, so real photos can do worse;
   - the test documents are cleaner than real ones;
   - context-dependent identifiers without a pattern (a nickname, a rare job title in a small town) rely on the model alone.
 - **Next steps:**
-  - OCR for scanned documents;
+  - real phone photos, to tune the OCR and the tilt correction;
   - more real, annotated documents to measure recall;
   - per-organisation policies for what counts as identifying.
+
+## Performance
+
+Measured on a photo of the official document: about 10 s to upload (OCR 2.5 s, model 5.5 s, the rest is fixed work) and 3 s to build and verify the redacted file. The model is the largest part and only shrinks by changing the prompt format, which would change the deliverable. What was tried for the OCR:
+
+| Idea | Result | Used |
+|---|---|---|
+| Read the pages of a document in parallel | 2-page scan 16 s to 8 s, identical result | yes |
+| Cut a page into bands read at the same time | OCR 48% faster, but 134 against 135 sensitive words read and twice the unread zones | no |
+| Enlarge the image less before OCR | 25% faster, one word lost | no |
+| One Tesseract thread | slower | no |
 
 ## Team
 

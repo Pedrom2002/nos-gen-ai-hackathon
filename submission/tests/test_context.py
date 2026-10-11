@@ -40,3 +40,12 @@ def test_only_the_school_test_document_is_escolar():
 def test_plain_text_drops_accents_and_styling():
     assert plain_text("Matrícula N.º") == "matricula n.o"
     assert plain_text("\U0001D400luno") == "aluno"  # math bold A
+
+
+def test_csv_rows_are_a_table_and_prose_is_not():
+    assert detect_contexts(["nome , nif", "Ana , 123", "Rui , 456"]) == {
+        "tabela"}
+    assert detect_contexts(["Nome: Ana, 30 anos",
+                            "Mora em Lisboa, perto do rio"]) == set()
+    lines = read_document(TEST_DOCS / "R10_registos_clientes.csv")
+    assert detect_contexts(lines) == {"tabela"}

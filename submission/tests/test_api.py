@@ -289,3 +289,45 @@ def test_fixed_ocr_text_is_kept_through_the_review(client, monkeypatch):
     after = client.put(f"/api/documents/{doc['id']}/decisions",
                        json={"keep": [name]}).json()
     assert after["output"] == ["Informações Financeiras:", "Nome: Rui Costa"]
+
+
+CSV_ROWS = ("nome,nif,telefone,email,morada\n"
+            "Maria Santos,123456789,912 345 678,maria@exemplo.pt,"
+            "\"Rua das Flores 23, Lisboa\"\n")
+
+
+def test_csv_is_masked_cell_by_cell_and_comes_back_as_csv(
+        client, monkeypatch):
+    import csv
+    import io
+    from tests.test_redact import names_only
+
+    monkeypatch.setattr(main, "generate_fn", names_only)
+    doc = client.post("/api/documents", files={
+        "file": ("clientes.csv", CSV_ROWS.encode(), "text/csv")}).json()
+    assert doc["kind"] == "csv" and doc["redactable"]
+    assert doc["lines"][0] == "nome , nif , telefone , email , morada"
+    # The name by the model, the phone and the email by the safety net:
+    # one item per cell, and the separators stay.
+    assert doc["output"][1] == ("* * , 123456789 , * * * , * , "
+                                "Rua das Flores 23, Lisboa")
+    assert [i["text"] for i in doc["items"]] == [
+        "Maria Santos", "912 345 678", "maria@exemplo.pt"]
+    assert doc["leaks"]["leaks"] == []
+
+    url = f"/api/documents/{doc['id']}/download/redacted"
+    first = client.get(url)
+    assert first.status_code == 200
+    assert first.headers["content-type"].startswith("text/csv")
+    assert "clientes_censurado.csv" in first.headers["content-disposition"]
+    rows = list(csv.reader(io.StringIO(first.content.decode("utf-8-sig"))))
+    assert rows == [["nome", "nif", "telefone", "email", "morada"],
+                    ["* *", "123456789", "* * *", "*",
+                     "Rua das Flores 23, Lisboa"]]
+
+    name = next(i for i in doc["items"] if i["text"] == "Maria Santos")
+    client.put(f"/api/documents/{doc['id']}/decisions",
+               json={"keep": [name["id"]]})
+    kept = list(csv.reader(io.StringIO(
+        client.get(url).content.decode("utf-8-sig"))))
+    assert kept[1][0] == "Maria Santos"

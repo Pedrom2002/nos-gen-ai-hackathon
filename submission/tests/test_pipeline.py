@@ -86,3 +86,19 @@ def test_invalid_answer_already_in_cache_is_requested_again(tmp_path):
     again = llm.generate("p", cache_dir=tmp_path, validate=must_have_lines,
                          client=SimpleNamespace(models=FakeModels([])))
     assert again == text
+
+
+def test_csv_separators_are_never_masked():
+    from anonimizador.pipeline import anonymize_source
+    from anonimizador.sources import load_source
+
+    source = load_source(b"nome,nif\nMaria Santos,123456789\n", ".csv")
+
+    def collapse(prompt, model=None, json_output=False, **kwargs):
+        # The whole row as one mask, separator included.
+        return json.dumps({"masked_lines": ["nome , nif", "*"],
+                           "entities": []})
+
+    result = anonymize_source(source, generate_fn=collapse)
+    assert result.lines == ["nome , nif", "* * , *"]
+    assert (1, 2) not in {(w.line, w.index) for w in result.masked}

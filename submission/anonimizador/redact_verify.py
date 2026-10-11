@@ -12,7 +12,10 @@ Raises RedactionError when anything could still give a masked value away:
 - docx: read again, every line equals the expected masked line; no media,
   comments, custom properties or thumbnail is left; the text of every XML
   part (headers, footnotes, properties...) holds no masked value; author
-  fields are empty.
+  fields are empty;
+- csv: read again as CSV with the file's delimiter, every row equals the
+  expected masked line with its separators where they were, so the file
+  holds exactly the masked text; no masked value is readable in a cell.
 
 Error messages never quote the values, so they are safe to show and log.
 """
@@ -30,8 +33,10 @@ from PIL import Image, ImageDraw
 
 from anonimizador import ocr
 from anonimizador.align import MaskedWord, _render
+from anonimizador.extract import decode_text
 from anonimizador.redact import RedactionError, Redacted, masked_values
 from anonimizador.sources import Source, load_source
+from anonimizador.tabular import read_csv
 from anonimizador.verify import find_values
 
 _PDF_FIELDS = ("title", "author", "subject", "keywords", "creator",
@@ -179,6 +184,24 @@ def _verify_docx(source: Source, redacted: Redacted, values, masked,
         raise _fail("o DOCX ainda tem o autor")
 
 
+def _verify_csv(source: Source, redacted: Redacted, values, masked,
+                keep_punct) -> None:
+    """A CSV is only text: once every row reads back as the expected
+    masked line, nothing else is in the file. A byte search for the
+    masked digits (as for PDF objects) would be wrong here: a visible
+    number may contain the digits of a masked one."""
+    table = read_csv(decode_text(redacted.data), source.delimiter)
+    per_line: dict[int, set[int]] = {}
+    for word in masked:
+        per_line.setdefault(word.line, set()).add(word.index)
+    expected = [_render(line, per_line.get(n, set()), keep_punct)
+                for n, line in enumerate(source.lines)]
+    if table.lines != expected or table.separators != source.separators:
+        raise _fail("o texto do CSV não corresponde ao resultado")
+    if find_values(values, table.lines):
+        raise _fail("há valores mascarados ainda no CSV")
+
+
 def verify(source: Source, redacted: Redacted, masked: list[MaskedWord],
            pages: dict, keep_punct: bool = False) -> None:
     # The file must not reveal anything the text output does not. A value
@@ -205,5 +228,7 @@ def verify(source: Source, redacted: Redacted, masked: list[MaskedWord],
         _verify_scanned(redacted, values, pages)
     elif source.kind == "pdf":
         _verify_pdf(redacted, values)
+    elif source.kind == "csv":
+        _verify_csv(source, redacted, values, masked, keep_punct)
     else:
         _verify_docx(source, redacted, values, masked, keep_punct)

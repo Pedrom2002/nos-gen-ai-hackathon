@@ -38,11 +38,13 @@ ALLOWED_ORIGINS=https://<id>.lovable.app
 | PUT | `/api/documents/{id}/decisions` | `{ "keep": ["L5-1"] }` | `DocumentState` after the review |
 | GET | `/api/documents/{id}/download/submission` | | `submission.txt` (masked text) |
 | GET | `/api/documents/{id}/download/report` | | `report.md` (values hidden) |
-| GET | `/api/documents/{id}/download/redacted` | | the original file with the masked words removed for good (PNG for images, PDF, DOCX), with the review applied; 404 for TXT/CSV, 422 if the safety checks fail |
+| GET | `/api/documents/{id}/download/redacted` | | the original file with the masked words removed for good (PNG for images, PDF, DOCX, CSV with the masked cells), with the review applied; 404 for TXT, 422 if the safety checks fail |
 | POST | `/api/documents/{id}/ask` | `{ "question": "..." }` | `GatewayAnswer` |
 | DELETE | `/api/documents/{id}` | | 204 |
 
 `PUT /decisions` always sends the full list of items to keep visible; an empty list masks everything again.
+
+A CSV is read cell by cell: each row becomes a line with the cells separated by the delimiter on its own (`Maria Santos , 123456789 , maria@x.pt`), so every value is its own item and the separators are never masked. `download/submission` gives that layout; `download/redacted` gives the CSV again, with the masked cells and the same delimiter.
 
 Errors return `{ "detail": "<message in Portuguese>" }`: 404 unknown, expired or deleted document, 413 file too large (see the limits above), 415 unsupported format, 422 empty or unreadable document, empty question, unknown item or a redacted file that failed verification, 502 the model did not answer (try again), 503 the model is not configured or the local server is not running (the message says what to fix: the key, `ollama pull <model>`, start the server).
 
@@ -101,7 +103,7 @@ interface DocumentState {
     checked: number;   // masked values verified in the output
     leaks: { line: number; text: string }[];  // empty = "0 fugas"
   };
-  kind: "text" | "pdf" | "scanned" | "image" | "docx";
+  kind: "text" | "csv" | "pdf" | "scanned" | "image" | "docx";
   redactable: boolean; // true if download/redacted is available
   uncertain: number;   // OCR words read with low confidence (masked if
                        // they look like identifiers)

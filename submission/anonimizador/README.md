@@ -12,6 +12,7 @@ The Python package behind Lethe. The full documentation, with the pipeline, the 
 |---|---|
 | `extract.py` | text extraction from PDF documents |
 | `sources.py` | reads any supported file (PDF, scanned PDF, image, DOCX, TXT, CSV) into lines, plus where each word is |
+| `tabular.py` | lays a CSV out cell by cell (the separators as words of their own) and writes the masked rows back as CSV |
 | `ocr.py` | local OCR with Tesseract: words, boxes and lines; re-reads lines the page OCR skipped; reads pages in parallel |
 | `deskew.py` | straightens a photographed page (perspective, or only the tilt of the text when the page has no border) |
 | `ocr_fix.py` | fixes OCR misreads with the model before anonymising a photo or scan |

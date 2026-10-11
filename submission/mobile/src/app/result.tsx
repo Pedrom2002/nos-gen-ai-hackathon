@@ -1,28 +1,68 @@
-// Result: the anonymised text next to the original, the summary from the API,
-// and sharing of submission.txt, the report and the redacted file.
+// Result, as in the web: the steps, the original and the anonymised version
+// side by side (one under the other on a phone) or with a handle to slide,
+// the photo and its redacted copy for images, the download actions and the
+// explanatory report with its counters, the bar by category and the table.
+import Feather from "@expo/vector-icons/Feather";
 import * as Clipboard from "expo-clipboard";
-import { Image } from "expo-image";
 import { router } from "expo-router";
-import { useEffect, useState } from "react";
-import { Text, View } from "react-native";
+import { useEffect, useMemo, useState } from "react";
+import { Pressable, Text, View } from "react-native";
 
-import { stats } from "@web/lib/anonymizer";
+import { CATEGORIES, stats } from "@web/lib/anonymizer";
 
+import { MaskedText, Panel, Photo, Slider } from "@/components/Comparison";
+import { Stepper } from "@/components/Stepper";
 import { reportMarkdown, reportRows, type ReportLabels } from "@/report";
 import { keepIds, useSession } from "@/session";
 import { useSettings } from "@/settings";
 import { shareFile, shareText } from "@/share";
-import { Body, Button, CATEGORY_COLORS, Card, Notice, Screen, Title, useColors } from "@/ui";
+import { Body, Button, CATEGORY_COLORS, Notice, Screen, useColors } from "@/ui";
 import { useApi } from "@/useApi";
 
 type Redacted = { uri: string; filename: string; mime: string };
+
+/** Two or more choices in a pill, as the web's toggle groups. */
+function Segmented<T extends string>({ label, value, options, onChange }: {
+  label: string; value: T; options: { id: T; label: string }[]; onChange: (id: T) => void;
+}) {
+  const c = useColors();
+  return (
+    <View accessibilityRole="radiogroup" accessibilityLabel={label}
+      style={{ flexDirection: "row", borderWidth: 1, borderColor: c.border, borderRadius: 10, padding: 3, backgroundColor: c.card }}>
+      {options.map((o) => {
+        const on = o.id === value;
+        return (
+          <Pressable key={o.id} accessibilityRole="radio" accessibilityState={{ selected: on }} onPress={() => onChange(o.id)}
+            style={{ flex: 1, minHeight: 38, borderRadius: 8, alignItems: "center", justifyContent: "center", backgroundColor: on ? c.primary : "transparent" }}>
+            <Text style={{ color: on ? c.primaryForeground : c.foreground, fontWeight: "600", fontSize: 13 }}>{o.label}</Text>
+          </Pressable>
+        );
+      })}
+    </View>
+  );
+}
+
+function Stat({ name, value, color, bar }: { name: string; value: string; color: string; bar: string }) {
+  const c = useColors();
+  return (
+    <View accessible accessibilityLabel={`${name}: ${value}`}
+      style={{ flex: 1, borderWidth: 1, borderColor: c.border, borderRadius: 10, overflow: "hidden", backgroundColor: c.card }}>
+      <View style={{ height: 3, backgroundColor: bar }} />
+      <View style={{ padding: 10, gap: 4 }}>
+        <Text numberOfLines={2} style={{ color: c.mutedForeground, fontSize: 10, fontWeight: "700", letterSpacing: 0.6, textTransform: "uppercase" }}>{name}</Text>
+        <Text style={{ color, fontSize: 22, fontWeight: "700" }}>{value}</Text>
+      </View>
+    </View>
+  );
+}
 
 export default function ResultScreen() {
   const { t, u, x, m } = useSettings();
   const c = useColors();
   const api = useApi();
   const { result, source, history, output, reset } = useSession();
-  const [tab, setTab] = useState<"anonymized" | "original">("anonymized");
+  const [view, setView] = useState<"document" | "text">("document");
+  const [layout, setLayout] = useState<"side" | "slide">("side");
   const [summary, setSummary] = useState(result?.summary ?? "");
   const [redacted, setRedacted] = useState<Redacted | null>(null);
   const [notice, setNotice] = useState<{ text: string; tone: "info" | "error" | "success" } | null>(null);
@@ -48,6 +88,11 @@ export default function ResultScreen() {
     })();
     return () => { alive = false; };
   }, [docId, api, history.present, result?.redactable, source?.kind, x.unknownErr]);
+
+  const rows = useMemo(() => (result ? reportRows(result.text, history.present) : []), [result, history.present]);
+  const byCategory = useMemo(() => CATEGORIES
+    .map((cat) => ({ id: cat.id, label: x.cats[cat.id] ?? cat.label, n: rows.filter((r) => r.category === cat.id).length }))
+    .filter((g) => g.n > 0), [rows, x.cats]);
 
   if (!result) {
     return (
@@ -78,7 +123,6 @@ export default function ResultScreen() {
   });
 
   const st = stats(result.text, history.present);
-  const rows = reportRows(result.text, history.present);
   const labels: ReportLabels = {
     entities: t.entities, pctWords: t.pctWords, risk: t.risk, thEntity: x.thEntity, thCategory: x.thCategory,
     thReason: x.thReason, noEntities: x.noEntities, manual: x.manual, cats: x.cats, riskNames: x.risk,
@@ -101,72 +145,105 @@ export default function ResultScreen() {
     router.replace("/");
   };
 
-  const shown = tab === "anonymized" ? output : result.text;
+  // A photo with its redacted copy can be compared as pictures, like the
+  // web's document view; anything else compares the text.
+  const photo = source?.kind === "image" && source.file && redacted?.mime.startsWith("image/") ? source.file : null;
+  const asPictures = photo !== null && view === "document";
+  const original = asPictures ? <Photo uri={photo.uri} label={t.original} /> : <Text selectable style={{ color: c.foreground, fontFamily: "monospace", fontSize: 13, lineHeight: 22 }}>{result.text}</Text>;
+  const anonymised = asPictures && redacted ? <Photo uri={redacted.uri} label={u.redactedPreview} /> : <MaskedText text={output} />;
+  const total = rows.length || 1;
+  // Masking keeps the line breaks, so line i of each version is the same line.
+  const originalLines = result.text.split("\n");
+  const maskedLines = output.split("\n");
+  const pairedLines = originalLines.length === maskedLines.length
+    ? originalLines.map((line, i): [string, string] => [line, maskedLines[i]])
+    : undefined;
+
   return (
     <Screen>
-      <Title>{t.anonymized}</Title>
+      <Stepper step={2} />
       {summary ? <Body muted>{summary}</Body> : null}
       {result.unread ? <Notice tone="warning" text={u.unreadLines.replace("{n}", String(result.unread))} /> : null}
 
-      <View accessibilityRole="tablist" style={{ flexDirection: "row", gap: 8 }}>
-        {(["anonymized", "original"] as const).map((id) => (
-          <Button
-            key={id}
-            label={id === "anonymized" ? t.anonymized : t.original}
-            variant={tab === id ? "primary" : "outline"}
-            onPress={() => setTab(id)}
-            style={{ flex: 1 }}
-          />
-        ))}
-      </View>
-      <Card>
-        <Text selectable style={{ color: c.foreground, fontFamily: "monospace", fontSize: 14, lineHeight: 22 }}>
-          {shown}
-        </Text>
-      </Card>
-
-      {redacted && redacted.mime.startsWith("image/") ? (
-        <Card>
-          <Body muted>{u.redactedPreview}</Body>
-          <Image source={{ uri: redacted.uri }} accessibilityLabel={u.redactedPreview} contentFit="contain"
-            style={{ width: "100%", aspectRatio: 3 / 4, borderRadius: 8 }} />
-        </Card>
+      {photo ? (
+        <Segmented label={u.docView} value={view} onChange={setView}
+          options={[{ id: "document", label: u.viewDocument }, { id: "text", label: u.viewText }]} />
       ) : null}
+      <Segmented label={u.comparison} value={layout} onChange={setLayout}
+        options={[{ id: "side", label: u.sideBySide }, { id: "slide", label: u.slideView }]} />
+
+      {layout === "side" ? (
+        <>
+          <Panel title={t.original}>{original}</Panel>
+          <Panel title={t.anonymized}>{anonymised}</Panel>
+        </>
+      ) : (
+        <Slider label={u.comparison} under={original} over={anonymised} lines={asPictures ? undefined : pairedLines} />
+      )}
 
       {notice ? <Notice tone={notice.tone} text={notice.text} /> : null}
 
-      <Card>
-        <Title>{t.reportTitle}</Title>
+      <View style={{ gap: 10 }}>
+        <Button variant="primary" icon="download" label={t.downloadTxt} disabled={busy} onPress={() => act(() => shareText("submission.txt", output))} />
+        <View style={{ flexDirection: "row", gap: 10 }}>
+          <Button icon="arrow-left" label={t.review} disabled={busy} onPress={() => router.back()} style={{ flex: 1 }} />
+          <Button icon="copy" label={t.copy} disabled={busy} style={{ flex: 1 }} onPress={() => act(async () => {
+            await Clipboard.setStringAsync(output);
+            setNotice({ text: t.copied, tone: "success" });
+          })} />
+        </View>
+        <Button icon="file-text" label={t.downloadReport} disabled={busy} onPress={shareReport} />
+        {result.redactable && !api.demo ? (
+          <Button icon="shield" label={u.downloadRedacted} disabled={busy} busy={busy} onPress={shareRedacted} />
+        ) : null}
+      </View>
+
+      <View style={{ gap: 14, marginTop: 8 }}>
+        <Text accessibilityRole="header" style={{ color: c.foreground, fontSize: 20, fontWeight: "700" }}>{t.reportTitle}</Text>
         <View style={{ flexDirection: "row", gap: 8 }}>
-          {([[t.entities, String(st.count), c.foreground], [t.pctWords, `${st.pct}%`, c.foreground], [t.risk, x.risk[st.risk] ?? st.risk, riskColor]] as const).map(([name, value, color]) => (
-            <View key={name} accessible accessibilityLabel={`${name}: ${value}`}
-              style={{ flex: 1, borderWidth: 1, borderColor: c.border, borderRadius: 10, padding: 10 }}>
-              <Text style={{ color: c.mutedForeground, fontSize: 12 }}>{name}</Text>
-              <Text style={{ color, fontSize: 20, fontWeight: "700" }}>{value}</Text>
+          <Stat name={t.entities} value={String(st.count)} color={c.foreground} bar={c.primary} />
+          <Stat name={t.pctWords} value={`${st.pct}%`} color={c.foreground} bar={c.primary} />
+          <Stat name={t.risk} value={x.risk[st.risk] ?? st.risk} color={riskColor} bar={riskColor} />
+        </View>
+
+        {byCategory.length ? (
+          <View style={{ borderWidth: 1, borderColor: c.border, borderRadius: 12, backgroundColor: c.card, padding: 14, gap: 12 }}>
+            <Text style={{ color: c.mutedForeground, fontSize: 11, fontWeight: "700", letterSpacing: 0.8, textTransform: "uppercase" }}>{u.byCategory}</Text>
+            <View accessibilityElementsHidden importantForAccessibility="no-hide-descendants"
+              style={{ flexDirection: "row", height: 10, borderRadius: 5, overflow: "hidden", backgroundColor: c.muted }}>
+              {byCategory.map((g) => <View key={g.id} style={{ flex: g.n / total, backgroundColor: CATEGORY_COLORS[g.id] }} />)}
+            </View>
+            {byCategory.map((g) => (
+              <View key={g.id} accessible accessibilityLabel={`${g.label}: ${g.n}`} style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+                <View style={{ width: 9, height: 9, borderRadius: 5, backgroundColor: CATEGORY_COLORS[g.id] }} />
+                <Text style={{ flex: 1, color: c.foreground }}>{g.label}</Text>
+                <Text style={{ color: c.mutedForeground, fontWeight: "600" }}>{g.n}</Text>
+              </View>
+            ))}
+          </View>
+        ) : null}
+
+        <View style={{ borderWidth: 1, borderColor: c.border, borderRadius: 12, backgroundColor: c.card, overflow: "hidden" }}>
+          {rows.length === 0 ? <View style={{ padding: 14 }}><Body muted>{x.noEntities}</Body></View> : rows.map((r, i) => (
+            <View key={r.value} accessible accessibilityLabel={`${r.value}, ${x.cats[r.category] ?? r.category}, ${r.manual ? x.manual : r.reason}`}
+              style={{ padding: 12, gap: 6, borderTopWidth: i ? 1 : 0, borderTopColor: c.border }}>
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                <Text style={{
+                  color: c.foreground, fontFamily: "monospace", fontSize: 13, paddingHorizontal: 6, paddingVertical: 2,
+                  borderRadius: 4, backgroundColor: `${CATEGORY_COLORS[r.category]}26`,
+                }}>{r.value}</Text>
+                <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+                  <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: CATEGORY_COLORS[r.category] }} />
+                  <Text style={{ color: c.mutedForeground, fontSize: 12 }}>{x.cats[r.category] ?? r.category}</Text>
+                </View>
+              </View>
+              <Text style={{ color: c.mutedForeground, fontSize: 13 }}>{r.manual ? x.manual : r.reason}</Text>
             </View>
           ))}
         </View>
-        {rows.length === 0 ? <Body muted>{x.noEntities}</Body> : rows.map((r) => (
-          <View key={r.value} accessible accessibilityLabel={`${r.value}, ${x.cats[r.category] ?? r.category}, ${r.reason}`}
-            style={{ borderLeftWidth: 4, borderLeftColor: CATEGORY_COLORS[r.category], paddingLeft: 10, gap: 2 }}>
-            <Text style={{ color: c.foreground, fontWeight: "600" }}>{r.value}</Text>
-            <Text style={{ color: c.mutedForeground, fontSize: 13 }}>{`${x.cats[r.category] ?? r.category}: ${r.manual ? x.manual : r.reason}`}</Text>
-          </View>
-        ))}
-      </Card>
-
-      <View style={{ gap: 10 }}>
-        <Button label={t.copy} disabled={busy} onPress={() => act(async () => {
-          await Clipboard.setStringAsync(output);
-          setNotice({ text: t.copied, tone: "success" });
-        })} />
-        <Button variant="primary" label={m.shareTxt} disabled={busy} onPress={() => act(() => shareText("submission.txt", output))} />
-        <Button label={m.shareReport} disabled={busy} onPress={shareReport} />
-        {result.redactable && !api.demo ? (
-          <Button label={m.shareRedacted} disabled={busy} busy={busy} onPress={shareRedacted} />
-        ) : null}
-        <Button variant="ghost" label={m.newDocument} disabled={busy} onPress={startOver} />
       </View>
+
+      <Button variant="ghost" icon="plus" label={m.newDocument} disabled={busy} onPress={startOver} />
     </Screen>
   );
 }

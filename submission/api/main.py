@@ -55,6 +55,8 @@ MAX_WORDS = 8000
 UNSUPPORTED = ("Formato não suportado: use PDF, DOCX, imagem (PNG, JPG, "
                "WebP), TXT ou CSV.")
 MODEL_DOWN = "O modelo não respondeu. Tente de novo dentro de um minuto."
+INTERNAL_ERROR = "Erro interno ao processar este ficheiro."
+LOG = logging.getLogger("lethe.api")
 # One request can bring several files (POST /api/documents/batch). Ten is a
 # case file's worth and stays well under MAX_SESSIONS, so a batch never
 # pushes its own first documents out of memory.
@@ -141,9 +143,9 @@ class RateLimiter:
             self._hits.clear()
 
 
-# Per client (the first X-Forwarded-For hop behind the tunnel, else the
-# socket address). Overridable in .env, e.g. RATE_BATCH=20/minute. The
-# file count is what a batch really costs: an OCR run and a model call each.
+# Per client (see _client_key). Overridable in .env, e.g.
+# RATE_BATCH=20/minute. The file count is what a batch really costs: an OCR
+# run and a model call each.
 BATCH_LIMITER = RateLimiter(os.environ.get("RATE_BATCH", "5/minute"))
 BATCH_FILES_LIMITER = RateLimiter(
     os.environ.get("RATE_BATCH_FILES", "30/minute"))
@@ -151,16 +153,39 @@ ZIP_LIMITER = RateLimiter(os.environ.get("RATE_ZIP", "10/minute"))
 LIMITERS = (BATCH_LIMITER, BATCH_FILES_LIMITER, ZIP_LIMITER)
 
 
+# Proxy headers are only believed from these addresses: the tunnel
+# (cloudflared) runs on this machine, so its requests come from loopback.
+# Anyone else could write any X-Forwarded-For or CF-Connecting-IP they like.
+TRUSTED_PROXIES = {
+    host.strip() for host in
+    os.environ.get("TRUSTED_PROXIES", "127.0.0.1,::1").split(",")
+    if host.strip()}
+
+
 def _client_key(request: Request) -> str:
-    forwarded = request.headers.get("x-forwarded-for", "")
-    if forwarded.strip():
-        return forwarded.split(",")[0].strip()
-    return request.client.host if request.client else "?"
+    """Who the rate limits count against.
+
+    A direct client is its socket address: headers it sends cannot change
+    it. Behind a trusted proxy, Cloudflare's CF-Connecting-IP comes first,
+    else the last X-Forwarded-For hop (the one the proxy added; the first
+    one is whatever the client wrote)."""
+    peer = request.client.host if request.client else "?"
+    if peer not in TRUSTED_PROXIES:
+        return peer
+    cloudflare = request.headers.get("cf-connecting-ip", "").strip()
+    if cloudflare:
+        return cloudflare
+    hops = [hop.strip() for hop in
+            request.headers.get("x-forwarded-for", "").split(",")
+            if hop.strip()]
+    return hops[-1] if hops else peer
 
 
 def _throttle(request: Request, limiter: RateLimiter, cost: int = 1) -> None:
-    """429 with Retry-After when this client has used its share; the whole
-    request is refused before any file is read, so a refusal costs nothing."""
+    """429 with Retry-After when this client has used its share. The upload
+    has already been received by then (FastAPI reads the request body before
+    the endpoint runs), but a refused request is never processed: no OCR and
+    no model call."""
     wait = limiter.wait(_client_key(request), cost)
     if wait:
         seconds = max(1, math.ceil(wait))
@@ -416,9 +441,13 @@ async def upload_batch(request: Request,
         except HTTPException as error:
             return {"name": name, "error": {"status": error.status_code,
                                             "detail": error.detail}}
-        except Exception:
-            return {"name": name, "error": {"status": 502,
-                                            "detail": MODEL_DOWN}}
+        except Exception as error:
+            # Model failures already arrive as HTTPException (_create), so
+            # this is a bug: log its type only, never the message, which
+            # could quote the document.
+            LOG.error("batch file failed: %s", type(error).__name__)
+            return {"name": name, "error": {"status": 500,
+                                            "detail": INTERNAL_ERROR}}
 
     return {"documents": await asyncio.gather(*(one(f) for f in files))}
 
@@ -448,8 +477,17 @@ def download_zip(request: Request, ids: Ids) -> Response:
         raise HTTPException(
             413, f"No máximo {MAX_SESSIONS} documentos de cada vez.")
     _throttle(request, ZIP_LIMITER)
-    sessions = [_session(doc_id) for doc_id in wanted]
-    buffer, notes, used = io.BytesIO(), [], set()
+    sessions, notes = [], []
+    for doc_id in wanted:
+        try:
+            sessions.append(_session(doc_id))
+        except HTTPException as error:
+            # One expired tab does not cost the user every other document.
+            notes.append(f"- {doc_id}: {error.detail}")
+    if not sessions:
+        raise HTTPException(
+            404, "Documento não encontrado, expirado ou já apagado.")
+    buffer, used = io.BytesIO(), set()
     with zipfile.ZipFile(buffer, "w", zipfile.ZIP_DEFLATED) as archive:
         for session in sessions:
             folder = _folder_name(session.name, used)
@@ -464,7 +502,8 @@ def download_zip(request: Request, ids: Ids) -> Response:
             archive.writestr(f"{folder}/{result.filename}", result.data)
         if notes:
             archive.writestr("LEIA-ME.txt", "Documentos sem ficheiro "
-                             "censurado:\n" + "\n".join(notes) + "\n")
+                             "censurado ou não incluídos:\n"
+                             + "\n".join(notes) + "\n")
     return Response(buffer.getvalue(), media_type="application/zip", headers={
         "Content-Disposition": 'attachment; filename="lethe-documentos.zip"'})
 

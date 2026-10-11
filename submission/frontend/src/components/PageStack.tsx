@@ -14,19 +14,22 @@ interface Props {
   /** "redacted" paints every box black; "original" only outlines the focused entity. */
   mode: "original" | "redacted";
   focusId?: string;
+  /** The backend is still building the redacted file: the redacted half pulses instead of guessing. */
+  pending?: boolean;
   pageLabel: (n: number) => string;
 }
 
 // The pages of the source document as images, with an SVG overlay in page
 // units on top of each one. The same component renders both halves of the
 // comparison, so the two layers always have identical size.
-export function PageStack({ pages, urls, redactedUrls = [], boxes, mode, focusId = "", pageLabel }: Props) {
+export function PageStack({ pages, urls, redactedUrls = [], boxes, mode, focusId = "", pending = false, pageLabel }: Props) {
   return (
     <ol className="space-y-4 p-3 sm:p-4">
       {pages.map((page, i) => {
-        const own = boxes.filter((b) => b.page === i);
+        const wait = pending && mode === "redacted";
+        const own = wait ? [] : boxes.filter((b) => b.page === i);
         const backend = mode === "redacted" ? redactedUrls[i] ?? null : null;
-        const src = backend ?? urls[i];
+        const src = wait ? null : backend ?? urls[i];
         return (
           <li key={i} className="relative mx-auto w-full max-w-[900px] overflow-hidden rounded-md bg-white shadow-sm ring-1 ring-black/10" style={{ aspectRatio: `${page.width} / ${page.height}` }}>
             {src

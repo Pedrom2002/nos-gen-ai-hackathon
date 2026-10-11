@@ -92,11 +92,76 @@ def _distance(p, q) -> float:
     return float(np.hypot(p[0] - q[0], p[1] - q[1]))
 
 
+SKEW_WORK = 900           # longest side used to measure the tilt of the text
+MAX_SKEW = 10.0           # degrees tried on each side
+MIN_SKEW = 0.5            # a smaller tilt is left alone
+SKEW_GAIN = 1.1           # lines must get this much sharper to be believed
+
+
+def _sharpness(ink: Image.Image, angle: float) -> float:
+    """How sharply the rows of ink stand apart once turned by ``angle``:
+    straight lines of text give a profile that jumps between rows."""
+    rows = np.asarray(ink.rotate(angle, resample=Image.BILINEAR),
+                      dtype=float).sum(axis=1)
+    return float(np.sum(np.diff(rows) ** 2))
+
+
+def estimate_skew(image: Image.Image) -> float:
+    """The turn, in degrees (PIL ``rotate``: counter-clockwise), that levels
+    the lines of text, or 0.0 when the text is level or there is none."""
+    scale = SKEW_WORK / max(image.size)
+    small = image.convert("L").resize(
+        (max(1, round(image.width * scale)),
+         max(1, round(image.height * scale))))
+    gray = np.asarray(small, dtype=float)
+    # Text is much darker than the paper, which is most of a page.
+    ink = Image.fromarray(
+        ((gray < 0.6 * np.median(gray)) * 255).astype(np.uint8))
+    if not np.asarray(ink).any():
+        return 0.0
+    coarse = np.arange(-MAX_SKEW, MAX_SKEW + 0.01, 0.5)
+    best = max(coarse, key=lambda a: _sharpness(ink, a))
+    fine = np.arange(best - 0.5, best + 0.51, 0.1)
+    best = max(fine, key=lambda a: _sharpness(ink, a))
+    if abs(best) < MIN_SKEW:
+        return 0.0
+    if _sharpness(ink, best) < SKEW_GAIN * _sharpness(ink, 0.0):
+        return 0.0
+    return round(float(best), 1)
+
+
+def _rotation_warp(size: tuple[int, int], angle: float) -> Warp:
+    """The Warp that turns an image by ``angle`` degrees (as PIL ``rotate``
+    with ``expand``), so boxes read on the turned page map back."""
+    width, height = size
+    c, s = np.cos(np.radians(angle)), np.sin(np.radians(angle))
+    out_w = int(np.ceil(abs(width * c) + abs(height * s)))
+    out_h = int(np.ceil(abs(width * s) + abs(height * c)))
+
+    def to_photo(x, y):
+        dx, dy = x - out_w / 2, y - out_h / 2
+        return (width / 2 + c * dx - s * dy, height / 2 + s * dx + c * dy)
+
+    flat = [(0, 0), (out_w, 0), (out_w, out_h), (0, out_h)]
+    return Warp((out_w, out_h),
+                _coeffs(flat, [to_photo(x, y) for x, y in flat]))
+
+
+def skew_warp(image: Image.Image):
+    """The Warp that levels crooked lines of text, or None if level."""
+    angle = estimate_skew(image)
+    return _rotation_warp(image.size, angle) if angle else None
+
+
 def page_warp(image: Image.Image):
-    """The Warp that flattens the photographed page, or None."""
+    """The Warp that flattens the photographed page, or None.
+
+    A page with a visible border is flattened by its corners. Without one
+    (a cropped or light-on-light photo) only the tilt of the text is fixed.
+    """
     corners = find_page(image)
     if corners is None:
-        return None
+        return skew_warp(image)
     tl, tr, br, bl = corners
     width = round(max(_distance(tl, tr), _distance(bl, br)))
     height = round(max(_distance(tl, bl), _distance(tr, br)))

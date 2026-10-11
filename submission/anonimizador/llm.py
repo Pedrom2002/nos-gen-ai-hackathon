@@ -109,9 +109,13 @@ def generate(prompt: str, model: str = DEFAULT_MODEL,
     (cached before the check existed) is ignored and requested again. The
     client and the sleep function can be injected for tests.
     """
-    key = cache_key(prompt, model, temperature, json_output)
-    cache_file = Path(cache_dir) / f"{key}.json"
-    if cache_file.exists():
+    # cache_dir=None: no cache at all (the API: the answers quote the
+    # document, so they are not written to disk).
+    cache_file = None
+    if cache_dir is not None:
+        key = cache_key(prompt, model, temperature, json_output)
+        cache_file = Path(cache_dir) / f"{key}.json"
+    if cache_file is not None and cache_file.exists():
         cached = json.loads(cache_file.read_text(encoding="utf-8"))["response"]
         if validate is None or _passes(validate, cached):
             return cached
@@ -127,9 +131,11 @@ def generate(prompt: str, model: str = DEFAULT_MODEL,
             raise InvalidResponseError(
                 f"Resposta inválida do modelo {model}: {exc}"
             ) from exc
-    cache_file.parent.mkdir(parents=True, exist_ok=True)
-    cache_file.write_text(
-        json.dumps({"model": model, "response": text}, ensure_ascii=False),
-        encoding="utf-8",
-    )
+    if cache_file is not None:
+        cache_file.parent.mkdir(parents=True, exist_ok=True)
+        cache_file.write_text(
+            json.dumps({"model": model, "response": text},
+                       ensure_ascii=False),
+            encoding="utf-8",
+        )
     return text

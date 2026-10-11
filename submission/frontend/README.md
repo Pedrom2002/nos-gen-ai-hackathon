@@ -8,7 +8,7 @@ Primeira versão feita com [Lovable](https://lovable.dev) e desenvolvida depois 
 
 ## Desenvolvimento
 
-Precisa de Node.js 20+ e da API a correr (ver "Ligar ao backend" mais abaixo).
+Precisa de Node.js 22.12+ (exigido pelo TanStack Start) e da API a correr (ver "Ligar ao backend" mais abaixo).
 
 ```sh
 cd submission/frontend

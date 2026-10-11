@@ -16,6 +16,7 @@ is read as before.
 
 import io
 import re
+import zipfile
 from dataclasses import dataclass, field
 from difflib import SequenceMatcher
 
@@ -25,7 +26,7 @@ from docx.oxml.ns import qn
 from PIL import Image
 
 from anonimizador import deskew, ocr
-from anonimizador.extract import clean_lines, decode_text
+from anonimizador.extract import BinaryFile, clean_lines, decode_text
 
 TEXT = {".txt", ".csv"}
 IMAGE = {".png", ".jpg", ".jpeg", ".webp"}
@@ -56,8 +57,17 @@ class TooManyPages(ValueError):
     """A scanned PDF longer than MAX_OCR_PAGES."""
 
 
+class TooLarge(ValueError):
+    """A file that is small to upload but huge once opened. The message is
+    shown to the user, so it never quotes the document."""
+
+
 # Each scanned page is OCR'd at 300 dpi (about 26 MB of pixels): cap them.
 MAX_OCR_PAGES = 20
+# A DOCX is a zip: a few KB can unpack to gigabytes of XML.
+MAX_UNPACKED_BYTES = 50 * 1024 * 1024
+# A photo of 48 megapixels is normal; 80 is not, and decodes to ~240 MB.
+MAX_PIXELS = 80_000_000
 
 
 @dataclass
@@ -262,7 +272,28 @@ def docx_paragraphs(document) -> list:
     return found
 
 
+def _check_docx_size(data: bytes) -> None:
+    """Refuse a DOCX that unpacks to too much, before reading any of it."""
+    with zipfile.ZipFile(io.BytesIO(data)) as archive:
+        unpacked = sum(info.file_size for info in archive.infolist())
+    if unpacked > MAX_UNPACKED_BYTES:
+        raise TooLarge(
+            "O DOCX é demasiado grande depois de descomprimido "
+            f"(máximo {MAX_UNPACKED_BYTES // (1024 * 1024)} MB).")
+
+
+def _check_pixels(data: bytes) -> None:
+    """Refuse an image with too many pixels, reading only its header."""
+    with Image.open(io.BytesIO(data)) as image:
+        width, height = image.size
+    if width * height > MAX_PIXELS:
+        raise TooLarge(
+            f"A imagem tem demasiados píxeis ({width}x{height}): reduza-a "
+            f"para menos de {MAX_PIXELS // 1_000_000} milhões.")
+
+
 def _docx(data: bytes) -> Source:
+    _check_docx_size(data)
     document = Document(io.BytesIO(data))
     lines = [text.rstrip() for _, text in docx_paragraphs(document)]
     return Source("docx", ".docx", data, lines)
@@ -274,9 +305,14 @@ def load_source(data: bytes, suffix: str) -> Source:
     if suffix not in SUPPORTED:
         raise UnsupportedFormat(suffix)
     if suffix in TEXT:
-        return Source("text", suffix, data, clean_lines(decode_text(data)))
+        try:
+            text = decode_text(data)
+        except BinaryFile:
+            raise UnsupportedFormat(suffix) from None
+        return Source("text", suffix, data, clean_lines(text))
     if suffix == ".pdf":
         return _pdf(data)
     if suffix == ".docx":
         return _docx(data)
+    _check_pixels(data)
     return _from_ocr(Source("image", suffix, data, []), straighten=True)

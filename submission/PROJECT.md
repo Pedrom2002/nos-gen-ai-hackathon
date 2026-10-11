@@ -16,7 +16,7 @@ Lethe masks the words that identify a person in a Portuguese document. It uses o
 | Words masked in the official document | 52, in 28 explained items |
 | Extra test documents | 17 (PDF, TXT in UTF-8 and UTF-16, CSV), 961 words masked, 0 errors |
 | Tilted photos of the official document (-5 to +5 degrees, no page border) | 306 of 315 sensitive words read by OCR (251 before the tilt correction) |
-| Python tests | 197, coverage 95% (gate 90%) |
+| Python tests | 213, coverage 96% (gate 90%) |
 | Web frontend tests | 55 |
 | Mobile app tests | 31 |
 
@@ -132,7 +132,9 @@ Without `VITE_API_URL` the interface runs in demo mode with simulated results, a
 
 ### Privacy by design
 
-- Documents live only in the API's memory, with no database and no files. `DELETE /api/documents/{id}` removes one.
+- Documents live only in the API's memory, with no database and no files; the API does not cache the model's answers either, since they quote the document. At most 30 are kept (the least recently used goes first), one idle for 30 minutes is dropped, and `DELETE /api/documents/{id}` removes one at once. Ids are 22 random characters.
+- Uploads are checked before any heavy work: at most 25 MB; a DOCX that unpacks past 50 MB, an image over 80 megapixels, a scanned PDF over 20 pages or a document over 8 000 words is refused (413) before any model call, and a binary file named `.txt` is refused as unsupported (415).
+- `run.py` (the command line) does cache the model's answers in `data/cache/`, so repeated runs cost nothing. That folder is not committed, but it holds the documents' text: delete it after working with real documents.
 - Request logging is off, and document text never appears in logs or error messages.
 - The browser only stores the theme and the language.
 - Only the text is sent to the model. The API key stays in `submission/.env`, which is never committed.
@@ -140,7 +142,7 @@ Without `VITE_API_URL` the interface runs in demo mode with simulated results, a
 
 ## Setup
 
-Requirements: Python 3.10+, Node.js 20+ and a Gemini API key. For images and scanned PDFs, also [Tesseract](https://github.com/UB-Mannheim/tesseract/wiki) with Portuguese (`apt install tesseract-ocr-por` on Linux; on Windows, the UB-Mannheim installer, or `por.traineddata` in `%LOCALAPPDATA%\tessdata`).
+Requirements: Python 3.10+, Node.js 22.12+ (TanStack Start, used by the web interface, needs it) and a Gemini API key. For images and scanned PDFs, also [Tesseract](https://github.com/UB-Mannheim/tesseract/wiki) with Portuguese (`apt install tesseract-ocr-por` on Linux; on Windows, the UB-Mannheim installer, or `por.traineddata` in `%LOCALAPPDATA%\tessdata`).
 
 ```bash
 cd submission

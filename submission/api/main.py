@@ -9,7 +9,9 @@ through the API. Document text never goes to logs or error messages.
 
 import logging
 import os
-import uuid
+import secrets
+import threading
+import time
 from collections import Counter
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -30,8 +32,8 @@ from anonimizador.report import build_report, to_markdown
 from anonimizador.redact import RedactionError, redact
 from anonimizador.review import apply_decisions
 from anonimizador.sources import (MAX_OCR_PAGES, SUPPORTED, NeedsOcr,
-                                  Source, TooManyPages, UnsupportedFormat,
-                                  load_source)
+                                  Source, TooLarge, TooManyPages,
+                                  UnsupportedFormat, load_source)
 from anonimizador.verify import check_leaks
 
 SUBMISSION_DIR = Path(__file__).resolve().parents[1]
@@ -40,6 +42,9 @@ OFFICIAL_PDF = SUBMISSION_DIR.parent / "raw_data" / "document_to_anonymize.pdf"
 MAX_BYTES = 25 * 1024 * 1024
 # Same output as run.py: punctuation next to a masked word stays ("*,").
 KEEP_PUNCT = True
+# The model returns every line again (about 6 tokens a word), and its answer
+# has a limit: 8 000 words is a 20-page scan or a long contract.
+MAX_WORDS = 8000
 UNSUPPORTED = ("Formato não suportado: use PDF, DOCX, imagem (PNG, JPG, "
                "WebP), TXT ou CSV.")
 MODEL_DOWN = "O modelo não respondeu. Tente de novo dentro de um minuto."
@@ -73,7 +78,9 @@ app.add_middleware(
 
 
 def generate_fn(*args, **kwargs):
-    """Model call; replaced in tests."""
+    """Model call; replaced in tests. No disk cache: the answers quote the
+    document, and the API keeps documents in memory only."""
+    kwargs.setdefault("cache_dir", None)
     return llm.generate(*args, **kwargs)
 
 
@@ -87,12 +94,40 @@ class Session:
     keep: set[str] = field(default_factory=set)
     output: list[str] = field(default_factory=list)
     masked: list = field(default_factory=list)
+    touched: float = field(default_factory=lambda: time.monotonic())
 
     def masked_items(self) -> list[dict]:
         return [i for i in self.items if i["id"] not in self.keep]
 
 
 STORE: dict[str, Session] = {}
+# Documents live in memory only, and each keeps the original file (up to
+# 25 MB): without a limit, uploads alone could fill the server's memory.
+MAX_SESSIONS = 30
+SESSION_TTL = 30 * 60        # seconds without use before a document is dropped
+_STORE_LOCK = threading.Lock()
+
+
+def new_id() -> str:
+    """An id nobody can guess: the id is the only key to a document."""
+    return secrets.token_urlsafe(16)
+
+
+def _drop_expired() -> None:
+    now = time.monotonic()
+    for doc_id in [i for i, s in STORE.items()
+                   if now - s.touched > SESSION_TTL]:
+        del STORE[doc_id]
+
+
+def _remember(doc_id: str, session: Session) -> None:
+    """Keep a document, dropping the expired and then the least recently
+    used ones so there are never more than MAX_SESSIONS."""
+    with _STORE_LOCK:
+        _drop_expired()
+        while len(STORE) >= MAX_SESSIONS:
+            del STORE[min(STORE, key=lambda i: STORE[i].touched)]
+        STORE[doc_id] = session
 
 
 class Decisions(BaseModel):
@@ -104,9 +139,14 @@ class Question(BaseModel):
 
 
 def _session(doc_id: str) -> Session:
-    if doc_id not in STORE:
-        raise HTTPException(404, "Documento não encontrado ou já apagado.")
-    return STORE[doc_id]
+    with _STORE_LOCK:
+        _drop_expired()
+        session = STORE.get(doc_id)
+        if session is None:
+            raise HTTPException(
+                404, "Documento não encontrado, expirado ou já apagado.")
+        session.touched = time.monotonic()
+        return session
 
 
 def _summary(items: list[dict]) -> dict:
@@ -141,6 +181,8 @@ def _read(data: bytes, suffix: str) -> Source:
         return load_source(data, suffix)
     except UnsupportedFormat:
         raise HTTPException(415, UNSUPPORTED) from None
+    except TooLarge as error:
+        raise HTTPException(413, str(error)) from None
     except TooManyPages:
         raise HTTPException(
             413, f"O PDF digitalizado tem mais de {MAX_OCR_PAGES} páginas: "
@@ -162,6 +204,13 @@ def _create(name: str, source: Source) -> dict:
             422, "O documento não tem texto legível. Se for uma fotografia, "
                  "tente uma imagem mais nítida."
         )
+    words = sum(len(line.split()) for line in source.lines)
+    if words > MAX_WORDS:
+        # The model answers with every line again: a longer document would
+        # not fit in one answer, and would only fail after a long wait.
+        raise HTTPException(
+            413, f"O documento tem {words} palavras; o máximo é {MAX_WORDS}. "
+                 "Divida-o em partes.")
     try:
         result = anonymize_source(source, keep_punct=KEEP_PUNCT,
                                   generate_fn=generate_fn)
@@ -171,10 +220,11 @@ def _create(name: str, source: Source) -> dict:
     # the report, the leak check and the review must all use that text.
     lines = source.lines
     items = build_report(lines, result)["items"]
-    doc_id = uuid.uuid4().hex[:12]
-    STORE[doc_id] = Session(name, source, lines, result, items, set(),
-                            list(result.lines), list(result.masked))
-    return _state(doc_id, STORE[doc_id])
+    doc_id = new_id()
+    session = Session(name, source, lines, result, items, set(),
+                      list(result.lines), list(result.masked))
+    _remember(doc_id, session)
+    return _state(doc_id, session)
 
 
 @app.get("/api/health")
@@ -276,5 +326,6 @@ def ask(doc_id: str, question: Question) -> dict:
 @app.delete("/api/documents/{doc_id}", status_code=204)
 def delete(doc_id: str) -> Response:
     _session(doc_id)
-    del STORE[doc_id]
+    with _STORE_LOCK:
+        STORE.pop(doc_id, None)
     return Response(status_code=204)

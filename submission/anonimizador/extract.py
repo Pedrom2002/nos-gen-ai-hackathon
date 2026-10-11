@@ -26,10 +26,19 @@ def extract_lines(pdf_path: str | Path) -> list[str]:
     return clean_lines(text)
 
 
+class BinaryFile(ValueError):
+    """A file called text that is not text (an executable, an archive...)."""
+
+
 def decode_text(data: bytes) -> str:
-    """Decode a text file: UTF-16 (with BOM), UTF-8 or Windows-1252."""
+    """Decode a text file: UTF-16 (with BOM), UTF-8 or Windows-1252.
+
+    Raises BinaryFile for a file with NUL bytes that is not UTF-16.
+    """
     if data[:2] in (b"\xff\xfe", b"\xfe\xff"):
         return data.decode("utf-16")
+    if b"\x00" in data[:8192]:
+        raise BinaryFile("not a text file")
     try:
         return data.decode("utf-8-sig")
     except UnicodeDecodeError:

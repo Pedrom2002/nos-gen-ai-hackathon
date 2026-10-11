@@ -24,7 +24,7 @@ Lethe masks the words that identify a person in a Portuguese document: one `*` p
 | Official document, local Similarity / Accuracy | 100% / 100% |
 | Leak check on the official document | 0 leaks in 26 masked values |
 | Extra test documents | 17, 961 words masked, 0 errors |
-| Tests | 197 Python (95% coverage), 55 web, 31 mobile |
+| Tests | 213 Python (96% coverage), 55 web, 31 mobile |
 
 The local metric reproduces the two figures of the official evaluation logs against a reference we annotated by hand (see `PROJECT.md`). The official score is unknown until the final evaluation.
 

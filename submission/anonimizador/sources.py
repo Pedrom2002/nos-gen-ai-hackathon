@@ -96,14 +96,21 @@ class Source:
 def _from_ocr(source: Source, straighten: bool = False) -> Source:
     if not ocr.available():
         raise NeedsOcr("O Tesseract com português não está instalado.")
-    for page_no, image in enumerate(source.page_images()):
+
+    def read_page(numbered):
+        page_no, image = numbered
         # A photographed page is read flattened; boxes stay in that space.
         warp = deskew.page_warp(image) if straighten else None
-        source.warps.append(warp)
         readable = warp.flatten(image) if warp else image
-        lines = ocr.read_image(readable)
-        lines, still_unread = ocr.recover_unread(readable, lines)
-        source.unread += len(still_unread)
+        lines, still_unread = ocr.recover_unread(
+            readable, ocr.read_image(readable))
+        return page_no, warp, lines, len(still_unread)
+
+    # Pages are read a few at a time; they are put together in page order.
+    for page_no, warp, lines, unread in ocr.map_pages(
+            read_page, enumerate(source.page_images())):
+        source.warps.append(warp)
+        source.unread += unread
         for words in lines:
             line_no = len(source.lines)
             source.lines.append(" ".join(w.text for w in words))

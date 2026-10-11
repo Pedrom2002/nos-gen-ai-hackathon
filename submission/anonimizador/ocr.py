@@ -11,6 +11,7 @@ folder; its language data through TESSDATA_PREFIX or %LOCALAPPDATA%/tessdata
 
 import os
 import shutil
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -22,6 +23,33 @@ LANG = "por"
 # Small photos are read better when enlarged; boxes are scaled back.
 MIN_WIDTH = 1600
 WINDOWS_CMD = Path(r"C:\Program Files\Tesseract-OCR\tesseract.exe")
+
+
+# Pages of a document are independent, and Tesseract uses one core per call,
+# so a few pages are read at the same time. Not more: a rendered scanned page
+# is about 26 MB of pixels and only this many are kept in memory at once.
+PAGE_WORKERS = max(1, min(3, os.cpu_count() or 1))
+
+
+def map_pages(fn, pages, workers: int = PAGE_WORKERS) -> list:
+    """Apply ``fn`` to every page and return the results in page order.
+
+    ``pages`` may be a generator that renders each page when asked for it;
+    it is taken ``workers`` pages at a time, so memory stays bounded. The
+    first error is raised once the pages being read have finished.
+    """
+    if workers <= 1:
+        return [fn(page) for page in pages]
+    results, batch = [], []
+    with ThreadPoolExecutor(max_workers=workers) as pool:
+        for page in pages:
+            batch.append(page)
+            if len(batch) == workers:
+                results += list(pool.map(fn, batch))
+                batch = []
+        if batch:
+            results += list(pool.map(fn, batch))
+    return results
 
 
 @dataclass(frozen=True)

@@ -84,17 +84,27 @@ def _verify_scanned(redacted: Redacted, values, pages) -> None:
     with pymupdf.open(stream=redacted.data, filetype="pdf") as doc:
         if any(doc.metadata.get(k) for k in _PDF_FIELDS):
             raise _fail("o PDF ainda tem metadados")
-        for page in doc:
-            if page.get_text().strip():
-                raise _fail("o PDF tem uma camada de texto")
-            images = page.get_images()
-            if len(images) != 1:
-                raise _fail("página com conteúdo inesperado")
-            pix = pymupdf.Pixmap(doc, images[0][0])
-            image = Image.frombytes("RGB", (pix.width, pix.height),
-                                    pix.samples)
-            _check_pixels(image, pages[page.number])
+
+        def page_images():
+            # MuPDF is not thread-safe: the PDF is only touched here, in the
+            # calling thread, and each page is handed over as a plain image.
+            for page in doc:
+                if page.get_text().strip():
+                    raise _fail("o PDF tem uma camada de texto")
+                images = page.get_images()
+                if len(images) != 1:
+                    raise _fail("página com conteúdo inesperado")
+                pix = pymupdf.Pixmap(doc, images[0][0])
+                yield page.number, Image.frombytes(
+                    "RGB", (pix.width, pix.height), pix.samples)
+
+        def check_image(numbered):
+            number, image = numbered
+            _check_pixels(image, pages[number])
             _check_ocr(image, values)
+
+        # The pages are read again a few at a time, each one in full.
+        ocr.map_pages(check_image, page_images())
 
 
 def _raw_tokens(values: list[str]) -> set[bytes]:

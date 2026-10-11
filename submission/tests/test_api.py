@@ -456,15 +456,63 @@ def test_batch_is_rate_limited_per_client(client, monkeypatch):
     assert refused.status_code == 429
     assert refused.headers["Retry-After"] == "60"
     assert "60 s" in refused.json()["detail"]
-    # Another client is not affected.
+    # Another client (seen through the trusted tunnel) is not affected.
+    monkeypatch.setattr(main, "TRUSTED_PROXIES", {"testclient"})
     other = batch(client, txt("a.txt", "Nome: Rui\n"),
-                  headers={"X-Forwarded-For": "203.0.113.9, 10.0.0.1"})
+                  headers={"CF-Connecting-IP": "203.0.113.9"})
     assert other.status_code == 200
+    monkeypatch.setattr(main, "TRUSTED_PROXIES", set())
     # The window slides: after a minute the first client is served again.
     now[0] += 30
     assert batch(client, txt("a.txt", "Nome: Rui\n")).status_code == 429
     now[0] += 30
     assert batch(client, txt("a.txt", "Nome: Rui\n")).status_code == 200
+
+
+def test_direct_client_cannot_dodge_the_limit_with_headers(client,
+                                                           monkeypatch):
+    monkeypatch.setattr(main, "BATCH_LIMITER", main.RateLimiter("1/minute"))
+    assert batch(client, txt("a.txt", "Nome: Rui\n")).status_code == 200
+    # Not behind a trusted proxy: forwarded headers are the client's own
+    # words and are ignored.
+    for n, headers in enumerate([
+            {"X-Forwarded-For": "203.0.113.1"},
+            {"X-Forwarded-For": "203.0.113.2, 10.0.0.1"},
+            {"CF-Connecting-IP": "203.0.113.3"}]):
+        refused = batch(client, txt(f"{n}.txt", "Nome: Rui\n"),
+                        headers=headers)
+        assert refused.status_code == 429
+
+
+def test_client_key_behind_the_trusted_tunnel(monkeypatch):
+    from types import SimpleNamespace
+    monkeypatch.setattr(main, "TRUSTED_PROXIES", {"127.0.0.1"})
+
+    def key(peer, **headers):
+        request = SimpleNamespace(
+            client=SimpleNamespace(host=peer),
+            headers={k.lower().replace("_", "-"): v
+                     for k, v in headers.items()})
+        return main._client_key(request)
+
+    assert key("198.51.100.7", X_Forwarded_For="1.2.3.4") == "198.51.100.7"
+    assert key("127.0.0.1", CF_Connecting_IP="203.0.113.9",
+               X_Forwarded_For="1.2.3.4") == "203.0.113.9"
+    # Without Cloudflare's header: the hop the proxy added, not the first
+    # one, which the client wrote.
+    assert key("127.0.0.1",
+               X_Forwarded_For="6.6.6.6, 203.0.113.9") == "203.0.113.9"
+    assert key("127.0.0.1") == "127.0.0.1"
+
+
+def test_batch_unexpected_error_is_internal_not_model_down(client,
+                                                           monkeypatch):
+    def bug(*args, **kwargs):
+        raise ValueError(f"something quoting {NAME}")
+
+    monkeypatch.setattr(main, "_ingest", bug)
+    (entry,) = batch(client, txt("a.txt", "Nome: Rui\n")).json()["documents"]
+    assert entry["error"] == {"status": 500, "detail": main.INTERNAL_ERROR}
 
 
 def test_batch_file_budget_refuses_the_whole_request(client, monkeypatch):
@@ -550,7 +598,12 @@ def test_zip_errors(client, monkeypatch):
     assert zip_of(client, [])[0].status_code == 422
     assert zip_of(client, ["nope"])[0].status_code == 404
     doc = official(client)
-    assert zip_of(client, [doc["id"], "nope"])[0].status_code == 404
+    # An expired document is noted in LEIA-ME.txt; the others still come.
+    response, archive = zip_of(client, [doc["id"], "nope"])
+    assert response.status_code == 200
+    folder = Path(main.OFFICIAL_PDF.name).stem
+    assert f"{folder}/submission.txt" in archive.namelist()
+    assert "- nope:" in archive.read("LEIA-ME.txt").decode()
     monkeypatch.setattr(main, "ZIP_LIMITER", main.RateLimiter("1/minute"))
     assert zip_of(client, [doc["id"]])[0].status_code == 200
     refused = zip_of(client, [doc["id"]])[0]

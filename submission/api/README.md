@@ -20,12 +20,15 @@ Other frontends (for example the Lovable preview) are added in `submission/.env`
 ALLOWED_ORIGINS=https://<id>.lovable.app
 ```
 
-The two heavy routes that take several documents at once are rate limited per client (the first `X-Forwarded-For` hop behind the tunnel, else the socket address) over a sliding window, in memory: `POST /api/documents/batch` to 5 requests and 30 files a minute, `POST /api/documents/zip` to 10 requests a minute. Over the limit the answer is 429 with a `Retry-After` header and the seconds to wait in `detail`, before any file is read. The limits can be changed in `submission/.env`:
+The two heavy routes that take several documents at once are rate limited per client over a sliding window, in memory: `POST /api/documents/batch` to 5 requests and 30 files a minute, `POST /api/documents/zip` to 10 requests a minute. Over the limit the answer is 429 with a `Retry-After` header and the seconds to wait in `detail`; the refused request is never processed (no OCR, no model call).
+
+A client is its socket address. Proxy headers are only believed when the request comes from a trusted proxy (`TRUSTED_PROXIES`, by default the loopback addresses where the Cloudflare tunnel runs): then `CF-Connecting-IP`, else the last `X-Forwarded-For` hop. A client talking to the API directly cannot dodge the limits by sending those headers itself. The limits can be changed in `submission/.env`:
 
 ```bash
 RATE_BATCH=5/minute          # requests to /batch, per client
 RATE_BATCH_FILES=30/minute   # files across those requests
 RATE_ZIP=10/minute           # requests to /zip
+TRUSTED_PROXIES=127.0.0.1,::1  # where proxy headers are believed from
 ```
 
 ## Privacy
@@ -49,7 +52,7 @@ RATE_ZIP=10/minute           # requests to /zip
 | GET | `/api/documents/{id}/download/report` | | `report.md` (values hidden) |
 | GET | `/api/documents/{id}/download/redacted` | | the original file with the masked words removed for good (PNG for images, PDF, DOCX, CSV with the masked cells), with the review applied; 404 for TXT, 422 if the safety checks fail. The file is built in the background as soon as the document or a new review is saved, so this request waits only for a build still in progress and the same review is never built twice |
 | POST | `/api/documents/{id}/ask` | `{ "question": "..." }` | `GatewayAnswer` |
-| POST | `/api/documents/zip` | `{ "ids": ["..."] }` | `lethe-documentos.zip`: a folder per document (the file's stem, `name (2)` when repeated) with `submission.txt`, `report.md` and the redacted file when one can be given, plus `LEIA-ME.txt` naming the documents without one and why; 404 if any id is unknown, 429 over the rate limit |
+| POST | `/api/documents/zip` | `{ "ids": ["..."] }` | `lethe-documentos.zip`: a folder per document (the file's stem, `name (2)` when repeated) with `submission.txt`, `report.md` and the redacted file when one can be given, plus `LEIA-ME.txt` naming the documents without one, or not found, and why; 404 only if no id is known, 429 over the rate limit |
 | DELETE | `/api/documents/{id}` | | 204 |
 
 `PUT /decisions` always sends the full list of items to keep visible; an empty list masks everything again.

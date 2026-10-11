@@ -28,6 +28,15 @@ describe("anonymize: whole words and backend positions", () => {
     expect(anonymize(text, [{ ...ana, enabled: false }])).toBe(text);
   });
 
+  it("keeps the punctuation around a masked word, as the backend does", () => {
+    const text = "Filhos: 2 (Pedro, 15 anos)\n(validade 09/27, CVV 123)";
+    const pedro: Entity = { ...e("(Pedro,"), at: [{ line: 1, first: 2, last: 2 }] };
+    const card: Entity = { ...e("09/27,"), at: [{ line: 2, first: 1, last: 1 }] };
+    const cvv: Entity = { ...e("123)"), at: [{ line: 2, first: 3, last: 3 }] };
+    expect(anonymize(text, [pedro, card, cvv])).toBe("Filhos: 2 (*, 15 anos)\n(validade *, CVV *)");
+    expect(anonymize("Morada: Rua das Flores, 123", [e("Rua das Flores, 123")])).toBe("Morada: * * *, *");
+  });
+
   it("falls back to text search when the positions do not fit the text", () => {
     const moved: Entity = { ...e("Rui"), at: [{ line: 9, first: 0, last: 0 }] };
     expect(anonymize("Doente: Rui", [moved])).toBe("Doente: *");

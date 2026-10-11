@@ -102,7 +102,17 @@ export function findSpans(text: string, entities: Entity[]): Span[] {
   return spans.sort((a, b) => a.start - b.start);
 }
 
-/** Strict hackathon format: each word of a sensitive span -> single "*", empty lines removed. */
+// Same edges as anonimizador/align.py: brackets and quotes before a word,
+// closing brackets, quotes and punctuation after it.
+const EDGE_PUNCT = /^([([\]"'«]*)(.*?)([)\]"'».,;:!?]*)$/s;
+
+/** A masked word keeps its punctuation ("Flores," -> "*,"), as the backend does. */
+function maskWord(word: string): string {
+  const [, lead, core, trail] = EDGE_PUNCT.exec(word) ?? ["", "", word, ""];
+  return core ? `${lead}*${trail}` : "*";
+}
+
+/** Hackathon format: each word of a sensitive span -> one "*" (punctuation kept), empty lines removed. */
 export function anonymize(text: string, entities: Entity[]): string {
   const spans = findSpans(text, entities.filter((e) => e.enabled));
   let out = "";
@@ -112,7 +122,7 @@ export function anonymize(text: string, entities: Entity[]): string {
     const segment = text.slice(s.start, s.end);
     out += segment
       .split("\n")
-      .map((line) => line.split(/\s+/).filter(Boolean).map(() => "*").join(" "))
+      .map((line) => line.split(/\s+/).filter(Boolean).map(maskWord).join(" "))
       .join("\n");
     cur = s.end;
   }

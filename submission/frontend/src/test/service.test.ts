@@ -6,7 +6,7 @@ const state: DocumentState = {
   id: "abc123",
   name: "doc.txt",
   lines: ["Nome:  Rui Costa Lima", "Contacto: 916 222 333, rui@mail.pt", "Médico: Dr. Paulo Reis"],
-  output: ["Nome:  * * *", "Contacto: * * * *", "Médico: Dr. * *"],
+  output: ["Nome:  * * *", "Contacto: * * *, *", "Médico: Dr. * *"],
   items: [
     { id: "L1-1", line: 1, first: 1, last: 3, words: 3, text: "Rui Costa Lima", category: "Pessoa", role: "titular", reason: "Nome do titular", source: "modelo", kept: false },
     { id: "L2-1", line: 2, first: 1, last: 4, words: 4, text: "916 222 333, rui@mail.pt", category: "Contacto", role: "", reason: "Padrão de identificador", source: "rede de segurança", kept: false },

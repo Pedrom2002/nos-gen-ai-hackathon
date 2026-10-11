@@ -92,6 +92,8 @@ The worked example includes a relationship word that stays visible ("(irmã)"): 
 
 ## Other formats and redacted files
 
+![A simulated photo of the official document and the redacted file returned by the API](docs/photo_redaction.png)
+
 Besides the challenge PDF, Lethe reads scanned PDFs, photos and images (PNG, JPG, WebP), DOCX, TXT and CSV. Every input still produces `submission.txt` and the report through the same pipeline. Images, PDFs and DOCX files also come back redacted, in their own format (`python run.py --pdf FILE --redact`, or `GET /api/documents/{id}/download/redacted`).
 
 - **Images and scans:** they are read by [Tesseract](https://github.com/tesseract-ocr/tesseract) on the machine, in Portuguese, so the image never leaves it; only its text goes to the model. Each word keeps its box.
@@ -206,6 +208,7 @@ submission/
 
 - **The LLM decides, the code guarantees.** The model only chooses what to mask. Alignment, the safety net and the leak check make sure the format is right and known identifier patterns never get through.
 - **Model choice:** `gemini-3.1-flash-lite` answers in about 5 to 6 seconds per document and reaches 100% on the reference. That time is the answer itself (about 2 500 output tokens: the model returns the masked lines and one explanation per item), not hidden reasoning: the model reports no thinking tokens, and turning thinking off gave identical output on three documents. `gemini-3.8-flash` took 12 to 15 seconds per call and hit rate limits more often.
+- **Prompt changes are measured, not assumed:** rewording one rule ("keep the name of the institution that issues the document") left the official output identical, but on the 17 extra documents it changed 6 of them: it masked a missed surname and an ID card expiry date, yet left parts of two personal addresses and two personal amounts visible. The model is deterministic here (two runs of the old prompt give the same output), so the change came from the wording. It was rejected.
 - **No database:** documents are sensitive by definition, so nothing is stored.
 - **Limitations:**
   - a blurry or strongly tilted photo can leave a line the OCR cannot read; the redacted file is then refused rather than delivered with that line visible, and only the text output is given;

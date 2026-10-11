@@ -4,6 +4,10 @@ Team **Enxada de Pedra** · NOS Gen-AI Hackathon, JunctionX Lisbon 2026
 
 Lethe masks the words that identify a person in a Portuguese document: one `*` per word, the original layout kept, no empty lines. Gemini decides what is sensitive; tested code guarantees the format and checks that nothing it masked is still readable. It reads PDFs (text or scanned), DOCX, photos (PNG, JPG, WebP), TXT and CSV, and can return the original file with the masked words removed for good.
 
+![A simulated photo of the official document and the file Lethe returns, with the identifying words removed](submission/docs/photo_redaction.png)
+
+*Left: a photo made from the official PDF (blur, noise, perspective). Right: the file the API returns. Names, date of birth, NIF, ID card, address, phone, email and social security number are removed; sex, ethnicity, age and the medical history stay.*
+
 **Start here: [`submission/PROJECT.md`](submission/PROJECT.md)** documents the solution: how it works, the prompt, the privacy rules, setup, usage and the decisions we took.
 
 ## Deliverables

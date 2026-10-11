@@ -214,6 +214,8 @@ def _create(name: str, source: Source) -> dict:
     try:
         result = anonymize_source(source, keep_punct=KEEP_PUNCT,
                                   generate_fn=generate_fn)
+    except (llm.ConfigError, llm.ProviderUnavailableError) as error:
+        raise HTTPException(503, str(error)) from None
     except Exception:
         raise HTTPException(502, MODEL_DOWN) from None
     # Read after anonymize_source: OCR text has been fixed by then, and
@@ -229,7 +231,10 @@ def _create(name: str, source: Source) -> dict:
 
 @app.get("/api/health")
 def health() -> dict:
-    return {"status": "ok"}
+    """Liveness plus the model in use, so the interface can say whether the
+    text goes to Gemini or stays on this machine (Ollama, LM Studio...)."""
+    return {"status": "ok", "provider": llm.provider(),
+            "model": llm.default_model(), "local": llm.provider() != "gemini"}
 
 
 @app.post("/api/documents")
@@ -319,6 +324,8 @@ def ask(doc_id: str, question: Question) -> dict:
     try:
         return gateway_ask(session.lines, current, question.question,
                            generate_fn=generate_fn)
+    except (llm.ConfigError, llm.ProviderUnavailableError) as error:
+        raise HTTPException(503, str(error)) from None
     except Exception:
         raise HTTPException(502, MODEL_DOWN) from None
 

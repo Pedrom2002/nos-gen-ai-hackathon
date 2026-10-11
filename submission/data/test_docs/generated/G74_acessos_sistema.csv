@@ -1,0 +1,21 @@
+utilizador,nome,email,perfil,ultimo_login,ip_origem,estado,tentativas_falhadas
+mribeiro,Maria Figueiredo Ribeiro,mribeiro@lusofibra.pt,admin,2026-09-23T16:53:00,161.89.74.154,bloqueado,0
+beatriz.gomes,Beatriz Gomes,beatriz.gomes@lusofibra.pt,operador,2026-09-28T10:29:00,89.215.207.154,expirado,6
+goliveira,Gonçalo Lopes Oliveira,goliveira@lusofibra.pt,supervisor,2026-10-05T20:37:00,162.119.164.29,expirado,2
+carla74,Carla Figueiredo Coelho,carla74@lusofibra.pt,operador,2026-10-01T13:28:00,8.158.148.185,ativo,3
+jmoreira,José Neves Moreira,jmoreira@lusofibra.pt,operador,2026-09-21T03:01:00,194.45.133.250,bloqueado,5
+ijesus,Isabel Varela Jesus,ijesus@lusofibra.pt,operador,2026-09-30T10:10:00,88.25.84.129,ativo,2
+bruno.brito,Bruno Ribeiro Lopes Brito,bruno.brito@lusofibra.pt,operador,2026-09-25T14:23:00,212.129.230.254,ativo,2
+luis85,Luís Azevedo,luis85@lusofibra.pt,leitura,2026-09-22T07:21:00,82.136.41.86,ativo,4
+henrique94,Henrique Azevedo Monteiro Raposo,henrique94@lusofibra.pt,leitura,2026-09-25T08:30:00,74.174.18.72,expirado,5
+eteixeira,Eduardo Alves Araújo Teixeira,eteixeira@lusofibra.pt,operador,2026-09-28T14:10:00,94.143.38.241,ativo,1
+tomas.borges,Tomás Bento Borges,tomas.borges@lusofibra.pt,supervisor,2026-10-03T12:55:00,18.150.20.95,bloqueado,0
+luis.monteiro,Luís Nogueira Monteiro,luis.monteiro@lusofibra.pt,leitura,2026-09-21T07:34:00,71.25.209.51,bloqueado,4
+vgoncalves,Vítor Raposo Gonçalves,vgoncalves@lusofibra.pt,operador,2026-09-27T08:05:00,199.213.82.30,expirado,2
+alexandra72,Alexandra Marques,alexandra72@lusofibra.pt,leitura,2026-10-01T02:13:00,43.102.110.153,ativo,0
+tborges,Tomás Borges,tborges@lusofibra.pt,operador,2026-09-24T16:18:00,91.180.181.234,expirado,0
+ricardo.cabral,Ricardo Lopes Rodrigues Cabral,ricardo.cabral@lusofibra.pt,admin,2026-09-20T17:40:00,88.139.89.195,expirado,3
+eduardo05,Eduardo Araújo,eduardo05@lusofibra.pt,leitura,2026-09-30T10:09:00,115.43.1.48,ativo,0
+patricia72,Patrícia Barbosa,patricia72@lusofibra.pt,operador,2026-09-28T10:38:00,69.45.134.166,ativo,3
+plopes,Paulo Fernandes Lopes,plopes@lusofibra.pt,supervisor,2026-09-23T07:51:00,165.138.213.20,expirado,4
+pmarques,Paulo Jesus Marques,pmarques@lusofibra.pt,operador,2026-09-21T08:28:00,95.69.241.38,expirado,5

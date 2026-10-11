@@ -1,0 +1,29 @@
+n_utente,nome,data_nasc,vacina,lote,data_toma,enfermeiro,local_administracao,reacoes
+110445690,Joaquim Gomes,1946-12-23,Tétano,L069255,2026-10-05,Paulo Pires,braço direito,reação local ligeira
+192703988,Vítor Lourenço Brito,1974-06-17,Pneumocócica,L932610,2026-10-04,Vasco Rocha,braço esquerdo,
+378709151,Helena Brito Monteiro Cruz,1963-02-21,Tétano,L592392,2026-10-04,Paulo Pires,braço esquerdo,
+156424796,Afonso Barbosa Esteves,1937-04-21,Gripe sazonal,L849574,2026-10-04,Vasco Rocha,braço direito,
+160629702,Lúcia Rodrigues,1944-09-18,Gripe sazonal,L202815,2026-10-01,Vasco Rocha,braço direito,
+104631240,Leonor Sequeira Costa,1979-09-24,Gripe sazonal,L798374,2026-10-04,Jorge Teixeira,braço esquerdo,reação local ligeira
+155780677,Mariana Borges Loureiro,1936-11-13,Gripe sazonal,L767435,2026-10-02,Vasco Rocha,braço direito,reação local ligeira
+203766335,Catarina Esteves Matos,1956-05-24,Gripe sazonal,L131791,2026-10-05,Jorge Teixeira,braço esquerdo,
+299113602,Marco Teixeira,2023-06-22,Gripe sazonal,L966507,2026-10-01,Vasco Rocha,braço direito,
+393791491,Sandra Borges Coelho,2015-01-09,Tétano,L926769,2026-10-01,Paulo Pires,braço direito,
+209958124,Manuel Almeida,1947-03-26,Tétano,L740013,2026-10-03,Jorge Teixeira,braço esquerdo,reação local ligeira
+399609307,João Silva Bento,1970-04-04,COVID-19,L293965,2026-10-05,Paulo Pires,braço esquerdo,
+229810731,Nuno Ribeiro Cardoso,1983-05-16,Pneumocócica,L224860,2026-10-05,Vasco Rocha,braço esquerdo,
+148037364,Alexandra Martins Pinto Raposo,1968-11-07,COVID-19,L619604,2026-10-02,Vasco Rocha,braço esquerdo,
+379653476,Marco Guerreiro Pereira,1974-03-11,Pneumocócica,L213406,2026-10-04,Jorge Teixeira,braço direito,
+176377322,José Marques Moreira,1938-01-22,Tétano,L764837,2026-10-02,Vasco Rocha,braço esquerdo,
+266831505,Afonso Mendes Lourenço,2010-08-29,Tétano,L947577,2026-10-04,Paulo Pires,braço esquerdo,
+168562014,Matilde Almeida Costa,1949-11-17,COVID-19,L426512,2026-10-01,Jorge Teixeira,braço esquerdo,
+210660409,Catarina Pinto Freitas,2007-03-15,COVID-19,L102400,2026-10-02,Paulo Pires,braço esquerdo,
+224315081,Marco Guerreiro Macedo Pereira,1997-03-30,Gripe sazonal,L088602,2026-10-03,Paulo Pires,braço direito,reação local ligeira
+218726770,Francisco Cabral Simões Ferreira,2009-11-22,Pneumocócica,L900296,2026-10-01,Paulo Pires,braço direito,
+328352154,Manuel Araújo,2014-07-02,Pneumocócica,L556776,2026-10-02,Paulo Pires,braço direito,
+310906975,Rui Guerreiro Cabral Almeida,2023-07-21,COVID-19,L867700,2026-10-05,Paulo Pires,braço direito,
+176026788,Catarina Neves,1988-05-31,Tétano,L738107,2026-10-05,Vasco Rocha,braço direito,
+118197686,Alberto Cabral Ramos Correia,1956-10-11,COVID-19,L514108,2026-10-04,Paulo Pires,braço esquerdo,reação local ligeira
+341145276,Alberto Reis Esteves,1972-08-09,COVID-19,L448353,2026-10-02,Jorge Teixeira,braço direito,reação local ligeira
+396505963,Duarte Macedo Leal,1997-05-19,Tétano,L967831,2026-10-02,Jorge Teixeira,braço esquerdo,
+375503732,Carla Rocha,1966-07-19,Pneumocócica,L360247,2026-10-03,Jorge Teixeira,braço esquerdo,reação local ligeira

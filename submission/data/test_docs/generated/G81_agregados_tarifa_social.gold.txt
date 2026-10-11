@@ -1,0 +1,24 @@
+requerente , nif_requerente , membro , relacao , data_nascimento , rendimento_mensal , situacao
+* * * , * , * * * , requerente , * , * ,
+* * * , * , * * * , filho/a , * , * ,
+* * * , * , * * * * , pai/mãe , * , * , incapacidade 60%
+* * * , * , * * , pai/mãe , * , * , incapacidade 60%
+* * * , * , * * * , requerente , * , * , incapacidade 60%
+* * * , * , * * * * , filho/a , * , * ,
+* * * , * , * * * * , pai/mãe , * , * , incapacidade 60%
+* * * , * , * * * , requerente , * , * , incapacidade 60%
+* * * , * , * * * , pai/mãe , * , * , estudante
+* * * , * , * * * , cônjuge , * , * ,
+* * * , * , * * * , requerente , * , * ,
+* * * * , * , * * * * , requerente , * , * ,
+* * * * , * , * * , filho/a , * , * , estudante
+* * * * , * , * * * , cônjuge , * , * ,
+* * * * , * , * * * , pai/mãe , * , * ,
+* * * , * , * * * , requerente , * , * , incapacidade 60%
+* * * , * , * * * , cônjuge , * , * , estudante
+* * * , * , * * , cônjuge , * , * ,
+* * , * , * * , requerente , * , * , estudante
+* * , * , * * , filho/a , * , * , incapacidade 60%
+* * * * , * , * * * * , requerente , * , * ,
+* * * * , * , * * * , filho/a , * , * , incapacidade 60%
+* * * * , * , * * * * , cônjuge , * , * ,

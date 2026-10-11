@@ -1,0 +1,5 @@
+[flake8]
+# The test-set generator is made of long Portuguese document templates;
+# wrapping them would make the documents unreadable in the code.
+per-file-ignores =
+    submission/data/test_docs/make_dataset.py:E501

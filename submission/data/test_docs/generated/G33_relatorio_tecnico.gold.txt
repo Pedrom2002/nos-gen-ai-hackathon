@@ -1,0 +1,24 @@
+RELATÓRIO DE INTERVENÇÃO TÉCNICA
+Ordem de trabalho: OT-208766865
+Técnico: * * * * (equipa LISBOA-07)
+Data da visita: 31/08/2026, 10h37 às 18h12
+Cliente: * *
+NIF cliente: *
+Morada: * * *, *, *, * * * *
+Coordenadas GPS da caixa de rua: * *, * *
+Contacto no local: o próprio, tel. (*) * * *
+Descrição da avaria reportada:
+Ruído na linha telefónica e quedas de chamada. Cliente refere que trabalha em casa e perdeu reuniões.
+Diagnóstico:
+Conector SC/APC da roseta danificado. Atenuação medida na ONT: -27,0 dBm (fora do limite). Cabo de drop com dobra junto à caixa do prédio.
+Trabalho realizado:
+1. Substituição do conector e da roseta ótica.
+2. Reposicionamento do cabo de drop na caixa de entrada do prédio.
+3. Nova medição na ONT: -17,3 dBm (dentro do limite).
+4. Teste de velocidade: 898 Mbps download / 427 Mbps upload.
+Material aplicado: 1 roseta ótica, 2 conectores SC/APC, 4 m de cabo de drop.
+Equipamento do cliente: ONT n.º série HWTC-4567-2688 (mantida).
+Observações:
+O tio do cliente, Sr. *, pediu que futuras visitas sejam marcadas para depois das 14h00 e deixou o contacto *.
+Assinatura do cliente: * *
+Assinatura do técnico: *. *

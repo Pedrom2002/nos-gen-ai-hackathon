@@ -1,0 +1,21 @@
+utilizador , nome , email , perfil , ultimo_login , ip_origem , estado , tentativas_falhadas
+* , * * * , * , admin , 2026-09-23T16:53:00 , * , bloqueado , 0
+* , * * , * , operador , 2026-09-28T10:29:00 , * , expirado , 6
+* , * * * , * , supervisor , 2026-10-05T20:37:00 , * , expirado , 2
+* , * * * , * , operador , 2026-10-01T13:28:00 , * , ativo , 3
+* , * * * , * , operador , 2026-09-21T03:01:00 , * , bloqueado , 5
+* , * * * , * , operador , 2026-09-30T10:10:00 , * , ativo , 2
+* , * * * * , * , operador , 2026-09-25T14:23:00 , * , ativo , 2
+* , * * , * , leitura , 2026-09-22T07:21:00 , * , ativo , 4
+* , * * * * , * , leitura , 2026-09-25T08:30:00 , * , expirado , 5
+* , * * * * , * , operador , 2026-09-28T14:10:00 , * , ativo , 1
+* , * * * , * , supervisor , 2026-10-03T12:55:00 , * , bloqueado , 0
+* , * * * , * , leitura , 2026-09-21T07:34:00 , * , bloqueado , 4
+* , * * * , * , operador , 2026-09-27T08:05:00 , * , expirado , 2
+* , * * , * , leitura , 2026-10-01T02:13:00 , * , ativo , 0
+* , * * , * , operador , 2026-09-24T16:18:00 , * , expirado , 0
+* , * * * * , * , admin , 2026-09-20T17:40:00 , * , expirado , 3
+* , * * , * , leitura , 2026-09-30T10:09:00 , * , ativo , 0
+* , * * , * , operador , 2026-09-28T10:38:00 , * , ativo , 3
+* , * * * , * , supervisor , 2026-09-23T07:51:00 , * , expirado , 4
+* , * * * , * , operador , 2026-09-21T08:28:00 , * , expirado , 5

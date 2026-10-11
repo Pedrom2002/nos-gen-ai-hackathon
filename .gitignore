@@ -182,3 +182,4 @@ __pypackages__/
 # Pipfile.lock
 # poetry.lock
 # pdm.lock
+.DS_Store

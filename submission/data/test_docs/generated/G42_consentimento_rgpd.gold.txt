@@ -1,0 +1,16 @@
+Hospital de Santa Luzia do Vale
+CONSENTIMENTO INFORMADO PARA TRATAMENTO DE DADOS PESSOAIS
+Eu, * * * *, nascido em *, utente n.º *, com o Cartão de Cidadão n.º * * * e NIF * * *, residente na * * *, *, * *., * *, declaro que fui informado sobre:
+a) A finalidade do tratamento: prestação de cuidados de saúde, faturação e envio de lembretes de consulta.
+b) O responsável pelo tratamento: o Hospital, através do seu Encarregado de Proteção de Dados, contactável em dpo@hsluzia-exemplo.pt.
+c) O prazo de conservação: 20 anos após o último contacto clínico.
+d) Os meus direitos de acesso, retificação, apagamento, limitação, portabilidade e oposição.
+Autorizo (assinalar):
+[X] O envio de lembretes por SMS para o número * * *.
+[ ] O envio de resultados de exames por email para *.
+[X] A partilha do meu processo clínico com o meu médico de família, Dr. * *, do Centro de Saúde de Tomar.
+[ ] A utilização de dados anonimizados para investigação.
+Dados clínicos relevantes que autorizo registar: hipertensão arterial; alergia a penicilina; grupo sanguíneo AB-.
+Oeiras, 14 de julho de 2026
+Assinatura do utente: * *. *
+Testemunha (profissional de saúde): * * *, n.º mecanográfico *

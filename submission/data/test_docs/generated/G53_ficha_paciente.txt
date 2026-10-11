@@ -1,0 +1,25 @@
+Hospital de Santa Luzia do Vale - Consulta Externa
+FICHA DO PACIENTE    Ref. CE-2026-815763
+
+Nome: Jorge Cruz Nunes Mendes
+Data de nascimento: 19/01/2006 (20 anos)    Sexo: M
+N.º utente: 𝟭𝟭𝟵𝟱𝟳𝟯𝟴𝟵𝟵
+NIF: 194 124 134    Cartão de Cidadão: 99741794 2 JD1
+Morada: Avenida das Flores, 187, 5.º C, 9000-390 Funchal
+Telemóvel: (̶+̶3̶5̶1̶)̶ ̶9̶3̶8̶ ̶5̶3̶3̶ ̶3̶9̶7̶ 937 035 086 (atualizado em 05/05/2026)
+Email: jmendes@correio-exemplo.pt
+Pessoa de contacto: André Cabral Teixeira Mendes (tio), 𝟵𝟮𝟬-𝟵𝟳𝟬-𝟰𝟯𝟯
+Seguro: AdvanceCare, apólice n.º 733770751
+
+ANTECEDENTES
+Artrose do joelho direito; rinite alérgica. Cirurgia de apendicectomia em 2009.
+Hábitos: não fumador; álcool nunca.
+Medicação: Ibuprofeno 400 mg se dor; Losartan 50 mg 1x/dia.
+Alergias: látex.
+Profissão: contabilista certificado, em CTT Exemplo, Loja de Alcântara; esforço físico diário.
+
+CONSULTA DE 05/05/2026
+Queixa: tosse persistente. Exame objetivo sem alterações relevantes.
+Plano: RX da coluna lombar; reavaliação em 4 semanas.
+
+Dr. Sérgio Pires, n.º de cédula 63808, ext. 3968

@@ -1,0 +1,17 @@
+LUSOFIBRA TELECOMUNICAÇÕES, S.A. - Sistemas de Informação
+REGISTO DE INCIDENTE DE SEGURANÇA N.º SEC-2026-1449
+Data: 14/09/2026    Severidade: alta    Estado: fechado
+Analista: * * (*)
+Resumo:
+Foram detetadas 124 tentativas de autenticação falhadas na VPN entre as 02h10 e as 03h45, a partir do endereço IP *, contra as contas abaixo.
+Contas afetadas:
+- Utilizador * (* * * *, Comercial), último acesso legítimo em 11/09/2026 a partir do IP *.
+- Utilizador * (* *, Rede e Infraestrutura), último acesso legítimo em 13/09/2026 a partir do IP *.
+- Utilizador * (* * *, Marketing), último acesso legítimo em 13/09/2026 a partir do IP *.
+Ações tomadas:
+1. Bloqueio do endereço * na firewall de perímetro.
+2. Reposição das palavras-passe. Palavra-passe temporária enviada por SMS: * (expira em 24h).
+3. Ativação obrigatória de MFA para as três contas. Código de recuperação da *: *.
+4. Contactada a titular * * pelo telemóvel * * * *, que confirmou não ter sido ela.
+Lições aprendidas: limitar tentativas por IP a 5 por minuto; rever a política de palavras-passe (mínimo 14 caracteres).
+Fechado por * * em 15/09/2026.

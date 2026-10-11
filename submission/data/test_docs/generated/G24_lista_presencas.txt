@@ -1,0 +1,17 @@
+LUSOFIBRA TELECOMUNICAÇÕES, S.A. - Academia Interna
+FOLHA DE PRESENÇAS - Ação de formação "Atendimento telefónico avançado"
+Data: 12/02/2026    Horário: 09h00-13h00    Sala: 2    Formadora: Helena Rodrigues Jesus Reis
+
+N.º   N.º mec.   Nome                                Departamento            Assinatura
+1     196142   Manuel Cabral Nogueira            Operações               M. Nogueira
+2     162712   Fernando Fonseca Soares           Rede e Infraestrutura   F. Soares
+3     139521   Duarte Magalhães                  Recursos Humanos        D. Magalhães
+4     195136   Diogo Bento Pires                 Comercial               D. Pires
+5     126491   Carolina Magalhães                Comercial               C. Magalhães
+6     105467   Alberto Neves Sequeira            Marketing               A. Sequeira
+7     185038   Bruno Vaz Mendes                  Sistemas de Informação  B. Mendes
+8     154811   Filipa Machado                    Financeiro              F. Machado
+
+Total de presenças: 8. Faltas: 0.
+Observações: o formando Fernando Soares saiu às 12h15 por motivo de consulta médica.
+O formador declara que a ação decorreu conforme o plano. Contacto: helena.reis@formacao-exemplo.pt

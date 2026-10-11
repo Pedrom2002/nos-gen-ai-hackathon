@@ -71,7 +71,7 @@ The review interface and the mobile app are optional; their commands are in `PRO
 - [`submission/api/README.md`](submission/api/README.md): the FastAPI backend, routes and types.
 - [`submission/frontend/README.md`](submission/frontend/README.md): the web review interface (Portuguese).
 - [`submission/mobile/README.md`](submission/mobile/README.md): the Android and iOS app (Portuguese).
-- [`submission/data/test_docs/README.md`](submission/data/test_docs/README.md): the 17 test documents and 6 test photos.
+- [`submission/data/test_docs/README.md`](submission/data/test_docs/README.md): the 17 hand-written test documents, the 6 test photos and the generated set of 81 documents with reference answers.
 
 ## Team
 

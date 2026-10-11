@@ -1,0 +1,24 @@
+requerente,nif_requerente,membro,relacao,data_nascimento,rendimento_mensal,situacao
+Paula Faria Moreira,136801900,Paula Faria Moreira,requerente,15/09/1971,"1.020,00",
+Paula Faria Moreira,136801900,Jorge Moreira Santos,filho/a,30/08/1953,"480,00",
+Paula Faria Moreira,136801900,Alexandra Silva Cabral Lacerda,pai/mãe,13/11/1996,"1.020,00",incapacidade 60%
+Paula Faria Moreira,136801900,Filipe Vaz,pai/mãe,07/12/1960,"480,00",incapacidade 60%
+Marta Sequeira Bento,244107955,Marta Sequeira Bento,requerente,24/12/1988,"1.430,00",incapacidade 60%
+Marta Sequeira Bento,244107955,Bruno Pinto Simões Cabral,filho/a,19/03/1966,"760,00",
+Marta Sequeira Bento,244107955,Daniela Vieira Soares Bento,pai/mãe,07/03/1961,"0,00",incapacidade 60%
+Inês Baptista Marques,304185426,Inês Baptista Marques,requerente,06/12/1963,"760,00",incapacidade 60%
+Inês Baptista Marques,304185426,José Esteves Marques,pai/mãe,31/12/1981,"1.020,00",estudante
+Inês Baptista Marques,304185426,Miguel Oliveira Marques,cônjuge,29/09/2000,"0,00",
+Paulo Sousa Brito,103374280,Paulo Sousa Brito,requerente,09/02/1957,"0,00",
+Catarina Santos Cardoso Pacheco,335685048,Catarina Santos Cardoso Pacheco,requerente,20/11/1994,"760,00",
+Catarina Santos Cardoso Pacheco,335685048,Matilde Pacheco,filho/a,21/12/1955,"0,00",estudante
+Catarina Santos Cardoso Pacheco,335685048,Rui Cardoso Soares,cônjuge,15/11/2006,"1.430,00",
+Catarina Santos Cardoso Pacheco,335685048,Ana Baptista Araújo,pai/mãe,31/07/1966,"1.020,00",
+Bruno Paiva Loureiro,228249767,Bruno Paiva Loureiro,requerente,12/11/1972,"1.020,00",incapacidade 60%
+Bruno Paiva Loureiro,228249767,João Alves Loureiro,cônjuge,29/08/1998,"0,00",estudante
+Bruno Paiva Loureiro,228249767,Helena Loureiro,cônjuge,30/03/1971,"1.020,00",
+Daniel Lourenço,349527695,Daniel Lourenço,requerente,16/05/1982,"1.430,00",estudante
+Daniel Lourenço,349527695,Matilde Lourenço,filho/a,29/06/1954,"1.430,00",incapacidade 60%
+Manuel Lopes Sousa Vieira,180120395,Manuel Lopes Sousa Vieira,requerente,12/03/1975,"760,00",
+Manuel Lopes Sousa Vieira,180120395,Carolina Macedo Carvalho,filho/a,31/03/1990,"1.430,00",incapacidade 60%
+Manuel Lopes Sousa Vieira,180120395,Nuno Gonçalves Lourenço Santos,cônjuge,21/02/1996,"760,00",

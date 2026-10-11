@@ -1,0 +1,17 @@
+ordem_trabalho;data;tecnico;cliente;morada;gps;avaria;resolucao;duracao_min
+OT-524949941;01/09/2026;Carolina Araújo;Francisco Coelho;Praceta do Olival, 205, 1.º andar, 7800-464 Beja;40.22452 N, 9.02185 W;router avariado;reagendado;101
+OT-158261353;15/09/2026;Henrique Fonseca;Tiago Marques Pires;Rua Engenheiro Duarte Pacheco, 90, 2.º Dto., 6200-043 Covilhã;41.25221 N, 8.69076 W;router avariado;resolvido;121
+OT-107855098;29/09/2026;Henrique Fonseca;Carlos Leal Ribeiro;Avenida Heróis do Ultramar, 87, 2.º Dto., 2560-590 Torres Vedras;38.31204 N, 7.12949 W;router avariado;reagendado;90
+OT-230306218;23/09/2026;Teresa Tavares Moreira;Eduardo Rodrigues Cardoso;Rua do Comércio, 58, 9500-914 Ponta Delgada;40.27658 N, 6.71814 W;router avariado;reagendado;31
+OT-700953704;04/09/2026;Carolina Araújo;Rui Nunes Moreira;Rua Luís de Camões, 138, 1500-361 Lisboa;39.49255 N, 6.22606 W;velocidade baixa;reagendado;31
+OT-457813120;10/09/2026;Teresa Tavares Moreira;Beatriz Alves Fonseca;Praceta do Olival, 239, 5.º C, 6200-797 Covilhã;40.35197 N, 8.02707 W;velocidade baixa;reagendado;40
+OT-527424943;14/09/2026;Teresa Tavares Moreira;Duarte Ribeiro;Rua Almirante Reis, 202, 2.º Dto., 2670-079 Loures;38.47272 N, 8.38502 W;TV sem imagem;reagendado;94
+OT-997295201;08/09/2026;Teresa Tavares Moreira;António Pereira;Avenida José Afonso, 102, r/c Dto., 7000-938 Évora;38.03012 N, 7.98674 W;TV sem imagem;resolvido;101
+OT-532251983;22/09/2026;Diogo Loureiro Gonçalves;Rafael Monteiro Correia;Largo Engenheiro Duarte Pacheco, 177, 6.º A, 3080-674 Figueira da Foz;40.06865 N, 7.67166 W;TV sem imagem;pendente de material;170
+OT-804129889;23/09/2026;Diogo Loureiro Gonçalves;Célia Mendes;Praceta do Comércio, 152, 6.º A, 3800-253 Aveiro;39.37604 N, 8.82241 W;router avariado;resolvido;74
+OT-654475071;04/09/2026;Teresa Tavares Moreira;Carlos Magalhães Costa Cunha;Avenida Sophia de Mello Breyner, 147, Bloco B, 2.º, 2000-478 Santarém;40.79984 N, 6.62247 W;router avariado;pendente de material;61
+OT-407197786;16/09/2026;Henrique Fonseca;Filipa Cunha Neves;Avenida de Santo António, 133, 5.º C, 9500-448 Ponta Delgada;41.71066 N, 7.02209 W;velocidade baixa;resolvido;177
+OT-476195260;19/09/2026;Teresa Tavares Moreira;José Sousa Castro Pires;Travessa Serpa Pinto, 24, 6.º A, 8000-110 Faro;39.28748 N, 8.94177 W;sem sinal ótico;pendente de material;60
+OT-115013569;15/09/2026;Diogo Loureiro Gonçalves;Vera Cardoso Tavares;Rua Miguel Torga, 240, 1.º, 4800-770 Guimarães;40.44756 N, 7.8449 W;cabo partido;resolvido;64
+OT-114329553;07/09/2026;Teresa Tavares Moreira;Fernanda Araújo Silva Gonçalves;Praceta Marquês de Pombal, 217, 2.º Dto., 4900-379 Viana do Castelo;39.91645 N, 6.82621 W;cabo partido;resolvido;61
+OT-623967058;02/09/2026;Diogo Loureiro Gonçalves;Jorge Pacheco Cunha;Travessa da Escola, 195, 6.º A, 2900-403 Setúbal;38.39302 N, 7.61191 W;TV sem imagem;resolvido;92

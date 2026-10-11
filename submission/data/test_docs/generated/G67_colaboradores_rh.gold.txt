@@ -1,0 +1,19 @@
+n_mecanografico ; nome ; cargo ; departamento ; data_admissao ; nif ; niss ; iban ; vencimento_base ; email_profissional ; telemovel ; vinculo
+* ; * * ; Operador de logística ; Comercial ; 08/11/2024 ; * ; * ; * * * * * * * ; * ; * ; * * * ; Termo certo
+* ; * * * ; Designer ; Rede e Infraestrutura ; 06/10/2025 ; * ; * ; * * * * * * * ; * ; * ; * * * ; Termo incerto
+* ; * * * ; Administrador de sistemas ; Rede e Infraestrutura ; 02/12/2024 ; * ; * ; * * * * * * * ; * ; * ; * * * ; Sem termo
+* ; * * ; Assistente de apoio ao cliente ; Comercial ; 09/01/2012 ; * ; * ; * * * * * * * ; * ; * ; * ; Termo incerto
+* ; * * * * ; Administrador de sistemas ; Apoio ao Cliente ; 17/03/2016 ; * ; * ; * * * * * * * ; * ; * ; * ; Termo certo
+* ; * * * ; Engenheiro de rede ; Financeiro ; 15/10/2013 ; * ; * ; * * * * * * * ; * ; * ; (*) * * * ; Sem termo
+* ; * * * * ; Técnica de RH ; Financeiro ; 29/12/2015 ; * ; * ; * * * * * * * ; * ; * ; * * * * ; Sem termo
+* ; * * * ; Engenheiro de rede ; Comercial ; 27/12/2017 ; * ; * ; * * * * * * * ; * ; * ; * ; Termo certo
+* ; * * * ; Operador de logística ; Marketing ; 03/12/2014 ; * ; * ; * * * * * * * ; * ; * ; * * * ; Sem termo
+* ; * * ; Técnica de RH ; Recursos Humanos ; 21/12/2011 ; * ; * ; * * * * * * * ; * ; * ; * * * * ; Termo certo
+* ; * * ; Designer ; Recursos Humanos ; 08/04/2010 ; * ; * ; * * * * * * * ; * ; * ; * ; Termo incerto
+* ; * * ; Assistente de apoio ao cliente ; Comercial ; 01/09/2024 ; * ; * ; * * * * * * * ; * ; * ; * * * ; Termo certo
+* ; * * * ; Gestor de conta ; Comercial ; 27/04/2019 ; * ; * ; * * * * * * * ; * ; * ; * * * ; Sem termo
+* ; * * ; Analista financeiro ; Sistemas de Informação ; 05/03/2026 ; * ; * ; * * * * * * * ; * ; * ; * * * ; Sem termo
+* ; * * ; Coordenador de equipa ; Jurídico ; 13/05/2014 ; * ; * ; * * * * * * * ; * ; * ; * ; Sem termo
+* ; * * * * ; Gestor de conta ; Jurídico ; 25/12/2019 ; * ; * ; * * * * * * * ; * ; * ; * ; Termo certo
+* ; * * * * ; Gestor de conta ; Jurídico ; 07/11/2011 ; * ; * ; * * * * * * * ; * ; * ; * ; Termo certo
+* ; * * * ; Administrador de sistemas ; Sistemas de Informação ; 04/09/2012 ; * ; * ; * * * * * * * ; * ; * ; * * * * ; Termo certo

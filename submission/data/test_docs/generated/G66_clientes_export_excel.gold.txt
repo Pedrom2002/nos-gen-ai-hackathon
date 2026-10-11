@@ -1,0 +1,26 @@
+Nome completo ; NIF ; Data de nascimento ; Sexo ; Morada ; Telemóvel ; E-mail ; IBAN ; Tarifário ; Mensalidade ; Estado
+* * * ; * ; * ; Feminino ; * * *, *, * *., * * * ; * * * ; * ; * ; Fibra 1G + TV ; 54,99 ; Ativo
+* * * ; * ; * ; Feminino ; * * *. *, *, *, * * ; * * * ; * ; * ; Pack Casa Total ; 64,99 ; Ativo
+* * ; * ; * ; Masculino ; * * *, *, * * ; * * * * ; * ; * ; Fibra 200 ; 29,99 ; Ativo
+* * ; * ; * ; Feminino ; * * * *, *, * *., * * * ; * ; * ; * ; Fibra 500 + TV ; 47,99 ; Ativo
+* * * ; * ; * ; Feminino ; * * * * *, *, * *, * * ; * ; * ; * ; Fibra 500 ; 39,99 ; Em cobrança
+* * * * ; * * * ; * ; Masculino ; * * * *, *, * *, *, * * ; * * * * ; * ; * ; Fibra 1G + TV ; 54,99 ; Ativo
+* * * ; * * * ; * ; Masculino ; * * *, *, * * ; * ; * ; * ; Fibra 500 ; 39,99 ; Em cobrança
+* * ; * * * ; * ; Feminino ; * * *, *, *, * * ; * ; * ; * ; Pack Casa Total ; 64,99 ; Ativo
+* * * ; * ; * ; Feminino ; * * *, *, * *, * * ; * ; * ; * ; Móvel 50GB ; 19,99 ; Ativo
+* * * ; * * * ; * ; Masculino ; * * * *, *, * *, *, * * ; * ; * ; * ; Fibra 1G + TV ; 54,99 ; Em cobrança
+* * ; * ; * ; Masculino ; * * * * *, *, * *, * * ; * ; * ; * ; Fibra 200 ; 29,99 ; Ativo
+* * ; * * * ; * ; Feminino ; * * *, *, * *, * * ; * ; * ; * ; Fibra 500 + TV ; 47,99 ; Ativo
+* * ; * ; * ; Masculino ; * * * *, *, *, * * ; * * * ; * ; * ; Pack Casa Total ; 64,99 ; Suspenso
+* * * ; * ; * ; Masculino ; * * *, *, * * * * * ; * ; * ; * ; Fibra 500 ; 39,99 ; Ativo
+* * * ; * * * ; * ; Masculino ; * * * *, *, *, * * * ; * ; * ; * ; Fibra 200 ; 29,99 ; Suspenso
+* * * ; * ; * ; Masculino ; * * *, *, * *, * * ; * ; * ; * ; Móvel 50GB ; 19,99 ; Suspenso
+* * * * ; * ; * ; Feminino ; * * * *, *, *, * * ; * * * * ; * ; * ; Fibra 500 + TV ; 47,99 ; Ativo
+* * * * ; * ; * ; Masculino ; * * *, *, * *, * * ; * * * ; * ; * ; Fibra 500 ; 39,99 ; Suspenso
+* * ; * * * ; * ; Feminino ; * * * *, *, * * ; * * * * ; * ; * ; Fibra 1G ; 44,99 ; Em cobrança
+* * * ; * * * ; * ; Masculino ; * * *, *, * *, * * ; * ; * ; * ; Móvel 20GB ; 12,99 ; Ativo
+* * ; * * * ; * ; Feminino ; * * *, *, * *, *, * * ; * ; * ; * ; Fibra 1G ; 44,99 ; Em cobrança
+* * * ; * ; * ; Feminino ; * * * *, *, * *, * * ; (*) * * * ; * ; * ; Fibra 200 ; 29,99 ; Ativo
+* * * ; * ; * ; Masculino ; * * *, *, * * ; * ; * ; * ; Fibra 500 ; 39,99 ; Suspenso
+* * * ; * ; * ; Feminino ; * * *, *, *, * * * ; * * * * ; * ; * ; Fibra 500 + TV ; 47,99 ; Ativo
+* * * ; * ; * ; Masculino ; * * *, *, * *, * * ; * * * ; * ; * ; Fibra 500 + TV ; 47,99 ; Ativo

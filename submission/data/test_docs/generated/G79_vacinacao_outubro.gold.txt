@@ -1,0 +1,29 @@
+n_utente , nome , data_nasc , vacina , lote , data_toma , enfermeiro , local_administracao , reacoes
+* , * * , * , Tétano , L069255 , 2026-10-05 , * * , braço direito , reação local ligeira
+* , * * * , * , Pneumocócica , L932610 , 2026-10-04 , * * , braço esquerdo ,
+* , * * * * , * , Tétano , L592392 , 2026-10-04 , * * , braço esquerdo ,
+* , * * * , * , Gripe sazonal , L849574 , 2026-10-04 , * * , braço direito ,
+* , * * , * , Gripe sazonal , L202815 , 2026-10-01 , * * , braço direito ,
+* , * * * , * , Gripe sazonal , L798374 , 2026-10-04 , * * , braço esquerdo , reação local ligeira
+* , * * * , * , Gripe sazonal , L767435 , 2026-10-02 , * * , braço direito , reação local ligeira
+* , * * * , * , Gripe sazonal , L131791 , 2026-10-05 , * * , braço esquerdo ,
+* , * * , * , Gripe sazonal , L966507 , 2026-10-01 , * * , braço direito ,
+* , * * * , * , Tétano , L926769 , 2026-10-01 , * * , braço direito ,
+* , * * , * , Tétano , L740013 , 2026-10-03 , * * , braço esquerdo , reação local ligeira
+* , * * * , * , COVID-19 , L293965 , 2026-10-05 , * * , braço esquerdo ,
+* , * * * , * , Pneumocócica , L224860 , 2026-10-05 , * * , braço esquerdo ,
+* , * * * * , * , COVID-19 , L619604 , 2026-10-02 , * * , braço esquerdo ,
+* , * * * , * , Pneumocócica , L213406 , 2026-10-04 , * * , braço direito ,
+* , * * * , * , Tétano , L764837 , 2026-10-02 , * * , braço esquerdo ,
+* , * * * , * , Tétano , L947577 , 2026-10-04 , * * , braço esquerdo ,
+* , * * * , * , COVID-19 , L426512 , 2026-10-01 , * * , braço esquerdo ,
+* , * * * , * , COVID-19 , L102400 , 2026-10-02 , * * , braço esquerdo ,
+* , * * * * , * , Gripe sazonal , L088602 , 2026-10-03 , * * , braço direito , reação local ligeira
+* , * * * * , * , Pneumocócica , L900296 , 2026-10-01 , * * , braço direito ,
+* , * * , * , Pneumocócica , L556776 , 2026-10-02 , * * , braço direito ,
+* , * * * * , * , COVID-19 , L867700 , 2026-10-05 , * * , braço direito ,
+* , * * , * , Tétano , L738107 , 2026-10-05 , * * , braço direito ,
+* , * * * * , * , COVID-19 , L514108 , 2026-10-04 , * * , braço esquerdo , reação local ligeira
+* , * * * , * , COVID-19 , L448353 , 2026-10-02 , * * , braço direito , reação local ligeira
+* , * * * , * , Tétano , L967831 , 2026-10-02 , * * , braço esquerdo ,
+* , * * , * , Pneumocócica , L360247 , 2026-10-03 , * * , braço esquerdo , reação local ligeira

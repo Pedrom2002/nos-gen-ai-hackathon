@@ -1,0 +1,21 @@
+Hospital de Santa Luzia do Vale
+CONSENTIMENTO INFORMADO PARA TRATAMENTO DE DADOS PESSOAIS
+
+Eu, Luís Nogueira Lacerda Bento, nascido em 31/07/1979, utente n.º 372021737, com o Cartão de Cidadão n.º 79790093 8 UM8 e NIF 379 014 637, residente na Rua Miguel Torga, 230, r/c Dto., 2780-867 Oeiras, declaro que fui informado sobre:
+
+a) A finalidade do tratamento: prestação de cuidados de saúde, faturação e envio de lembretes de consulta.
+b) O responsável pelo tratamento: o Hospital, através do seu Encarregado de Proteção de Dados, contactável em dpo@hsluzia-exemplo.pt.
+c) O prazo de conservação: 20 anos após o último contacto clínico.
+d) Os meus direitos de acesso, retificação, apagamento, limitação, portabilidade e oposição.
+
+Autorizo (assinalar):
+[X] O envio de lembretes por SMS para o número 967 396 846.
+[ ] O envio de resultados de exames por email para lbento@netcabo.pt.
+[X] A partilha do meu processo clínico com o meu médico de família, Dr. Nuno Loureiro, do Centro de Saúde de Tomar.
+[ ] A utilização de dados anonimizados para investigação.
+
+Dados clínicos relevantes que autorizo registar: hipertensão arterial; alergia a penicilina; grupo sanguíneo AB-.
+
+Oeiras, 14 de julho de 2026
+Assinatura do utente: Luís N.L. Bento
+Testemunha (profissional de saúde): Helena Matos Ribeiro, n.º mecanográfico 63448

@@ -183,6 +183,8 @@ Other commands:
 ```bash
 python -m anonimizador.metric submission.txt data/gold/gold.txt   # local score
 python -m anonimizador.evaluate_docs data/test_docs               # 17 extra documents
+python -m anonimizador.evaluate_docs data/test_docs/generated --keep-punct  # 81 generated documents, with reference answers
+python data/test_docs/make_dataset.py                             # rebuild the generated set
 python data/test_docs/make_photos.py                              # rebuild the 6 test photos
 python ask.py "Que medicação toma a paciente?"                    # gateway demo
 python -m pytest                                                  # Python tests
@@ -205,6 +207,7 @@ submission/
 ├── mobile/               Expo app for Android and iOS (see mobile/README.md)
 ├── data/gold/            hand-annotated reference for the official document
 ├── data/test_docs/       17 fictitious documents and 6 test photos (see its README)
+│   └── generated/        81 generated documents with .gold.txt answers (make_dataset.py)
 ├── tests/                pytest suite
 └── PROJECT.md            this file
 ```

@@ -1,0 +1,21 @@
+﻿LUSOFIBRA TELECOMUNICAÇÕES, S.A. - Sistemas de Informação
+REGISTO DE INCIDENTE DE SEGURANÇA N.º SEC-2026-1449
+Data: 14/09/2026    Severidade: alta    Estado: fechado
+Analista: Manuel Paiva (manuel.paiva@lusofibra.pt)
+
+Resumo:
+Foram detetadas 124 tentativas de autenticação falhadas na VPN entre as 02h10 e as 03h45, a partir do endereço IP 27.232.209.86, contra as contas abaixo.
+
+Contas afetadas:
+- Utilizador asousa (Ana Alves Pereira Sousa, Comercial), último acesso legítimo em 11/09/2026 a partir do IP 10.18.18.210.
+- Utilizador fmoreira (Francisco Moreira, Rede e Infraestrutura), último acesso legítimo em 13/09/2026 a partir do IP 10.4.208.159.
+- Utilizador susana.rocha (Susana Reis Rocha, Marketing), último acesso legítimo em 13/09/2026 a partir do IP 10.13.110.193.
+
+Ações tomadas:
+1. Bloqueio do endereço 27.232.209.86 na firewall de perímetro.
+2. Reposição das palavras-passe. Palavra-passe temporária enviada por SMS: Tmp-648828 (expira em 24h).
+3. Ativação obrigatória de MFA para as três contas. Código de recuperação da Ana: 5729-9584-7026.
+4. Contactada a titular Ana Sousa pelo telemóvel +351 938 889 510, que confirmou não ter sido ela.
+
+Lições aprendidas: limitar tentativas por IP a 5 por minuto; rever a política de palavras-passe (mínimo 14 caracteres).
+Fechado por Manuel Paiva em 15/09/2026.

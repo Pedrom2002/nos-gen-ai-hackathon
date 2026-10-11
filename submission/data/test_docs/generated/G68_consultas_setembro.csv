@@ -1,0 +1,31 @@
+data,hora,n_utente,nome,data_nasc,medico,especialidade,diagnostico,prescricao,estado
+2026-09-26,10:40,284667467,Bruno Pacheco Vaz,2024-11-06,Dra. Luísa Cardoso,Pediatria,asma brônquica,Levotiroxina 75 mcg em jejum,realizada
+2026-09-10,18:00,262698215,Ricardo Varela Ferreira,1938-01-05,Dr. João Lopes,Pediatria,depressão major em tratamento,Cetirizina 10 mg 1x/dia,faltou
+2026-09-04,11:40,227466522,Miguel Carvalho Cabral,1949-04-15,Dr. João Lopes,Pediatria,artrose do joelho direito,Omeprazol 20 mg 1x/dia,realizada
+2026-09-13,12:40,186147218,Nuno Neves Pereira Baptista,1993-06-22,Dra. Luísa Cardoso,Cardiologia,hipertensão arterial,Atorvastatina 20 mg à noite,faltou
+2026-09-18,13:00,152781912,Rosa Antunes,1979-01-20,Dra. Luísa Cardoso,Pediatria,artrose do joelho direito,Levotiroxina 75 mcg em jejum,remarcada
+2026-09-13,12:00,357073212,Duarte Rocha Martins Azevedo,1961-10-17,Dr. Rafael Ribeiro,Pediatria,doença celíaca,Cetirizina 10 mg 1x/dia,realizada
+2026-09-14,14:00,199361358,Patrícia Varela Loureiro Brito,1957-10-14,Dr. João Lopes,Dermatologia,apneia do sono,Metformina 850 mg 2x/dia,realizada
+2026-09-16,11:00,323510484,Sofia Magalhães Ferreira Pacheco,1985-06-19,Dr. João Lopes,Medicina Geral,artrose do joelho direito,Levetiracetam 500 mg 2x/dia,realizada
+2026-09-21,17:40,103208053,Manuel Fonseca,1963-02-10,Dra. Luísa Cardoso,Dermatologia,rinite alérgica,Cetirizina 10 mg 1x/dia,realizada
+2026-09-09,11:20,363716386,Paula Lacerda Rocha,2018-05-18,Dr. Rafael Ribeiro,Pediatria,hipertensão arterial,Atorvastatina 20 mg à noite,realizada
+2026-09-24,13:40,272139266,Nuno Faria,1986-03-12,Dr. Marco Lacerda,Cardiologia,diabetes tipo 2,Omeprazol 20 mg 1x/dia,remarcada
+2026-09-26,13:40,125692400,Vítor Cruz Baptista,2012-06-16,Dr. João Lopes,Pediatria,hipertensão arterial,Levetiracetam 500 mg 2x/dia,faltou
+2026-09-15,11:00,270135727,Carolina Ribeiro,1959-01-22,Dra. Luísa Cardoso,Dermatologia,diabetes tipo 2,Losartan 50 mg 1x/dia,realizada
+2026-09-06,15:00,399462226,Lúcia Alves Cunha Tavares,1997-04-14,Dr. Rafael Ribeiro,Dermatologia,epilepsia controlada,Omeprazol 20 mg 1x/dia,realizada
+2026-09-06,15:00,172241137,João Freitas,1944-09-20,Dr. Rafael Ribeiro,Dermatologia,hipotiroidismo,Sertralina 50 mg 1x/dia,remarcada
+2026-09-13,12:20,111474510,Isabel Macedo Martins,1991-05-01,Dr. Marco Lacerda,Dermatologia,doença celíaca,Levotiroxina 75 mcg em jejum,realizada
+2026-09-27,17:40,237454537,Marta Rodrigues Machado Santos,2011-01-21,Dr. João Lopes,Dermatologia,doença celíaca,Cetirizina 10 mg 1x/dia,realizada
+2026-09-29,15:00,258566077,Inês Antunes Simões,2015-10-11,Dr. Marco Lacerda,Cardiologia,enxaqueca crónica,Metformina 850 mg 2x/dia,remarcada
+2026-09-15,14:00,121268844,Carolina Almeida Guerreiro,1974-02-02,Dr. João Lopes,Pediatria,doença celíaca,Levotiroxina 75 mcg em jejum,realizada
+2026-09-25,08:20,341481394,João Rocha Castro,1971-12-05,Dr. Marco Lacerda,Cardiologia,epilepsia controlada,Sertralina 50 mg 1x/dia,faltou
+2026-09-18,09:20,390001438,Ana Pacheco Vaz,1965-06-14,Dra. Luísa Cardoso,Pediatria,hipotiroidismo,Cetirizina 10 mg 1x/dia,remarcada
+2026-09-16,11:00,362526073,Vera Coelho Lacerda,1950-06-05,Dr. João Lopes,Cardiologia,asma brônquica,Omeprazol 20 mg 1x/dia,realizada
+2026-09-27,10:00,335656968,Maria Silva Amaral,1944-05-23,Dr. Marco Lacerda,Medicina Geral,rinite alérgica,Omeprazol 20 mg 1x/dia,realizada
+2026-09-08,18:40,333757986,Eduardo Pacheco Mendes,1933-03-31,Dr. João Lopes,Dermatologia,depressão major em tratamento,Cetirizina 10 mg 1x/dia,realizada
+2026-09-04,14:00,305576017,Leonor Sousa Fonseca Raposo,1950-06-09,Dr. João Lopes,Dermatologia,asma brônquica,Cetirizina 10 mg 1x/dia,faltou
+2026-09-25,18:20,197832496,Vasco Brito Bento,1951-11-10,Dr. João Lopes,Pediatria,doença celíaca,Sertralina 50 mg 1x/dia,realizada
+2026-09-23,09:40,371449839,Joaquim Monteiro Mendes,2012-01-21,Dr. Rafael Ribeiro,Dermatologia,doença celíaca,Sertralina 50 mg 1x/dia,realizada
+2026-09-27,08:20,323951016,Francisco Sequeira Vieira Azevedo,1982-03-24,Dr. Rafael Ribeiro,Dermatologia,apneia do sono,Atorvastatina 20 mg à noite,remarcada
+2026-09-09,13:20,135259816,Henrique Guerreiro Vaz Vieira,1947-11-23,Dr. João Lopes,Pediatria,depressão major em tratamento,Levetiracetam 500 mg 2x/dia,remarcada
+2026-09-01,14:20,303296089,Carla Silva,1955-02-10,Dr. Marco Lacerda,Medicina Geral,asma brônquica,Levotiroxina 75 mcg em jejum,realizada

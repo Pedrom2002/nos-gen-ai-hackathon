@@ -1,0 +1,41 @@
+data_hora | duracao_s | numero_origem | nome_cliente | agente | motivo | resolvido
+2026-10-02 21:46 | 1398 | * | * * * | * * | fatura | sim
+2026-10-01 21:51 | 868 | * | * * * | * * | avaria | sim
+2026-10-02 10:39 | 1090 | * | * * | * * | fatura | sim
+2026-10-02 18:22 | 1302 | * | * * | * * | portabilidade | sim
+2026-10-03 13:26 | 583 | * | * * * | * * | avaria | não
+2026-10-02 09:30 | 889 | * | * * * * | * * | cancelamento | escalado
+2026-10-02 08:24 | 342 | * | * * * | * * | fatura | não
+2026-10-01 18:11 | 991 | * | * * * | * * | fatura | escalado
+2026-10-02 11:56 | 291 | * | * * * | * * | alteração de tarifário | escalado
+2026-10-03 20:13 | 134 | * | * * | * * | portabilidade | sim
+2026-10-03 08:19 | 400 | * | * * * * | * * | portabilidade | escalado
+2026-10-02 18:54 | 1229 | * | * * * | * * | equipamento | sim
+2026-10-03 16:16 | 610 | * | * * * * | * * | portabilidade | não
+2026-10-03 08:04 | 825 | * | * * * | * * | portabilidade | escalado
+2026-10-02 10:40 | 608 | * | * * * | * * | fatura | sim
+2026-10-03 15:03 | 310 | * | * * * | * * | portabilidade | não
+2026-10-03 14:25 | 1188 | * | * * * * | * * | fatura | não
+2026-10-01 12:41 | 757 | * | * * * | * * | alteração de tarifário | sim
+2026-10-02 16:57 | 1036 | * | * * | * * | portabilidade | não
+2026-10-03 13:34 | 1332 | * | * * * | * * | equipamento | não
+2026-10-03 19:30 | 1154 | * | * * * | * * | fatura | não
+2026-10-02 13:37 | 1010 | * | * * * | * * | avaria | escalado
+2026-10-02 16:51 | 1010 | * | * * * | * * | fatura | escalado
+2026-10-02 21:27 | 1150 | * | * * * | * * | fatura | sim
+2026-10-02 17:59 | 1030 | * | * * * | * * | equipamento | sim
+2026-10-03 19:21 | 1472 | * | * * * | * * | fatura | sim
+2026-10-01 17:06 | 536 | * | * * | * * | portabilidade | sim
+2026-10-01 12:38 | 301 | * | * * | * * | fatura | escalado
+2026-10-02 13:27 | 394 | * | * * * | * * | alteração de tarifário | sim
+2026-10-01 21:36 | 539 | * | * * * | * * | alteração de tarifário | não
+2026-10-01 09:47 | 1249 | * | * * * | * * | fatura | escalado
+2026-10-03 08:28 | 564 | * | * * * | * * | equipamento | sim
+2026-10-01 11:36 | 1442 | * | * * * | * * | cancelamento | escalado
+2026-10-03 13:34 | 662 | * | * * * | * * | avaria | não
+2026-10-02 20:09 | 1025 | * | * * * | * * | avaria | não
+2026-10-02 16:05 | 679 | * | * * * * | * * | alteração de tarifário | sim
+2026-10-03 16:50 | 1300 | * | * * * | * * | avaria | sim
+2026-10-03 10:55 | 139 | * | * * * | * * | fatura | sim
+2026-10-02 16:36 | 628 | * | * * * | * * | avaria | escalado
+2026-10-01 11:58 | 1466 | * | * * | * * | portabilidade | escalado

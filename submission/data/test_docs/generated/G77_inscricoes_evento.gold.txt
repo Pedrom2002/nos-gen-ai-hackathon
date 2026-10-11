@@ -1,0 +1,19 @@
+Nome ; E-mail ; Telefone ; Entidade ; Função ; Restrições alimentares ; Workshop ; Confirmado
+* * ; * ; * ; * * * * ; Enfermeira ; vegan ; Workshop A - Fibra ; não
+* * * ; * ; * ; * * * ; Motorista de pesados ; sem glúten ; Workshop A - Fibra ; não
+* * * * ; * ; * * * ; * * * ; Técnica de farmácia ; sem glúten ; Workshop C - Segurança ; não
+* * * ; * ; * ; * * * * * * ; Gestor de produto ; vegan ; Workshop C - Segurança ; sim
+* * * ; * ; (*) * * * ; * * * * * * ; Carteira ; nenhuma ; Workshop A - Fibra ; não
+* * * ; * ; * ; * * *, *. ; Programadora ; vegetariano ; Workshop A - Fibra ; sim
+* * ; * ; * * * ; * * *, *. ; Motorista de pesados ; sem lactose ; Workshop B - 5G ; não
+* * * * ; * ; * ; * *, *. ; Operador de caixa ; sem lactose ; Workshop A - Fibra ; sim
+* * * ; * ; * ; * *, * * * ; Engenheiro civil ; sem glúten ; Workshop B - 5G ; não
+* * ; * ; * * * ; * * * * * * ; Assistente social ; sem lactose ; Workshop B - 5G ; sim
+* * * * ; * ; * ; * * * * * * ; Técnica de farmácia ; vegan ; Workshop B - 5G ; sim
+* * * ; * ; (*) * * * ; * * *, *. ; Carteiro ; sem glúten ; Workshop B - 5G ; sim
+* * * ; * ; * * * ; * *, *. ; Assistente social ; sem glúten ; Workshop A - Fibra ; sim
+* * * ; * ; * * * * ; * * *, *. ; Rececionista ; nenhuma ; Workshop B - 5G ; sim
+* * * ; * ; * ; * * * * ; Técnico de farmácia ; sem lactose ; Workshop A - Fibra ; sim
+* * * ; * ; (*) * * * ; * * * ; Designer gráfico ; sem lactose ; Workshop A - Fibra ; sim
+* * ; * ; * * * ; * * *, * * * ; Motorista de pesados ; sem glúten ; Workshop A - Fibra ; não
+* * * * ; * ; * * * * ; * * * * ; Cozinheiro ; vegetariano ; Workshop A - Fibra ; sim

@@ -1,0 +1,21 @@
+LUSOFIBRA TELECOMUNICAÇÕES, S.A. - Sistemas de Informação
+REGISTO DE INCIDENTE DE SEGURANÇA N.º SEC-2026-0760
+Data: 23/08/2026    Severidade: média    Estado: fechado
+Analista: Sofia Esteves (sesteves@lusofibra.pt)
+
+Resumo:
+Foram detetadas 248 tentativas de autenticação falhadas na VPN entre as 02h10 e as 03h45, a partir do endereço IP 44.136.238.2, contra as contas abaixo.
+
+Contas afetadas:
+- Utilizador daniela.coelho (Daniela Coelho, Apoio ao Cliente), último acesso legítimo em 21/08/2026 a partir do IP 10.15.200.186.
+- Utilizador ines53 (Inês Soares Simões Cardoso, Operações), último acesso legítimo em 21/08/2026 a partir do IP 10.18.234.95.
+- Utilizador joaquim87 (Joaquim Valente Antunes, Apoio ao Cliente), último acesso legítimo em 19/08/2026 a partir do IP 10.15.73.182.
+
+Ações tomadas:
+1. Bloqueio do endereço 44.136.238.2 na firewall de perímetro.
+2. Reposição das palavras-passe. Palavra-passe temporária enviada por SMS: Tmp-979484 (expira em 24h).
+3. Ativação obrigatória de MFA para as três contas. Código de recuperação da Daniela: 2916-6035-5209.
+4. Contactada a titular Daniela Coelho pelo telemóvel 935-457-469, que confirmou não ter sido ela.
+
+Lições aprendidas: limitar tentativas por IP a 5 por minuto; rever a política de palavras-passe (mínimo 14 caracteres).
+Fechado por Sofia Esteves em 24/08/2026.

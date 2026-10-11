@@ -1,0 +1,41 @@
+data_hora	duracao_s	numero_origem	nome_cliente	agente	motivo	resolvido
+2026-10-02 21:46	1398	938419193	Hugo Moreira Macedo	Ana Cruz	fatura	sim
+2026-10-01 21:51	868	969743924	Teresa Ramos Moreira	Afonso Neves	avaria	sim
+2026-10-02 10:39	1090	922027960	Inês Macedo	Rita Brito	fatura	sim
+2026-10-02 18:22	1302	918321069	Manuel Gomes	Rita Brito	portabilidade	sim
+2026-10-03 13:26	583	916660633	Paulo Araújo Silva	Fernanda Matos	avaria	não
+2026-10-02 09:30	889	916337208	Afonso Neves Azevedo Reis	Afonso Neves	cancelamento	escalado
+2026-10-02 08:24	342	966528699	Cláudia Macedo Lacerda	Afonso Neves	fatura	não
+2026-10-01 18:11	991	931329394	Afonso Loureiro Castro	Afonso Neves	fatura	escalado
+2026-10-02 11:56	291	937977441	Marta Pereira Rodrigues	Fernanda Matos	alteração de tarifário	escalado
+2026-10-03 20:13	134	933057517	Célia Araújo	Afonso Neves	portabilidade	sim
+2026-10-03 08:19	400	929975847	Alexandra Ribeiro Pinto Cunha	Ana Cruz	portabilidade	escalado
+2026-10-02 18:54	1229	926303350	Paula Ferreira Borges	Ana Cruz	equipamento	sim
+2026-10-03 16:16	610	925464793	Fernanda Soares Araújo Almeida	Afonso Neves	portabilidade	não
+2026-10-03 08:04	825	917781730	Rui Esteves Ferreira	Fernanda Matos	portabilidade	escalado
+2026-10-02 10:40	608	966641185	Francisca Figueiredo Nunes	Rita Brito	fatura	sim
+2026-10-03 15:03	310	918928091	Gonçalo Fonseca Barbosa	Fernanda Matos	portabilidade	não
+2026-10-03 14:25	1188	962733352	Carlos Varela Amaral Vieira	Fernanda Matos	fatura	não
+2026-10-01 12:41	757	910444053	Diana Fonseca Cardoso	Afonso Neves	alteração de tarifário	sim
+2026-10-02 16:57	1036	914305926	Daniel Lourenço	Afonso Neves	portabilidade	não
+2026-10-03 13:34	1332	921924881	Inês Cabral Amaral	Fernanda Matos	equipamento	não
+2026-10-03 19:30	1154	921979827	Daniela Oliveira Esteves	Rita Jesus	fatura	não
+2026-10-02 13:37	1010	934060373	Sandra Lopes Almeida	Afonso Neves	avaria	escalado
+2026-10-02 16:51	1010	936669539	Filipe Lacerda Sousa	Ana Cruz	fatura	escalado
+2026-10-02 21:27	1150	935706281	Filipa Leal Rodrigues	Rita Brito	fatura	sim
+2026-10-02 17:59	1030	962329571	Margarida Correia Vieira	Rita Brito	equipamento	sim
+2026-10-03 19:21	1472	911075548	João Teixeira Silva	Fernanda Matos	fatura	sim
+2026-10-01 17:06	536	938865311	Francisca Valente	Fernanda Matos	portabilidade	sim
+2026-10-01 12:38	301	935824983	Rui Gonçalves	Rita Brito	fatura	escalado
+2026-10-02 13:27	394	923786556	Luísa Jesus Oliveira	Rita Jesus	alteração de tarifário	sim
+2026-10-01 21:36	539	963358928	Rosa Vieira Amaral	Fernanda Matos	alteração de tarifário	não
+2026-10-01 09:47	1249	914351809	Daniel Antunes Bento	Fernanda Matos	fatura	escalado
+2026-10-03 08:28	564	931270923	Carolina Guerreiro Raposo	Ana Cruz	equipamento	sim
+2026-10-01 11:36	1442	919691797	Rosa Azevedo Cabral	Rita Jesus	cancelamento	escalado
+2026-10-03 13:34	662	923419414	Joana Lourenço Almeida	Afonso Neves	avaria	não
+2026-10-02 20:09	1025	929966016	João Machado Paiva	Afonso Neves	avaria	não
+2026-10-02 16:05	679	929403524	André Raposo Rodrigues Reis	Afonso Neves	alteração de tarifário	sim
+2026-10-03 16:50	1300	967481654	Fernando Silva Reis	Rita Jesus	avaria	sim
+2026-10-03 10:55	139	915730964	Carlos Loureiro Teixeira	Rita Brito	fatura	sim
+2026-10-02 16:36	628	937785979	Daniela Jesus Guerreiro	Rita Jesus	avaria	escalado
+2026-10-01 11:58	1466	969966396	Daniela Matos	Rita Jesus	portabilidade	escalado

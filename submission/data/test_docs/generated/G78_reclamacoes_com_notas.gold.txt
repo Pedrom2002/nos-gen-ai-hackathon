@@ -1,0 +1,10 @@
+n_reclamacao , data , cliente , contacto , canal , descricao , estado
+REC-2026-3200 , 18/09/2026 , * * * * , * , email , Cliente * refere que o técnico * * não apareceu na hora marcada. Pede novo agendamento e contacto para o *. , fechada
+REC-2026-3201 , 26/09/2026 , * * * , * , livro de reclamações , Pedido de cancelamento por mudança de casa para * * * *, *, * *, * * * * *. Sem fidelização ativa. , fechada
+REC-2026-3202 , 08/09/2026 , * * * , * , telefone , Pedido de cancelamento por mudança de casa para * * *, *, * *. Sem fidelização ativa. , aberta
+REC-2026-3203 , 23/09/2026 , * * , * , telefone , Reclama da qualidade do sinal de TV. Vizinho Sr. * tem o mesmo problema. , em análise
+REC-2026-3204 , 25/09/2026 , * * * , * , loja , Fatura com valor duplicado. Sr. * enviou comprovativo do IBAN * * * * * * *. Aguarda estorno. , aberta
+REC-2026-3205 , 22/09/2026 , * * * , * , telefone , Reclama da qualidade do sinal de TV. Vizinho Sra. * tem o mesmo problema. , fechada
+REC-2026-3206 , 11/09/2026 , * * * * , * , email , Fatura com valor duplicado. Sr. * enviou comprovativo do IBAN * * * * * * *. Aguarda estorno. , aberta
+REC-2026-3207 , 03/09/2026 , * * * * , * , livro de reclamações , Reclama da qualidade do sinal de TV. Vizinho Sr. * tem o mesmo problema. , aberta
+REC-2026-3208 , 28/09/2026 , * * * , * , telefone , Cliente * refere que o técnico * * não apareceu na hora marcada. Pede novo agendamento e contacto para o (*) * * *. , aberta

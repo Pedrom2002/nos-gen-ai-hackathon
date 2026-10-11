@@ -1,0 +1,16 @@
+n_reclamacao,data,cliente,contacto,canal,descricao,estado
+REC-2026-3200,18/09/2026,Maria Teixeira Paiva Neves,maria.neves@mail.pt,email,"Cliente Maria refere que o técnico Sérgio Sousa não apareceu na hora marcada.
+Pede novo agendamento e contacto para o 932669516.",fechada
+REC-2026-3201,26/09/2026,Paulo Lourenço Gonçalves,pgoncalves@hotmail.com,livro de reclamações,"Pedido de cancelamento por mudança de casa para Avenida Vasco da Gama, 47, 1.º andar, 4400-299 Vila Nova de Gaia.
+Sem fidelização ativa.",fechada
+REC-2026-3202,08/09/2026,Miguel Brito Guerreiro,miguel.guerreiro@live.com.pt,telefone,"Pedido de cancelamento por mudança de casa para Rua das Flores, 14, 2700-634 Amadora.
+Sem fidelização ativa.",aberta
+REC-2026-3203,23/09/2026,Catarina Coelho,catarina.coelho21@correio-exemplo.pt,telefone,Reclama da qualidade do sinal de TV. Vizinho Sr. Teixeira tem o mesmo problema.,em análise
+REC-2026-3204,25/09/2026,Manuel Simões Sousa,manuel.sousa24@gmail.com,loja,"Fatura com valor duplicado. Sr. Sousa enviou comprovativo do IBAN PT50 0269 2764 4973 8171 5992 2.
+Aguarda estorno.",aberta
+REC-2026-3205,22/09/2026,Sandra Gonçalves Marques,sandra.marques63@protonmail.com,telefone,Reclama da qualidade do sinal de TV. Vizinho Sra. Teixeira tem o mesmo problema.,fechada
+REC-2026-3206,11/09/2026,Paulo Nogueira Magalhães Ferreira,pferreira@protonmail.com,email,"Fatura com valor duplicado. Sr. Ferreira enviou comprovativo do IBAN PT50 0033 0975 8512 6158 1708 3.
+Aguarda estorno.",aberta
+REC-2026-3207,03/09/2026,Filipe Raposo Cabral Moreira,filipe.moreira9@netcabo.pt,livro de reclamações,Reclama da qualidade do sinal de TV. Vizinho Sr. Macedo tem o mesmo problema.,aberta
+REC-2026-3208,28/09/2026,Carlos Sousa Faria,carlos_faria@protonmail.com,telefone,"Cliente Carlos refere que o técnico Daniela Valente não apareceu na hora marcada.
+Pede novo agendamento e contacto para o (+351) 923 666 701.",aberta

@@ -1,0 +1,21 @@
+n_estudante ; nome ; curso ; ano ; propina_mensal ; estado_pagamento ; email ; telemovel
+* ; * * * ; Design ; 2 ; 69,70 ; em atraso ; * ; *
+* ; * * * ; Informática ; 3 ; 69,70 ; em atraso ; * ; *
+* ; * * ; Design ; 3 ; 69,70 ; pago ; * ; * * * *
+* ; * * ; Design ; 2 ; 69,70 ; pago ; * ; (*) * * *
+* ; * * * * ; Design ; 3 ; 69,70 ; pago ; * ; * * * *
+* ; * * * ; Gestão ; 1 ; 69,70 ; pago ; * ; * * *
+* ; * * * ; Design ; 3 ; 69,70 ; pago ; * ; *
+* ; * * * ; Gestão ; 1 ; 69,70 ; isento (bolsa) ; * ; *
+* ; * * * ; Enfermagem ; 2 ; 69,70 ; isento (bolsa) ; * ; (*) * * *
+* ; * * * ; Informática ; 2 ; 69,70 ; pago ; * ; *
+* ; * * * * ; Enfermagem ; 2 ; 69,70 ; pago ; * ; *
+* ; * * * * ; Design ; 3 ; 69,70 ; pago ; * ; * * *
+* ; * * * ; Enfermagem ; 3 ; 69,70 ; pago ; * ; *
+* ; * * * ; Enfermagem ; 3 ; 69,70 ; em atraso ; * ; * * *
+* ; * * * ; Enfermagem ; 3 ; 69,70 ; pago ; * ; * * *
+* ; * * * * ; Design ; 2 ; 69,70 ; pago ; * ; *
+* ; * * ; Gestão ; 3 ; 69,70 ; isento (bolsa) ; * ; * * * *
+* ; * * * ; Informática ; 3 ; 69,70 ; isento (bolsa) ; * ; *
+* ; * * * ; Informática ; 1 ; 69,70 ; pago ; * ; * * *
+* ; * * * ; Informática ; 1 ; 69,70 ; isento (bolsa) ; * ; *

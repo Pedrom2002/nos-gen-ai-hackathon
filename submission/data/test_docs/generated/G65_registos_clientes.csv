@@ -1,0 +1,13 @@
+nome,nif,data_nasc,sexo,cod_postal,localidade,telemovel,email,iban,plano,mensalidade,ultima_fatura
+Vera Pacheco Gonçalves,353944726,1984-07-28,F,6300-974,Guarda,962 657 563,vera.goncalves19@outlook.pt,PT50 0018 2724 7196 1899 2662 2,Fibra 1G + TV,54.99,FT2026/88200
+Paula Esteves Faria Nogueira,266353789,1958-12-05,F,3500-816,Viseu,913 563 525,paula.nogueira@netcabo.pt,PT50 0018 5967 5073 2222 4582 4,Móvel 50GB,19.99,FT2026/88201
+Afonso Reis Ferreira,198398123,1992-12-04,M,4000-003,Porto,(+351) 934 909 098,afonsoferreira92@outlook.pt,PT50 0269 9817 8414 5123 1387 1,Móvel 50GB,19.99,FT2026/88202
+Rita Raposo Araújo,285865633,1997-07-22,F,3000-907,Coimbra,+351919893288,rita.araujo13@mail.pt,PT50 0269 9526 8697 7458 5085 8,Fibra 500,39.99,FT2026/88203
+Catarina Ferreira Barbosa Jesus,224527223,1976-01-07,F,2620-015,Odivelas,(+351) 936 700 920,catarina.jesus70@outlook.pt,PT50 0033 5986 1780 7730 4106 3,Fibra 1G,44.99,FT2026/88204
+Filipa Cunha Neves,182362051,1959-09-01,F,3800-583,Aveiro,922-187-761,filipaneves59@hotmail.com,PT50 0035 7772 9841 6369 9163 0,Fibra 1G,44.99,FT2026/88205
+Filipe Alves,328204994,2000-12-07,M,2620-562,Odivelas,(+351) 966 059 252,filipealves00@correio-exemplo.pt,PT50 0010 2179 6169 4465 9477 1,Móvel 50GB,19.99,FT2026/88206
+Joaquim Pires Almeida Guerreiro,153784482,1949-10-08,M,7800-691,Beja,(+351) 961 283 460,joaquim_guerreiro@sapo.pt,PT50 0035 2411 3133 9661 6144 8,Pack Casa Total,64.99,FT2026/88207
+Tiago Silva Henriques Borges,366595210,1980-04-09,M,2800-395,Almada,+351936132877,tiago.borges@live.com.pt,PT50 0079 3625 2135 6948 5117 2,Fibra 1G + TV,54.99,FT2026/88208
+Ana Lourenço Coelho,395800986,2007-04-02,F,2400-657,Leiria,(+351) 930 480 993,acoelho@hotmail.com,PT50 0033 5213 7740 0580 9872 8,Móvel 50GB,19.99,FT2026/88209
+Alberto Silva Macedo,295494930,1985-04-08,M,8000-142,Faro,961376484,amacedo@correio-exemplo.pt,PT50 0033 8074 9652 2028 2034 1,Fibra 500,39.99,FT2026/88210
+Joana Lacerda Leal,116839082,1982-08-19,F,2620-123,Odivelas,966-327-054,joana.leal8@netcabo.pt,PT50 0079 0694 4546 7634 9537 1,Fibra 500,39.99,FT2026/88211

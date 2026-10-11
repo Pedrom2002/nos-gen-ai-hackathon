@@ -1,0 +1,16 @@
+n_fatura,data,cliente,nif,morada_faturacao,total,iva,estado
+FT2026/90100,17/08/2026,Bruno Antunes Valente Costa,372069487,"Rua Heróis do Ultramar, 144, 6.º A, 2670-808 Loures",47.99,8.97,paga
+FT2026/90101,08/08/2026,José Vaz Pacheco Bento,372640214,"Avenida da Boavista, 209, 6.º A, 3000-133 Coimbra",17.49,3.27,paga
+FT2026/90102,30/08/2026,Mariana Cabral Varela,262840596,"Largo do Rossio, 124, 2750-269 Cascais",54.99,10.28,em atraso
+FT2026/90103,26/08/2026,Rita Macedo,309639859,"Rua da República, 32, 2.º Dto., 4150-044 Porto",54.99,10.28,paga
+FT2026/90104,05/08/2026,José Pires Azevedo,224601938,"Avenida Vasco da Gama, 17, 4.º Frente, 3500-394 Viseu",64.99,12.15,em atraso
+FT2026/90105,09/08/2026,Sandra Reis Silva,385347731,"Travessa da Boavista, 201, cave, 2670-404 Loures",54.99,10.28,em atraso
+FT2026/90106,17/08/2026,Vasco Martins,174729111,"Praceta de São João, 51, 1.º, 2500-355 Caldas da Rainha",24.99,4.67,paga
+FT2026/90107,15/08/2026,Cláudia Vieira Baptista,354068075,"Rua Cândido dos Reis, 15, 2670-604 Loures",24.99,4.67,pendente
+FT2026/90108,28/08/2026,Diana Silva,159931932,"Travessa do Rossio, 16, 1.º, 2830-756 Barreiro",66.99,12.53,paga
+FT2026/90109,23/08/2026,Rafael Fonseca,108843327,"Rua de Ceuta, 52, 5.º C, 2620-118 Odivelas",24.99,4.67,paga
+FT2026/90110,15/08/2026,Rui Varela Simões,359689442,"Rua das Flores, 216, Bloco B, 2.º, 2670-648 Loures",54.99,10.28,paga
+FT2026/90111,25/08/2026,Carla Alves Valente,251143759,"Praceta dos Combatentes, 21, 6.º A, 1000-130 Lisboa",24.49,4.58,em atraso
+FT2026/90112,13/08/2026,Vera Mendes,396199658,"Travessa da Liberdade, 222, r/c Dto., 4900-141 Viana do Castelo",44.49,8.32,paga
+FT2026/90113,01/08/2026,Mariana Barbosa,270463607,"Largo Engenheiro Duarte Pacheco, 167, 6.º A, 2500-434 Caldas da Rainha",41.99,7.85,em atraso
+FT2026/90114,08/08/2026,Hugo Loureiro Castro Guerreiro,215436210,"Praceta Almirante Reis, 206, 2.º Dto., 6000-331 Castelo Branco",34.49,6.45,paga

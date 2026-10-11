@@ -2,12 +2,15 @@
 
 Usage (from the submission folder):
     python -m anonimizador.evaluate_docs <file or folder>... [--model M]
+                                         [--keep-punct]
 
 For each document it reports how many words were masked, how many
 identifiers the model missed and the regex safety net caught, and errors.
 If a reference answer ``<name>.gold.txt`` sits next to a document, the local
-Similarity and Accuracy are reported too. Outputs are written to
-data/runs/docs/ so they can be reviewed by hand.
+Similarity and Accuracy are reported too. ``--keep-punct`` writes a masked
+word with its glued punctuation ("*,"), the form of data/gold/gold.txt and of
+the generated set's answers (data/test_docs/make_dataset.py). Outputs are
+written to data/runs/docs/ so they can be reviewed by hand.
 """
 
 import argparse
@@ -51,12 +54,14 @@ def collect(paths: list[Path]) -> list[Path]:
 
 def evaluate_document(path: Path, model: str = DEFAULT_MODEL,
                       out_dir: Path = OUT_DIR,
-                      generate_fn=generate) -> DocResult:
+                      generate_fn=generate,
+                      keep_punct: bool = False) -> DocResult:
     result = DocResult(name=path.name)
     start = time.time()
     try:
         lines = read_document(path)
-        output = anonymize(lines, model=model, generate_fn=generate_fn)
+        output = anonymize(lines, model=model, generate_fn=generate_fn,
+                           keep_punct=keep_punct)
     except Exception as exc:
         result.error = f"{type(exc).__name__}: {str(exc)[:80]}"
         return result
@@ -100,9 +105,12 @@ def main(argv: list[str] | None = None) -> None:
     parser.add_argument("paths", nargs="+", type=Path)
     parser.add_argument("--model", default=DEFAULT_MODEL)
     parser.add_argument("--out-dir", type=Path, default=OUT_DIR)
+    parser.add_argument("--keep-punct", action="store_true",
+                        help='write "Flores," as "*," instead of "*"')
     args = parser.parse_args(argv)
     results = [
-        evaluate_document(p, args.model, args.out_dir, generate_fn=generate)
+        evaluate_document(p, args.model, args.out_dir, generate_fn=generate,
+                          keep_punct=args.keep_punct)
         for p in collect(args.paths)
     ]
     print(to_markdown(results))

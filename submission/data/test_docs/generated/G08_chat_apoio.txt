@@ -1,0 +1,15 @@
+[Transcrição do chat de apoio, sessão #CH-3231677]
+[01/10/2026 13:27] Assistente Lusofibra: Olá! Sou o Bruno, em que posso ajudar?
+[01/10/2026 13:27] Cliente: boa tarde, queria mudar o tarifário para o Móvel 20GB
+[01/10/2026 13:28] Assistente Lusofibra: Claro. Para validar a sua identidade, pode indicar o NIF do titular e a data de nascimento?
+[01/10/2026 13:28] Cliente: 186969538, 19-09-1987
+[01/10/2026 13:29] Assistente Lusofibra: Obrigado. Confirmo que fala com a titular Paula Gomes Brito?
+[01/10/2026 13:29] Cliente: sim sou eu, a paula
+[01/10/2026 13:30] Cliente: aproveito para atualizar o email, agora é paula.brito@mail.pt e o tlm passou a ser 969-214-153
+[01/10/2026 13:31] Assistente Lusofibra: Atualizado. A morada de instalação mantém-se na Rua do Comércio, 49, 1.º andar, 3000-560 Coimbra?
+[01/10/2026 13:31] Cliente: sim
+[01/10/2026 13:32] Cliente: ah e o pagamento passa a ser pela conta do meu tio, Nuno Magalhães, o iban é PT50 0036 1692 98442782062 61. ele autoriza
+[01/10/2026 13:33] Assistente Lusofibra: Para alterar o débito para uma conta de outra pessoa preciso da autorização do titular. Vou enviar o formulário para o seu novo email.
+[01/10/2026 13:33] Cliente: ok obrigada bruno
+[01/10/2026 13:34] Assistente Lusofibra: A alteração de tarifário para Móvel 20GB (12,99 EUR/mês) fica ativa amanhã. Obrigado e boa tarde!
+[Fim da sessão]

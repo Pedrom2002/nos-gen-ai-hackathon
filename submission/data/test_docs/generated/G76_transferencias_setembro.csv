@@ -1,0 +1,23 @@
+data,iban_origem,titular_origem,iban_destino,beneficiario,montante,descricao,estado
+2026-09-16,PT50007900713846097019885,Daniel Lopes,PT50001063820149180823128,Patrícia Leal Jesus,"2.285,45",Mesada,executada
+2026-09-11,PT50001048719624034822465,Fernanda Varela Ribeiro,PT50003310086836835249839,Tiago Rocha Soares,"1.378,97",Pagamento fatura,pendente
+2026-09-04,PT50003565364502479692893,Ricardo Cardoso,PT50003603418367440610609,Afonso Monteiro,"1.475,99",Prestação,pendente
+2026-09-04,PT50001826522119539312445,João Esteves Figueiredo Santos,PT50000758551662864529795,Fernando Guerreiro,"2.031,77",Prestação,executada
+2026-09-15,PT50000772933059983755110,Vítor Azevedo,PT50004592416722078646067,Alberto Sequeira Castro,"832,03",Transferência,pendente
+2026-09-02,PT50003598745726749215229,Carolina Guerreiro Martins Sequeira,PT50007956638695231821232,Susana Leal Jesus,"1.138,39",Renda,executada
+2026-09-30,PT50026929504031267854298,Francisco Ribeiro Teixeira,PT50007981871156765565403,Filipe Nogueira Lopes,"1.187,73",Mesada,executada
+2026-09-20,PT50007904133726824955723,Paula Macedo Cunha,PT50003673501572264674520,Alexandra Sousa Tavares,"1.213,89",Renda,devolvida
+2026-09-27,PT50003581421587500249560,Marta Jesus Martins,PT50001010447909170691038,Tomás Lacerda Sequeira Cabral,"1.351,23",Reembolso,devolvida
+2026-09-20,PT50004528918427655460770,Catarina Leal Cruz,PT50026952604678980435504,Henrique Silva Carvalho,"1.329,20",Reembolso,devolvida
+2026-09-25,PT50003678027632758542161,Bruno Freitas Pereira,PT50000727624274894698808,Alexandra Alves,"1.083,60",Pagamento fatura,executada
+2026-09-07,PT50007970853965834698740,António Varela Soares Monteiro,PT50000787780601378738070,Ricardo Loureiro,"696,33",Renda,pendente
+2026-09-16,PT50002381697768168234855,Teresa Rocha Pacheco,PT50003391262112941800505,Miguel Valente Ribeiro Lourenço,"328,93",Pagamento fatura,devolvida
+2026-09-18,PT50001012401876343261153,Nuno Cruz Pereira,PT50007916533212170336616,Francisco Coelho,"305,85",Pagamento fatura,executada
+2026-09-22,PT50003575764185530611325,Patrícia Carvalho Brito Azevedo,PT50026955653510466668140,Tiago Coelho Lacerda Pinto,"1.009,40",Reembolso,executada
+2026-09-28,PT50002314003702210381641,Fernando Azevedo Sousa,PT50001819489553550956047,Vasco Gomes Sequeira Rocha,"106,01",Renda,devolvida
+2026-09-25,PT50002372759665125023132,Ricardo Tavares Jesus Ribeiro,PT50003334798713900172324,Carolina Nunes,"1.043,85",Pagamento fatura,executada
+2026-09-20,PT50004502986013520478686,Matilde Ferreira Nogueira,PT50001801156055458194710,Helena Guerreiro Costa Araújo,"1.835,27",Pagamento fatura,pendente
+2026-09-15,PT50007928286280158629678,Pedro Moreira,PT50003557026479000202396,Sofia Gonçalves Esteves,"1.293,41",Prestação,pendente
+2026-09-08,PT50003510856576328668255,Diogo Guerreiro,PT50003666371272887378185,Marco Jesus Santos,"924,24",Mesada,executada
+2026-09-26,PT50001028753559414292046,Margarida Lacerda,PT50003682297260532177176,Fernanda Pires Neves,"2.333,81",Pagamento fatura,executada
+2026-09-02,PT50007990351508640563005,Henrique Reis,PT50026995266421084001115,Cláudia Teixeira Neves,"1.216,96",Mesada,executada

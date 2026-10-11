@@ -1,0 +1,3 @@
+# Stored byte for byte: the set deliberately mixes LF and CRLF files,
+# and tests/test_dataset.py checks them against the generator.
+* -text

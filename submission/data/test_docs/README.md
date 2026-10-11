@@ -8,11 +8,16 @@ Fictitious documents used to check that the pipeline generalises beyond the offi
 
 - `F01`–`F06`: photo versions of the two pages of the official document, made by `make_photos.py` (`python data/test_docs/make_photos.py`): a flat scan (`F01`, `F04`), the page on a dark table seen at an angle (`F02`, `F05`) and a page turned 1.6 degrees with no border to find (`F03`, `F06`). They are rendered from the PDF and degraded with blur, uneven light, noise and JPEG compression, so they are invented data, not real photographs. They test OCR, the line recovery, the deskew and the redacted image; `evaluate_docs` does not read them (it only takes PDF, TXT and CSV).
 
+- `generated/`: a larger set made by `make_dataset.py` (`python data/test_docs/make_dataset.py`): 81 documents (54 TXT, 10 PDF, 17 CSV; about 19 000 words, 5 800 of them to mask) filled with invented people whose NIF, NISS, Cartão de Cidadão, IBAN and card numbers pass the official checksums. Customer records, complaints, call notes, HR forms, pay slips, medical statements, school records, powers of attorney, chat transcripts, invoices, security incident logs, condominium minutes, insurance claims, job applications; CSV exports of customers, employees, appointments, students, calls, invoices, logins, transfers, vaccinations and complaints with notes. TXT files in UTF-8 (with and without BOM), UTF-16 and Windows-1252, with LF and CRLF; CSV files with comma, semicolon, tab and pipe delimiters, quoted cells with delimiters and line breaks inside; one record with styled digits and a struck-through number. Each document has a reference answer `<name>.gold.txt` written by the generator, which knows which words it placed to identify someone (names in any role, dates of birth, identifiers, addresses, contacts, payment data, credentials, a person's employer or school, salaries; everything else stays, including the issuing institution). The set is deterministic and `tests/test_dataset.py` checks that the committed files are the ones the script writes.
+
 Run the evaluation:
 
 ```bash
 cd submission
-python -m anonimizador.evaluate_docs data/test_docs
+python -m anonimizador.evaluate_docs data/test_docs                          # the 17 hand-written documents
+python -m anonimizador.evaluate_docs data/test_docs/generated --keep-punct   # the 81 generated ones, with Similarity and Accuracy
 ```
 
-A reference answer named `<document>.gold.txt` next to a document adds Similarity and Accuracy to the report.
+A reference answer named `<document>.gold.txt` next to a document adds Similarity and Accuracy to the report. The generated answers keep the punctuation glued to a masked word (`Flores,` is `*,`, as in `data/gold/gold.txt`), so they are compared with `--keep-punct`.
+
+Feeding each generated answer back as the model's answer scores 100% Accuracy on all 81 documents and 100% Similarity on 72: the safety net also masks the generic mailboxes (`reclamacoes@lusofibra.pt`, `rh@`, `dpo@`) and the condominium's IBAN that appear in the other 9, which the answers keep because they do not point to a person.

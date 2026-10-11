@@ -1,0 +1,31 @@
+data , hora , n_utente , nome , data_nasc , medico , especialidade , diagnostico , prescricao , estado
+2026-09-26 , 10:40 , * , * * * , * , Dra. * * , Pediatria , asma brônquica , Levotiroxina 75 mcg em jejum , realizada
+2026-09-10 , 18:00 , * , * * * , * , Dr. * * , Pediatria , depressão major em tratamento , Cetirizina 10 mg 1x/dia , faltou
+2026-09-04 , 11:40 , * , * * * , * , Dr. * * , Pediatria , artrose do joelho direito , Omeprazol 20 mg 1x/dia , realizada
+2026-09-13 , 12:40 , * , * * * * , * , Dra. * * , Cardiologia , hipertensão arterial , Atorvastatina 20 mg à noite , faltou
+2026-09-18 , 13:00 , * , * * , * , Dra. * * , Pediatria , artrose do joelho direito , Levotiroxina 75 mcg em jejum , remarcada
+2026-09-13 , 12:00 , * , * * * * , * , Dr. * * , Pediatria , doença celíaca , Cetirizina 10 mg 1x/dia , realizada
+2026-09-14 , 14:00 , * , * * * * , * , Dr. * * , Dermatologia , apneia do sono , Metformina 850 mg 2x/dia , realizada
+2026-09-16 , 11:00 , * , * * * * , * , Dr. * * , Medicina Geral , artrose do joelho direito , Levetiracetam 500 mg 2x/dia , realizada
+2026-09-21 , 17:40 , * , * * , * , Dra. * * , Dermatologia , rinite alérgica , Cetirizina 10 mg 1x/dia , realizada
+2026-09-09 , 11:20 , * , * * * , * , Dr. * * , Pediatria , hipertensão arterial , Atorvastatina 20 mg à noite , realizada
+2026-09-24 , 13:40 , * , * * , * , Dr. * * , Cardiologia , diabetes tipo 2 , Omeprazol 20 mg 1x/dia , remarcada
+2026-09-26 , 13:40 , * , * * * , * , Dr. * * , Pediatria , hipertensão arterial , Levetiracetam 500 mg 2x/dia , faltou
+2026-09-15 , 11:00 , * , * * , * , Dra. * * , Dermatologia , diabetes tipo 2 , Losartan 50 mg 1x/dia , realizada
+2026-09-06 , 15:00 , * , * * * * , * , Dr. * * , Dermatologia , epilepsia controlada , Omeprazol 20 mg 1x/dia , realizada
+2026-09-06 , 15:00 , * , * * , * , Dr. * * , Dermatologia , hipotiroidismo , Sertralina 50 mg 1x/dia , remarcada
+2026-09-13 , 12:20 , * , * * * , * , Dr. * * , Dermatologia , doença celíaca , Levotiroxina 75 mcg em jejum , realizada
+2026-09-27 , 17:40 , * , * * * * , * , Dr. * * , Dermatologia , doença celíaca , Cetirizina 10 mg 1x/dia , realizada
+2026-09-29 , 15:00 , * , * * * , * , Dr. * * , Cardiologia , enxaqueca crónica , Metformina 850 mg 2x/dia , remarcada
+2026-09-15 , 14:00 , * , * * * , * , Dr. * * , Pediatria , doença celíaca , Levotiroxina 75 mcg em jejum , realizada
+2026-09-25 , 08:20 , * , * * * , * , Dr. * * , Cardiologia , epilepsia controlada , Sertralina 50 mg 1x/dia , faltou
+2026-09-18 , 09:20 , * , * * * , * , Dra. * * , Pediatria , hipotiroidismo , Cetirizina 10 mg 1x/dia , remarcada
+2026-09-16 , 11:00 , * , * * * , * , Dr. * * , Cardiologia , asma brônquica , Omeprazol 20 mg 1x/dia , realizada
+2026-09-27 , 10:00 , * , * * * , * , Dr. * * , Medicina Geral , rinite alérgica , Omeprazol 20 mg 1x/dia , realizada
+2026-09-08 , 18:40 , * , * * * , * , Dr. * * , Dermatologia , depressão major em tratamento , Cetirizina 10 mg 1x/dia , realizada
+2026-09-04 , 14:00 , * , * * * * , * , Dr. * * , Dermatologia , asma brônquica , Cetirizina 10 mg 1x/dia , faltou
+2026-09-25 , 18:20 , * , * * * , * , Dr. * * , Pediatria , doença celíaca , Sertralina 50 mg 1x/dia , realizada
+2026-09-23 , 09:40 , * , * * * , * , Dr. * * , Dermatologia , doença celíaca , Sertralina 50 mg 1x/dia , realizada
+2026-09-27 , 08:20 , * , * * * * , * , Dr. * * , Dermatologia , apneia do sono , Atorvastatina 20 mg à noite , remarcada
+2026-09-09 , 13:20 , * , * * * * , * , Dr. * * , Pediatria , depressão major em tratamento , Levetiracetam 500 mg 2x/dia , remarcada
+2026-09-01 , 14:20 , * , * * , * , Dr. * * , Medicina Geral , asma brônquica , Levotiroxina 75 mcg em jejum , realizada

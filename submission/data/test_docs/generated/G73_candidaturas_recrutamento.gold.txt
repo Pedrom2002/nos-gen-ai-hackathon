@@ -1,0 +1,15 @@
+nome | email | telemovel | data_nascimento | localidade | empregador_atual | profissao | anos_experiencia | vaga | estado | classificacao
+* * | * | * | * | * | * * * *, *. | Fisioterapeuta | 2 | Gestor de conta | | 4
+* * * | * | (*) * * * | * | * | * *, * * * | Assistente social | 6 | Técnico de instalação | entrevista marcada | 2
+* * | * | * * * | * | * | * *, *. | Carteira | 21 | Analista financeiro | entrevista marcada | 4
+* * | * | * | * | * | * *, *. | Carteiro | 6 | Técnico de instalação | rejeitado | 5
+* * | * | (*) * * * | * | * | * * * *, *. | Enfermeiro | 18 | Administrador de sistemas | rejeitado | 1
+* * * | * | * | * | * | * *, *. | Empregada de mesa | 23 | Administrador de sistemas | rejeitado | 4
+* * | * | * | * | * | * * * * * | Operadora de caixa | 7 | Engenheiro de rede | proposta enviada | 1
+* * * * | * | * * * | * | * * | * * * * | Designer gráfica | 1 | Técnica de RH | entrevista marcada | 4
+* * | * | * | * | * | * * * * * | Advogado | 16 | Gestor de conta | proposta enviada | 4
+* * * * | * | * | * | * * * | * * * * * * | Técnica de farmácia | 15 | Coordenador de equipa | | 1
+* * * | * | * * * * | * | * * | * *, *. | Eletricista | 10 | Gestor de conta | rejeitado | 3
+* * * | * | (*) * * * | * | * | * * * * * * | Designer gráfico | 16 | Jurista | proposta enviada | 1
+* * * * | * | * | * | * | * * * * | Empregada de mesa | 6 | Operador de logística | | 5
+* * * | * | * | * | * | * * * * | Engenheira civil | 22 | Gestor de conta | rejeitado | 3

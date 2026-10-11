@@ -100,3 +100,19 @@ describe("shared API model", () => {
       expect(source).not.toContain(banned);
   });
 });
+
+describe("fromBatch", () => {
+  it("keeps one entry per file, in order, with the result or the reason", async () => {
+    const { fromBatch } = await import("@/services/anonymizer");
+    const out = fromBatch({ documents: [
+      { name: "a.txt", state },
+      { name: "b.exe", error: { status: 415, detail: "Formato não suportado." } },
+      { name: "c.txt", error: { status: 502 } as { status: number; detail: string } },
+    ] });
+    expect(out.map((e) => e.name)).toEqual(["a.txt", "b.exe", "c.txt"]);
+    expect(out[0]?.result?.docId).toBe("abc123");
+    expect(out[0]?.result?.entities.map((e) => e.text)).toEqual(["Rui Costa Lima", "916 222 333, rui@mail.pt", "Paulo Reis"]);
+    expect(out[1]).toEqual({ name: "b.exe", error: "Formato não suportado." });
+    expect(out[2]?.error).toContain("502");
+  });
+});

@@ -41,9 +41,11 @@ Todo o acesso ao backend está em `src/services/anonymizer.ts`. O backend é a A
 Fluxo:
 
 1. `POST /api/documents` (multipart `file`): o ficheiro original (PDF, DOCX, PNG, JPG, WebP, TXT ou CSV) quando o texto não foi editado, senão o texto como `documento.txt`. Da resposta (`DocumentState`), `lines` passa a ser o texto mostrado (o documento como o backend o leu, sem linhas vazias) e cada `item` vira uma entidade com o troço exato da linha (`first..last`), guardando os ids do backend em `refs`.
+   Com vários ficheiros de uma vez, `POST /api/documents/batch` (multipart `files`) envia-os tal como estão, num só pedido; cada entrada da resposta abre um separador com a sua revisão e o seu resultado, e um ficheiro recusado é listado com o motivo sem impedir os outros.
 2. O mascaramento (`*` por palavra, sem linhas vazias) continua a ser feito no frontend, para as alterações manuais se aplicarem antes do resultado.
 3. Ao gerar o resultado, `PUT /api/documents/{id}/decisions` envia os itens desativados na revisão (`keep`), e o resumo passa a incluir a verificação de fugas do backend.
 4. "Limpar" faz `DELETE /api/documents/{id}`: o backend só guarda documentos em memória.
+5. Com vários documentos abertos, "Transferir tudo (.zip)" faz `POST /api/documents/zip` com os ids, quando todos têm o resultado gerado: uma pasta por documento com `submission.txt`, `report.md` e o ficheiro censurado.
 
 ```sh
 # terminal 1

@@ -85,6 +85,18 @@ export function fromState(state: DocumentState): AnalysisResult {
   };
 }
 
+/** One entry of POST /api/documents/batch: the document, or why that file alone was refused. */
+export interface BatchEntry { name: string; state?: DocumentState; error?: { status: number; detail: string } }
+export interface BatchResponse { documents: BatchEntry[] }
+export interface BatchResult { name: string; result?: AnalysisResult; error?: string }
+
+/** The batch answer as the page uses it, one entry per file sent and in the same order. */
+export function fromBatch(response: BatchResponse): BatchResult[] {
+  return response.documents.map((entry) => entry.state
+    ? { name: entry.name, result: fromState(entry.state) }
+    : { name: entry.name, error: entry.error?.detail || `O servidor respondeu com erro ${entry.error?.status ?? "desconhecido"}.` });
+}
+
 /** The file name from Content-Disposition (RFC 5987 or plain), or a fallback. */
 export function filenameFrom(header: string | null, fallback: string): string {
   const star = /filename\*=UTF-8''([^;]+)/i.exec(header ?? "");

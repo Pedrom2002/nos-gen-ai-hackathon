@@ -95,7 +95,7 @@ The worked example includes a relationship word that stays visible ("(irmã)"): 
 
 ![A simulated photo of the official document and the redacted file returned by the API](docs/photo_redaction.png)
 
-Besides the challenge PDF, Lethe reads scanned PDFs, photos and images (PNG, JPG, WebP), DOCX, TXT and CSV. Every input still produces `submission.txt` and the report through the same pipeline. Images, PDFs, DOCX and CSV files also come back redacted, in their own format (`python run.py --pdf FILE --redact`, or `GET /api/documents/{id}/download/redacted`). A CSV is read cell by cell: each row becomes a line with the cells separated by the delimiter on its own, so every value is its own item, the separators are never masked, and the redacted file is the CSV again with the masked cells.
+Besides the challenge PDF, Lethe reads scanned PDFs, photos and images (PNG, JPG, WebP), DOCX, TXT and CSV. Every input still produces `submission.txt` and the report through the same pipeline. Images, PDFs, DOCX and CSV files also come back redacted, in their own format (`python run.py --pdf FILE --redact`, or `GET /api/documents/{id}/download/redacted`). A CSV is read cell by cell: each row becomes a line with the cells separated by the delimiter on its own, so every value is its own item, the separators are never masked, and the redacted file is the CSV again with the masked cells. Several files can go at once: `POST /api/documents/batch` takes up to ten in one request and answers for each one, the web app opens a tab per document, and `POST /api/documents/zip` returns every output in one archive.
 
 - **Images and scans:** they are read by [Tesseract](https://github.com/tesseract-ocr/tesseract) on the machine, in Portuguese, so the image never leaves it; only its text goes to the model. Each word keeps its box.
   - The redaction paints opaque black over the masked words. It never blurs or pixelates, since those can be reversed. The boxes are padded so accents and descenders are covered too.
@@ -138,7 +138,7 @@ Without `VITE_API_URL` the interface runs in demo mode with simulated results, a
 ### Privacy by design
 
 - Documents live only in the API's memory, with no database and no files; the API does not cache the model's answers either, since they quote the document. At most 30 are kept (the least recently used goes first), one idle for 30 minutes is dropped, and `DELETE /api/documents/{id}` removes one at once. Ids are 22 random characters.
-- Uploads are checked before any heavy work: at most 25 MB; a DOCX that unpacks past 50 MB, an image over 80 megapixels, a scanned PDF over 20 pages or a document over 8 000 words is refused (413) before any model call, and a binary file named `.txt` is refused as unsupported (415).
+- Uploads are checked before any heavy work: at most 25 MB; a DOCX that unpacks past 50 MB, an image over 80 megapixels, a scanned PDF over 20 pages or a document over 8 000 words is refused (413) before any model call, and a binary file named `.txt` is refused as unsupported (415). The routes that take several documents at once (`/batch`, `/zip`) are rate limited per client (429 with `Retry-After`).
 - `run.py` (the command line) does cache the model's answers in `data/cache/`, so repeated runs cost nothing. That folder is not committed, but it holds the documents' text: delete it after working with real documents.
 - Request logging is off, and document text never appears in logs or error messages.
 - The browser only stores the theme and the language.

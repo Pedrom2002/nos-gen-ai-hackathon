@@ -36,11 +36,17 @@ export interface ApiClient {
   remove(docId: string): Promise<void>;
 }
 
+/**
+ * @param timeoutMs quick calls (connection test, delete)
+ * @param longTimeoutMs analysis and redacted file: a full-size photo goes up
+ *   over mobile data, then OCR and the model run; that can take minutes.
+ */
 export function createClient(
   baseUrl: string,
   fetchFn: typeof fetch = fetch,
-  timeoutMs = 120_000,
+  timeoutMs = 15_000,
   demoDelayMs = 1500,
+  longTimeoutMs = 300_000,
 ): ApiClient {
   const base = normalizeBase(baseUrl);
 
@@ -59,15 +65,23 @@ export function createClient(
     };
   }
 
-  /** fetch with a timeout; network failures become one clear message. */
-  async function call(path: string, init: RequestInit = {}): Promise<Response> {
+  /** fetch with a timeout. A timeout and a refused request get different
+   * messages, the second with the technical cause, so a failure can be
+   * told apart from a slow analysis. */
+  async function call(path: string, init: RequestInit = {}, limitMs = timeoutMs): Promise<Response> {
     const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), timeoutMs);
+    let timedOut = false;
+    const timer = setTimeout(() => { timedOut = true; controller.abort(); }, limitMs);
     let res: Response;
     try {
       res = await fetchFn(`${base}/api${path}`, { ...init, signal: controller.signal });
-    } catch {
-      throw new ApiError(OFFLINE);
+    } catch (error) {
+      if (timedOut) {
+        throw new ApiError(`O servidor não respondeu a tempo (${Math.round(limitMs / 1000)} s). `
+          + "Uma fotografia grande demora mais: tente outra vez, de preferência em Wi-Fi.");
+      }
+      const cause = error instanceof Error && error.message ? ` (${error.message})` : "";
+      throw new ApiError(`${OFFLINE}${cause}`);
     } finally {
       clearTimeout(timer);
     }
@@ -93,19 +107,16 @@ export function createClient(
       }
     },
     async analyze({ file, text }) {
-      // React Native's FormData only sends files as {uri, name, type}; a Blob
-      // loses its name and the API needs the ".txt" to read it. Pasted text
-      // is written to the cache first and sent like any other file.
-      let upload = file;
-      if (!upload) {
-        const draft = new File(Paths.cache, "documento.txt");
-        if (draft.exists) draft.delete();
-        draft.write(text ?? "");
-        upload = { uri: draft.uri, name: "documento.txt", type: "text/plain" };
-      }
+      // Expo's fetch (SDK 52+) sends a part from its name, type and bytes();
+      // it refuses React Native's old {uri, name, type} ("Unsupported
+      // FormDataPart implementation"). The name keeps the extension the API
+      // needs: the picked file's own name, or documento.txt for pasted text.
+      const part = file
+        ? { name: file.name, type: file.type, bytes: () => new File(file.uri).bytes() }
+        : { name: "documento.txt", type: "text/plain", bytes: async () => new TextEncoder().encode(text ?? "") };
       const form = new FormData();
-      form.append("file", { uri: upload.uri, name: upload.name, type: upload.type } as unknown as Blob);
-      const res = await call("/documents", { method: "POST", body: form });
+      form.append("file", part as unknown as Blob);
+      const res = await call("/documents", { method: "POST", body: form }, longTimeoutMs);
       return fromState((await res.json()) as DocumentState);
     },
     async decide(docId, keep) {
@@ -113,11 +124,11 @@ export function createClient(
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ keep }),
-      });
+      }, longTimeoutMs);
       return describe((await res.json()) as DocumentState);
     },
     async redacted(docId) {
-      const res = await call(`/documents/${docId}/download/redacted`);
+      const res = await call(`/documents/${docId}/download/redacted`, {}, longTimeoutMs);
       const filename = filenameFrom(res.headers.get("content-disposition"), "documento_censurado");
       const mime = res.headers.get("content-type")?.split(";")[0] ?? "application/octet-stream";
       const target = new File(Paths.cache, filename);
@@ -126,7 +137,7 @@ export function createClient(
       return { uri: target.uri, filename, mime };
     },
     async report(docId) {
-      return (await call(`/documents/${docId}/download/report`)).text();
+      return (await call(`/documents/${docId}/download/report`, {}, longTimeoutMs)).text();
     },
     async remove(docId) {
       await call(`/documents/${docId}`, { method: "DELETE" });

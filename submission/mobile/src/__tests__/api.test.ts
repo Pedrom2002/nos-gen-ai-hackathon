@@ -4,8 +4,9 @@ jest.mock("expo-file-system", () => ({
   File: class {
     uri: string;
     exists = false;
-    constructor(_dir: unknown, name: string) { this.uri = `file:///cache/${name}`; }
+    constructor(dirOrUri: unknown, name?: string) { this.uri = name ? `file:///cache/${name}` : String(dirOrUri); }
     write(content: string) { cacheFiles[this.uri] = content; }
+    async bytes() { return new Uint8Array([1, 2, 3]); }
     delete() {}
   },
 }));
@@ -65,12 +66,53 @@ test("shows the API's reason when it refuses", async () => {
   await expect(api.redacted("d1")).rejects.toThrow("não foram lidas pelo OCR");
 });
 
-test("gives up on a silent server with a clear message", async () => {
+test("a silent server: says it took too long, not that it is offline", async () => {
   const fetchFn = (_: string, init: RequestInit) =>
     new Promise<Response>((_r, reject) => init.signal?.addEventListener("abort", () => reject(new Error("aborted"))));
-  const api = createClient("h.example", fetchFn as unknown as typeof fetch, 50);
+  const api = createClient("h.example", fetchFn as unknown as typeof fetch, 50, 0, 80);
   await expect(api.health()).resolves.toBe(false);
-  await expect(api.analyze({ text: "x" })).rejects.toThrow("Não foi possível ligar ao servidor");
+  await expect(api.analyze({ text: "x" })).rejects.toThrow("não respondeu a tempo");
+});
+
+test("a request the network refuses: says so, with the technical cause", async () => {
+  const fetchFn = () => Promise.reject(new TypeError("Network request failed"));
+  const api = createClient("h.example", fetchFn as unknown as typeof fetch);
+  await expect(api.analyze({ text: "x" })).rejects.toThrow(/Não foi possível ligar ao servidor.*Network request failed/);
+});
+
+test("reading a document may take minutes: the analysis waits longer than a health check", async () => {
+  let health = 0;
+  let analysis = 0;
+  const fetchFn = (url: string, init: RequestInit) => new Promise<Response>((resolve, reject) => {
+    const started = Date.now();
+    init.signal?.addEventListener("abort", () => {
+      if (url.endsWith("/health")) health = Date.now() - started; else analysis = Date.now() - started;
+      reject(new Error("aborted"));
+    });
+  });
+  const api = createClient("h.example", fetchFn as unknown as typeof fetch, 40, 0, 200);
+  await api.health();
+  await expect(api.analyze({ text: "x" })).rejects.toThrow();
+  expect(health).toBeLessThan(150);
+  expect(analysis).toBeGreaterThanOrEqual(180);
+});
+
+test("sends a picked file by its bytes, keeping its name and type", async () => {
+  const appended: [string, unknown][] = [];
+  const realFormData = globalThis.FormData;
+  globalThis.FormData = class {
+    append(key: string, value: unknown) { appended.push([key, value]); }
+  } as unknown as typeof FormData;
+  try {
+    const api = createClient("h.example", (() => json(STATE)) as unknown as typeof fetch);
+    await api.analyze({ file: { uri: "file:///cache/foto.jpg", name: "foto.jpg", type: "image/jpeg" } });
+  } finally {
+    globalThis.FormData = realFormData;
+  }
+  const part = appended[0]?.[1] as { name: string; type: string; bytes(): Promise<Uint8Array>; uri?: string };
+  expect(part.uri).toBeUndefined();
+  expect(part).toMatchObject({ name: "foto.jpg", type: "image/jpeg" });
+  expect(Array.from(await part.bytes())).toEqual([1, 2, 3]);
 });
 
 test("sends pasted text as a documento.txt file the API can read", async () => {
@@ -87,6 +129,12 @@ test("sends pasted text as a documento.txt file the API can read", async () => {
   } finally {
     globalThis.FormData = realFormData;
   }
-  expect(appended).toEqual([["file", { uri: "file:///cache/documento.txt", name: "documento.txt", type: "text/plain" }]]);
-  expect(cacheFiles["file:///cache/documento.txt"]).toBe("Nome: Rui Costa");
+  // Expo's fetch reads parts with name, type and bytes(); it refuses the old
+  // React Native {uri, name, type} ("Unsupported FormDataPart implementation").
+  expect(appended).toHaveLength(1);
+  const [key, part] = appended[0] as [string, { name: string; type: string; bytes(): Promise<Uint8Array>; uri?: string }];
+  expect(key).toBe("file");
+  expect(part.uri).toBeUndefined();
+  expect(part).toMatchObject({ name: "documento.txt", type: "text/plain" });
+  expect(new TextDecoder().decode(await part.bytes())).toBe("Nome: Rui Costa");
 });

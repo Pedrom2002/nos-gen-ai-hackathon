@@ -117,6 +117,8 @@ Besides the challenge PDF, Lethe reads scanned PDFs, photos and images (PNG, JPG
 
 ## Review interface
 
+![The review screen](docs/ui_review.png)
+
 `frontend/` is the review screen, built with Lovable and connected to the API. It lets you:
 
 - **Load a document:** import a PDF, DOCX, image (PNG, JPG, WebP), TXT or CSV, or paste text.

@@ -14,7 +14,11 @@ A lógica não é duplicada: a máscara por posição, o histórico de revisão,
    npx expo start --tunnel
    ```
 3. Ler o QR com a câmara (iOS) ou com o Expo Go (Android).
-4. Na app, abrir **Definições** e escrever o endereço da API (por exemplo o túnel `abc.trycloudflare.com` que aponta para `uvicorn api.main:app --port 8000`). Carregar em **Testar ligação**. Sem endereço, a app funciona em modo demo, com o aviso no cabeçalho.
+4. A app encontra a API sozinha:
+   - **pelo endereço deste computador**: copiar `.env.example` para `.env.local` e pôr `EXPO_PUBLIC_API_URL=` com o túnel da API (por exemplo `abc.trycloudflare.com`), depois reiniciar `npx expo start`;
+   - **ou na mesma rede Wi-Fi**: sem nada configurado, usa a porta 8000 do computador que serviu a app (`uvicorn api.main:app --host 0.0.0.0 --port 8000`).
+
+   Um endereço escrito em **Definições** tem prioridade; **Testar ligação** confirma. Sem nenhum endereço, a app funciona em modo demo, com o aviso no cabeçalho.
 
 ## Estrutura
 

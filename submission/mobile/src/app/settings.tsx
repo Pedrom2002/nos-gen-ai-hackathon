@@ -4,6 +4,7 @@ import { TextInput, View } from "react-native";
 
 import { LANGS } from "@web/lib/i18n";
 
+import { appDefaultApiUrl } from "@/address";
 import { createClient, normalizeBase } from "@/api";
 import { useSettings, type Theme } from "@/settings";
 import { Body, Button, Card, Notice, Screen, Title, useColors } from "@/ui";
@@ -14,6 +15,8 @@ export default function SettingsScreen() {
   const [url, setUrl] = useState(s.apiUrl);
   const [status, setStatus] = useState<{ ok: boolean; text: string } | null>(null);
   const [testing, setTesting] = useState(false);
+  // Used while the field is empty (address set on the computer or same Wi-Fi).
+  const automatic = appDefaultApiUrl();
 
   const saveUrl = () => {
     const clean = normalizeBase(url);
@@ -23,7 +26,7 @@ export default function SettingsScreen() {
   };
 
   const test = async () => {
-    const clean = saveUrl();
+    const clean = saveUrl() || automatic;
     setTesting(true);
     setStatus(null);
     const ok = await createClient(clean, fetch, 15_000).health();
@@ -45,11 +48,11 @@ export default function SettingsScreen() {
           autoCapitalize="none"
           autoCorrect={false}
           keyboardType="url"
-          placeholder="abc.trycloudflare.com"
+          placeholder={automatic || "abc.trycloudflare.com"}
           placeholderTextColor={c.mutedForeground}
           style={{ minHeight: 48, borderWidth: 1, borderColor: c.border, borderRadius: 10, paddingHorizontal: 12, color: c.foreground, fontSize: 16 }}
         />
-        <Button variant="primary" label={m.testConnection} onPress={test} busy={testing} disabled={!url.trim()} />
+        <Button variant="primary" label={m.testConnection} onPress={test} busy={testing} disabled={!url.trim() && !automatic} />
         {status ? <Notice tone={status.ok ? "success" : "error"} text={status.text} /> : null}
       </Card>
 

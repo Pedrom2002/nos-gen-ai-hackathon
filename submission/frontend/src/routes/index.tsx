@@ -79,11 +79,11 @@ function Index() {
   const [dragging, setDragging] = useState(false);
   const [busy, setBusy] = useState<ReadProgress | null>(null);
   const reading = busy !== null;
-  const [resultView, setResultView] = useState<"side" | "slide">("side");
+  const [resultView, setResultView] = useState<"side" | "slide">("slide");
   // Photos and PDFs can be shown as their pages, with the masked words
   // blacked out in place, or as text; plain text and DOCX only have text.
   const [docView, setDocView] = useState<"text" | "pages">("pages");
-  const [sliderSeen, setSliderSeen] = useState(false);
+  const [sliderSeen, setSliderSeen] = useState(true);
   const [focusId, setFocusId] = useState("");
   const hasPages = (source?.pages.length ?? 0) > 0;
   const showPages = hasPages && docView === "pages";
